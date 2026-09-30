@@ -1,0 +1,24 @@
+{
+  "name": "nakdong-gang-shift-web",
+  "version": "1.0.0",
+  "description": "낙동강 발전관리과 4조3교대 근무일정표 및 대교직 관리 Antigravity 웹 포털",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "server": "node server.js",
+    "python": "python3 server.py",
+    "serve": "npx serve -l 3000 ."
+  },
+  "keywords": [
+    "antigravity",
+    "shift-schedule",
+    "4teams-3shifts",
+    "supabase",
+    "javascript",
+    "html",
+    "css",
+    "nodejs"
+  ],
+  "author": "낙동강 발전관리과",
+  "license": "MIT"
+}

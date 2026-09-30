@@ -11,43 +11,60 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <!-- Supabase JS Client CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=20260930_3">
 </head>
 <body>
   <!-- Antigravity Canvas for Floating Particles -->
   <canvas id="antigravityCanvas"></canvas>
 
   <div class="app-container">
-    <!-- Top Header Bar -->
+    <!-- Top Header Bar (낙동강 발전관리과 블루 테마 상단 메뉴) -->
     <header class="app-header">
       <div class="header-left">
         <div class="logo-icon"><i class="fa-solid fa-water"></i></div>
         <div class="header-title-group">
           <h1>낙동강 발전관리과</h1>
-          <span class="header-subtitle">4조3교대 근무일정 및 대교직 종합 포털</span>
+          <span class="header-subtitle">4조3교대 근무일정 및 대교직 포털</span>
         </div>
       </div>
 
       <div class="header-actions">
-        <!-- Antigravity Mode Button -->
-        <button id="antigravityBtn" class="btn-pill btn-antigravity" title="무중력 부유 효과 토글">
-          <i class="fa-solid fa-rocket"></i> <span class="btn-text">Antigravity 모드</span>
-        </button>
-
-        <!-- Supabase Status Badge -->
-        <div id="supabaseStatus" class="status-badge connecting" style="cursor: pointer;" title="클릭하여 Supabase 연결 상태 점검 및 설정">
-          <span class="status-dot"></span>
-          <span id="supabaseStatusText">Supabase 확인 중...</span>
-          <i class="fa-solid fa-gear" style="font-size: 0.75rem; margin-left: 3px; opacity: 0.8;"></i>
-        </div>
-
-        <!-- Current User Selector -->
-        <div class="user-selector-container">
-          <label for="currentUserSelect"><i class="fa-solid fa-user-circle"></i> 작업자:</label>
-          <select id="currentUserSelect" class="user-select">
+        <!-- 1. 프로필 전환 캡슐 -->
+        <div class="header-profile-capsule" id="headerProfileCapsule" title="작업자 프로필 전환 (클릭하여 조원 선택)">
+          <div class="header-avatar" id="headerProfileAvatar">장</div>
+          <div class="header-user-meta">
+            <span class="header-user-name" id="headerProfileName">장성훈(대리)</span>
+            <span class="header-user-team" id="headerProfileTeam">1조</span>
+          </div>
+          <i class="fa-solid fa-caret-down header-caret"></i>
+          <select id="currentUserSelect" class="user-select-overlay" title="작업자 변경">
             <!-- Dynamically populated -->
           </select>
         </div>
+
+        <!-- 2. 대구역 실시간 열차 버튼 -->
+        <button id="headerDaeguBtn" class="header-pill-btn" title="대구역 실시간 열차 및 광역전철 시간표">
+          <i class="fa-solid fa-train"></i>
+          <span>대구역</span>
+        </button>
+
+        <!-- 3. 알림 버튼 및 카운트 배지 -->
+        <button id="headerNotifBtn" class="header-circle-btn" title="알림 확인">
+          <i class="fa-solid fa-bell"></i>
+          <span id="headerNotifBadge" class="header-badge-count">2</span>
+        </button>
+
+        <!-- Supabase Status Badge -->
+        <div id="supabaseStatus" class="header-status-badge" style="cursor: pointer;" title="클릭하여 Supabase 연결 상태 점검 및 설정">
+          <span class="status-dot"></span>
+          <span id="supabaseStatusText">Supabase 확인 중...</span>
+          <i class="fa-solid fa-gear" style="font-size: 0.7rem; margin-left: 2px; opacity: 0.85;"></i>
+        </div>
+
+        <!-- Antigravity Mode Button -->
+        <button id="antigravityBtn" class="header-circle-btn btn-antigravity-toggle" title="무중력 부유 효과 토글">
+          <i class="fa-solid fa-rocket"></i>
+        </button>
       </div>
     </header>
 
@@ -461,8 +478,90 @@
         </div>
       </div>
       <div class="modal-footer">
+        <button type="button" class="btn-pill btn-secondary" id="btnResetSupabaseConfig" title="기본 낙동강 Supabase 설정으로 복원"><i class="fa-solid fa-rotate-left"></i> 기본값 복원</button>
         <button type="button" class="btn-pill btn-secondary" id="btnTestSupabase"><i class="fa-solid fa-arrows-rotate"></i> 다시 연결 테스트</button>
         <button type="button" class="btn-pill btn-primary" id="btnSaveSupabaseConfig"><i class="fa-solid fa-check"></i> 설정 저장 및 재연결</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= Modal: 대구역 실시간 기차·전철 시간표 ================= -->
+  <div id="daeguStationModal" class="modal-backdrop">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header" style="background: linear-gradient(135deg, #0284c7, #0369a1); color:#fff;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <i class="fa-solid fa-train" style="font-size:1.25rem;"></i>
+          <div>
+            <h3 style="color:#fff; margin:0; font-size:1.1rem;">대구역 실시간 기차·광역전철</h3>
+            <small style="color:rgba(255,255,255,0.85); font-size:0.75rem;">낙동강 발전관리과 조원 출퇴근 전용 열차 안내</small>
+          </div>
+        </div>
+        <button class="modal-close" data-close="daeguStationModal" style="color:#fff;">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 1rem 1.25rem;">
+        <!-- Live Clock Banner -->
+        <div class="train-clock-card">
+          <div class="clock-label"><i class="fa-regular fa-clock"></i> 현재 시각</div>
+          <div class="clock-time" id="trainLiveClock">00:00:00</div>
+          <div class="clock-badge">실시간 배차 연동</div>
+        </div>
+
+        <!-- Train Line Tabs -->
+        <div class="train-tabs">
+          <button class="train-tab-btn active" data-train-tab="daegyeong">
+            <span class="line-dot line-dg"></span> 대경선 광역전철
+          </button>
+          <button class="train-tab-btn" data-train-tab="line1">
+            <span class="line-dot line-1"></span> 1호선 (하양/안심)
+          </button>
+          <button class="train-tab-btn" data-train-tab="korail">
+            <span class="line-dot line-kr"></span> 일반열차 (ITX/무궁화)
+          </button>
+        </div>
+
+        <!-- Train List Container -->
+        <div id="trainScheduleList" class="train-schedule-list">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= Modal: 알림 센터 ================= -->
+  <div id="notificationsModal" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-bell"></i> 알림 센터</h3>
+        <button class="modal-close" data-close="notificationsModal">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 1rem;">
+        <div class="notification-list" id="notificationItemsList">
+          <!-- Dynamically populated notifications -->
+          <div class="notif-card unread">
+            <div class="notif-icon substitute"><i class="fa-solid fa-repeat"></i></div>
+            <div class="notif-content">
+              <strong>대교직 신청 현황</strong>
+              <p>대기 중인 대직/교직 신청 내역을 확인하세요.</p>
+              <small class="notif-time">오늘</small>
+            </div>
+          </div>
+          <div class="notif-card">
+            <div class="notif-icon notice"><i class="fa-solid fa-bullhorn"></i></div>
+            <div class="notif-content">
+              <strong>10월 4조3교대 정상 순환</strong>
+              <p>10월 근무일정 및 인수인계 사항이 동기화되었습니다.</p>
+              <small class="notif-time">실시간</small>
+            </div>
+          </div>
+          <div class="notif-card">
+            <div class="notif-icon system"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+            <div class="notif-content">
+              <strong>Supabase 클라우드 동기화</strong>
+              <p>데이터베이스와 실시간으로 연결되어 있습니다.</p>
+              <small class="notif-time">실시간</small>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -471,6 +570,6 @@
   <div id="toastContainer" class="toast-container"></div>
 
   <!-- Application Logic -->
-  <script src="app.js"></script>
+  <script src="app.js?v=20260930_3"></script>
 </body>
 </html>

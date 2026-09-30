@@ -90,62 +90,214 @@ body {
 .app-container {
   position: relative;
   z-index: 1;
-  max-width: 1280px;
+  max-width: 1240px;
   margin: 0 auto;
-  padding: 1rem 1.25rem 3rem;
+  padding: 0.5rem 0.85rem 2rem;
 }
 
-/* Header */
+/* Header (낙동강 발전관리과 블루 테마 상단 메뉴) */
 .app-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: var(--bg-card);
-  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, #1e40af 0%, #2563eb 50%, #1d4ed8 100%);
+  color: #ffffff;
+  padding: 0.65rem 1.15rem;
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--border-color);
-  margin-bottom: 1rem;
+  box-shadow: 0 4px 14px rgba(30, 64, 175, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  margin-bottom: 0.65rem;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 0.65rem;
 }
 
 .header-left {
   display: flex;
   align-items: center;
-  gap: 0.875rem;
+  gap: 0.75rem;
 }
 
 .logo-icon {
-  width: 44px;
-  height: 44px;
-  background: linear-gradient(135deg, #4f46e5, #06b6d4);
+  width: 38px;
+  height: 38px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.35);
   color: #fff;
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.35rem;
-  box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+  font-size: 1.15rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
 }
 
 .header-title-group h1 {
-  font-size: 1.35rem;
+  font-size: 1.15rem;
   font-weight: 700;
-  color: var(--text-main);
+  color: #ffffff;
   letter-spacing: -0.02em;
+  line-height: 1.25;
 }
 
 .header-subtitle {
-  font-size: 0.825rem;
-  color: var(--text-secondary);
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 400;
 }
 
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
   flex-wrap: wrap;
+}
+
+/* 1. Header Profile Capsule */
+.header-profile-capsule {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  padding: 0.25rem 0.65rem 0.25rem 0.35rem;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: var(--transition);
+}
+.header-profile-capsule:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+.header-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #3b82f6;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+.header-user-meta {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+.header-user-name {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+.header-user-team {
+  font-size: 0.675rem;
+  color: rgba(255, 255, 255, 0.85);
+}
+.header-caret {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.85);
+  margin-left: 2px;
+}
+.user-select-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* 2. Header Pill Buttons (대구역 열차 등) */
+.header-pill-btn {
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #ffffff;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-full);
+  font-size: 0.8rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.header-pill-btn:hover {
+  background: rgba(255, 255, 255, 0.28);
+  transform: translateY(-1px);
+}
+.header-pill-btn i {
+  color: #7dd3fc;
+  font-size: 0.85rem;
+}
+
+/* 3. Header Circle Buttons (알림, 모드 등) */
+.header-circle-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: var(--transition);
+  font-size: 0.85rem;
+}
+.header-circle-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
+.header-badge-count {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 0.65rem;
+  font-weight: 800;
+  min-width: 16px;
+  height: 16px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  border: 2px solid #1e40af;
+}
+
+/* 4. Header Supabase Status */
+.header-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #ffffff;
+  transition: var(--transition);
+}
+.header-status-badge:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+.header-status-badge.connected .status-dot {
+  background-color: #34d399;
+  box-shadow: 0 0 6px #34d399;
+}
+.header-status-badge.connecting .status-dot {
+  background-color: #fbbf24;
+}
+.header-status-badge.error .status-dot {
+  background-color: #f87171;
 }
 
 /* Status Badge */
@@ -241,26 +393,26 @@ body {
 /* Nav Tabs */
 .main-nav {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.35rem;
   background: var(--bg-card);
-  padding: 0.4rem;
+  padding: 0.3rem;
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--border-color);
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.65rem;
   overflow-x: auto;
 }
 
 .nav-tab {
   display: flex;
   align-items: center;
-  gap: 0.45rem;
-  padding: 0.65rem 1.15rem;
+  gap: 0.35rem;
+  padding: 0.45rem 0.85rem;
   border-radius: var(--radius-md);
   border: none;
   background: transparent;
   color: var(--text-secondary);
-  font-size: 0.925rem;
+  font-size: 0.825rem;
   font-weight: 600;
   cursor: pointer;
   transition: var(--transition);
@@ -276,28 +428,28 @@ body {
 .nav-tab.active {
   background: var(--primary);
   color: #ffffff;
-  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.35);
+  box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);
 }
 
 .nav-badge {
   background: #ef4444;
   color: #fff;
-  font-size: 0.7rem;
-  padding: 0.15rem 0.45rem;
+  font-size: 0.65rem;
+  padding: 0.1rem 0.4rem;
   border-radius: var(--radius-full);
-  margin-left: 0.25rem;
+  margin-left: 0.2rem;
 }
 
 /* Tab Panes */
 .tab-pane {
   display: none;
-  animation: fadeIn 0.25s ease-out;
+  animation: fadeIn 0.2s ease-out;
 }
 .tab-pane.active {
   display: block;
 }
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
+  from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
@@ -306,48 +458,86 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.25rem;
+  margin-bottom: 0.65rem;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 0.5rem;
 }
 
 .month-controls {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.45rem;
+}
+
+/* 대시보드 및 모든 탭의 월 이동 화살표 크기 일원화 (34px 원형 규격) */
+.month-controls .btn-icon,
+.btn-icon {
+  width: 34px !important;
+  height: 34px !important;
+  min-width: 34px !important;
+  min-height: 34px !important;
+  max-width: 34px !important;
+  max-height: 34px !important;
+  border-radius: 50% !important;
+  border: 1px solid var(--border-color) !important;
+  background: #ffffff !important;
+  color: var(--text-main) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  font-size: 0.875rem !important;
+  line-height: 1 !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+  cursor: pointer !important;
+  transition: var(--transition) !important;
+}
+
+.month-controls .btn-icon:hover,
+.btn-icon:hover {
+  background: #eff6ff !important;
+  color: var(--primary) !important;
+  border-color: #bfdbfe !important;
+  transform: scale(1.05);
+}
+
+.month-controls .btn-icon:active,
+.btn-icon:active {
+  transform: scale(0.95);
 }
 
 .calendar-title {
-  font-size: 1.35rem;
+  font-size: 1.15rem;
   font-weight: 700;
-  min-width: 150px;
+  min-width: 120px;
   text-align: center;
+  letter-spacing: -0.01em;
 }
 
 .stats-pills {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.35rem;
   flex-wrap: wrap;
 }
 
 .stat-pill {
-  padding: 0.4rem 0.85rem;
+  padding: 0.25rem 0.6rem;
   border-radius: var(--radius-full);
-  font-size: 0.825rem;
+  font-size: 0.75rem;
   font-weight: 600;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   box-shadow: var(--shadow-sm);
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.25rem;
 }
 .stat-pill.day { color: var(--shift-day); background: var(--shift-day-bg); border-color: #bfdbfe; }
 .stat-pill.night { color: var(--shift-night); background: var(--shift-night-bg); border-color: #fecaca; }
 .stat-pill.off { color: var(--shift-off); background: var(--shift-off-bg); border-color: #a7f3d0; }
 .stat-pill.total { color: var(--primary); background: var(--primary-container); border-color: #c7d2fe; }
 
-/* Calendar Wrapper */
+/* Calendar Wrapper (한 화면 최적화 콤팩트 규격) */
 .calendar-wrapper {
   background: var(--bg-card);
   border-radius: var(--radius-lg);
@@ -363,12 +553,12 @@ body {
   border-bottom: 1px solid var(--border-color);
   text-align: center;
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--text-secondary);
 }
 
 .weekday {
-  padding: 0.65rem 0.25rem;
+  padding: 0.45rem 0.2rem;
 }
 .weekday.sun { color: #dc2626; }
 .weekday.sat { color: #2563eb; }
@@ -380,10 +570,11 @@ body {
   gap: 1px;
 }
 
+/* 캘린더 셀: 모바일앱처럼 한 화면에 다 보이도록 높이 및 패딩 컴팩트 조정 */
 .calendar-cell {
   background: #ffffff;
-  min-height: 96px;
-  padding: 0.5rem;
+  min-height: 64px;
+  padding: 0.35rem;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -393,7 +584,7 @@ body {
 }
 
 .calendar-cell:hover {
-  background: #f1f5f9;
+  background: #f8fafc;
 }
 
 .calendar-cell.selected {
@@ -405,23 +596,24 @@ body {
   background: var(--primary);
   color: #fff;
   border-radius: 50%;
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  font-size: 0.72rem;
 }
 
 .calendar-cell.other-month {
   background: #fafafa;
-  opacity: 0.55;
+  opacity: 0.45;
 }
 
 .day-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.825rem;
+  font-size: 0.75rem;
   font-weight: 600;
 }
 
@@ -430,19 +622,20 @@ body {
 
 /* Shift Tags */
 .shift-tag-box {
-  margin-top: 0.25rem;
+  margin-top: 0.2rem;
 }
 
 .shift-tag {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.2rem 0.5rem;
+  padding: 0.15rem 0.35rem;
   border-radius: var(--radius-sm);
-  font-size: 0.775rem;
+  font-size: 0.725rem;
   font-weight: 700;
   width: 100%;
   text-align: center;
+  line-height: 1.2;
 }
 
 .shift-tag.D { background: var(--shift-day-bg); color: var(--shift-day); border: 1px solid #bfdbfe; }
@@ -1039,9 +1232,13 @@ body {
 }
 
 .btn-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
+  width: 34px !important;
+  height: 34px !important;
+  min-width: 34px !important;
+  min-height: 34px !important;
+  max-width: 34px !important;
+  max-height: 34px !important;
+  border-radius: 50% !important;
   border: 1px solid var(--border-color);
   background: var(--bg-card);
   display: inline-flex;
@@ -1049,11 +1246,12 @@ body {
   justify-content: center;
   cursor: pointer;
   color: var(--text-secondary);
+  font-size: 0.875rem !important;
   transition: var(--transition);
 }
 .btn-icon:hover {
   background: #f1f5f9;
-  color: var(--text-main);
+  color: var(--primary);
 }
 
 /* Toast */
@@ -1069,10 +1267,10 @@ body {
 .toast {
   background: #1e293b;
   color: #fff;
-  padding: 0.75rem 1.25rem;
+  padding: 0.65rem 1.15rem;
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
-  font-size: 0.875rem;
+  font-size: 0.825rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -1081,6 +1279,285 @@ body {
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==============================================================================
+   대구역 실시간 기차·광역전철 스타일 (Daegu Station Timetable)
+   ============================================================================== */
+.train-clock-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+  border: 1px solid #bae6fd;
+  border-radius: var(--radius-md);
+  padding: 0.65rem 1rem;
+  margin-bottom: 0.75rem;
+}
+.clock-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #0369a1;
+}
+.clock-time {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #0c4a6e;
+  letter-spacing: 0.05em;
+  font-variant-numeric: tabular-nums;
+}
+.clock-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: #0284c7;
+  color: #fff;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-full);
+}
+
+.train-tabs {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 0.4rem;
+}
+.train-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  background: transparent;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition);
+}
+.train-tab-btn:hover {
+  background: #f1f5f9;
+  color: var(--text-main);
+}
+.train-tab-btn.active {
+  background: #0284c7;
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.3);
+}
+.line-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.line-dot.line-dg { background: #0284c7; }
+.line-dot.line-1 { background: #dc2626; }
+.line-dot.line-kr { background: #059669; }
+
+.train-schedule-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 380px;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+.train-item-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  background: #ffffff;
+  transition: var(--transition);
+}
+.train-item-card:hover {
+  border-color: #38bdf8;
+  box-shadow: var(--shadow-sm);
+}
+.train-item-card.next-train {
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+.train-item-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.train-badge-pill {
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.725rem;
+  font-weight: 700;
+  color: #fff;
+}
+.train-badge-pill.dg { background: #0284c7; }
+.train-badge-pill.line1 { background: #dc2626; }
+.train-badge-pill.kr { background: #059669; }
+.train-dest-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+.train-dest-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+.train-time-display {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+.train-remaining-tag {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #0284c7;
+}
+.train-remaining-tag.soon {
+  color: #dc2626;
+  animation: pulse-glow 1.5s infinite alternate;
+}
+
+/* ==============================================================================
+   알림 센터 스타일 (Notifications Modal)
+   ============================================================================== */
+.notification-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 350px;
+  overflow-y: auto;
+}
+.notif-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  background: #ffffff;
+  transition: var(--transition);
+}
+.notif-card.unread {
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+.notif-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+.notif-icon.substitute { background: #f59e0b; }
+.notif-icon.notice { background: #ef4444; }
+.notif-icon.system { background: #3b82f6; }
+.notif-content {
+  flex: 1;
+}
+.notif-content strong {
+  font-size: 0.825rem;
+  color: var(--text-main);
+  display: block;
+}
+.notif-content p {
+  font-size: 0.775rem;
+  color: var(--text-secondary);
+  margin: 0.15rem 0;
+}
+.notif-time {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+/* ==============================================================================
+   모바일 최적화 및 한 화면 표시 반응형 규칙 (Mobile-First 1-Screen)
+   ============================================================================== */
+@media (max-width: 768px) {
+  .app-container {
+    padding: 0.35rem 0.5rem 1.5rem;
+  }
+  
+  .app-header {
+    padding: 0.5rem 0.75rem;
+    gap: 0.5rem;
+  }
+  
+  .header-title-group h1 {
+    font-size: 1.05rem;
+  }
+  .header-subtitle {
+    font-size: 0.7rem;
+  }
+  
+  .main-nav {
+    padding: 0.25rem;
+    gap: 0.25rem;
+  }
+  .nav-tab {
+    padding: 0.4rem 0.65rem;
+    font-size: 0.775rem;
+  }
+
+  .month-controls .btn-icon,
+  .btn-icon {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+    max-width: 32px !important;
+    max-height: 32px !important;
+    font-size: 0.8rem !important;
+  }
+
+  .calendar-title {
+    font-size: 1.05rem;
+    min-width: 100px;
+  }
+
+  .weekday {
+    padding: 0.35rem 0.1rem;
+    font-size: 0.75rem;
+  }
+
+  /* 모바일 화면에서 한 화면에 캘린더 전체가 들어오도록 높이 조정 */
+  .calendar-cell {
+    min-height: 48px;
+    padding: 0.2rem;
+  }
+  .day-header {
+    font-size: 0.7rem;
+  }
+  .calendar-cell.today .day-number {
+    width: 18px;
+    height: 18px;
+    font-size: 0.68rem;
+  }
+  .shift-tag {
+    font-size: 0.68rem;
+    padding: 0.1rem 0.25rem;
+  }
+
+  .date-detail-card {
+    margin-top: 0.5rem !important;
+    padding: 0.5rem 0.75rem !important;
+  }
+  .date-detail-card .card-body {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+  }
+  .detail-row {
+    margin-bottom: 0 !important;
+  }
 }
 
 /* Antigravity Active Physics Animation */

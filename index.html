@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>낙동강 발전관리과 - 4조3교대 근무 관리 시스템</title>
+  <!-- Google Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Supabase JS Client CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Antigravity Canvas for Floating Particles -->
+  <canvas id="antigravityCanvas"></canvas>
+
+  <div class="app-container">
+    <!-- Top Header Bar -->
+    <header class="app-header">
+      <div class="header-left">
+        <div class="logo-icon"><i class="fa-solid fa-water"></i></div>
+        <div class="header-title-group">
+          <h1>낙동강 발전관리과</h1>
+          <span class="header-subtitle">4조3교대 근무일정 및 대교직 종합 포털</span>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- Antigravity Mode Button -->
+        <button id="antigravityBtn" class="btn-pill btn-antigravity" title="무중력 부유 효과 토글">
+          <i class="fa-solid fa-rocket"></i> <span class="btn-text">Antigravity 모드</span>
+        </button>
+
+        <!-- Supabase Status Badge -->
+        <div id="supabaseStatus" class="status-badge connecting" style="cursor: pointer;" title="클릭하여 Supabase 연결 상태 점검 및 설정">
+          <span class="status-dot"></span>
+          <span id="supabaseStatusText">Supabase 확인 중...</span>
+          <i class="fa-solid fa-gear" style="font-size: 0.75rem; margin-left: 3px; opacity: 0.8;"></i>
+        </div>
+
+        <!-- Current User Selector -->
+        <div class="user-selector-container">
+          <label for="currentUserSelect"><i class="fa-solid fa-user-circle"></i> 작업자:</label>
+          <select id="currentUserSelect" class="user-select">
+            <!-- Dynamically populated -->
+          </select>
+        </div>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="main-nav">
+      <button class="nav-tab active" data-tab="myCalendar">
+        <i class="fa-regular fa-calendar-days"></i> 개인 캘린더
+      </button>
+      <button class="nav-tab" data-tab="teamSchedule">
+        <i class="fa-solid fa-users"></i> 팀 일정표
+      </button>
+      <button class="nav-tab" data-tab="shiftRequests">
+        <i class="fa-solid fa-arrow-right-arrow-left"></i> 대교직 신청·승인
+        <span id="pendingRequestBadge" class="nav-badge" style="display:none;">0</span>
+      </button>
+      <button class="nav-tab" data-tab="adminWeekly">
+        <i class="fa-solid fa-clipboard-list"></i> 업무 메모 / 주간일정
+      </button>
+      <button class="nav-tab" data-tab="bulletinBoard">
+        <i class="fa-solid fa-comments"></i> 소통 게시판
+      </button>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="content-area">
+
+      <!-- ================= 1. 개인 캘린더 (My Calendar) ================= -->
+      <section id="tab-myCalendar" class="tab-pane active">
+        <div class="pane-header">
+          <div class="month-controls">
+            <button id="prevMonthBtn" class="btn-icon" title="이전 달"><i class="fa-solid fa-chevron-left"></i></button>
+            <h2 id="currentMonthTitle" class="calendar-title">2026년 10월</h2>
+            <button id="nextMonthBtn" class="btn-icon" title="다음 달"><i class="fa-solid fa-chevron-right"></i></button>
+            <button id="todayBtn" class="btn-pill btn-secondary"><i class="fa-solid fa-calendar-day"></i> 오늘</button>
+          </div>
+
+          <!-- Monthly Stats Widget -->
+          <div class="stats-pills">
+            <div class="stat-pill day"><span class="label">주간(D):</span> <strong id="statDayCount">0</strong>일</div>
+            <div class="stat-pill night"><span class="label">야간(S):</span> <strong id="statNightCount">0</strong>일</div>
+            <div class="stat-pill off"><span class="label">비번(X):</span> <strong id="statOffCount">0</strong>일</div>
+            <div class="stat-pill total"><span class="label">근무시간:</span> <strong id="statTotalHours">0</strong>h</div>
+          </div>
+        </div>
+
+        <div class="calendar-wrapper">
+          <div class="calendar-weekdays">
+            <div class="weekday sun">일</div>
+            <div class="weekday">월</div>
+            <div class="weekday">화</div>
+            <div class="weekday">수</div>
+            <div class="weekday">목</div>
+            <div class="weekday">금</div>
+            <div class="weekday sat">토</div>
+          </div>
+          <div id="myCalendarGrid" class="calendar-grid">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- Selected Date Detail Box -->
+        <div id="selectedDateDetail" class="card date-detail-card" style="margin-top: 1.5rem;">
+          <div class="card-header">
+            <h3 id="selectedDateText"><i class="fa-regular fa-clock"></i> 선택된 날짜 상세 정보</h3>
+            <span id="selectedShiftBadge" class="shift-tag">근무 정보 없음</span>
+          </div>
+          <div class="card-body">
+            <div class="detail-row">
+              <span class="detail-label">근무시간:</span>
+              <span id="selectedTimeRange" class="detail-val">-</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">휴게시간:</span>
+              <span id="selectedRestTime" class="detail-val">-</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">특이사항/메모:</span>
+              <span id="selectedNote" class="detail-val">-</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 2. 팀 일정표 (Team Schedule) ================= -->
+      <section id="tab-teamSchedule" class="tab-pane">
+        <div class="pane-header">
+          <div class="month-controls">
+            <button id="teamPrevMonthBtn" class="btn-icon"><i class="fa-solid fa-chevron-left"></i></button>
+            <h2 id="teamMonthTitle" class="calendar-title">2026년 10월</h2>
+            <button id="teamNextMonthBtn" class="btn-icon"><i class="fa-solid fa-chevron-right"></i></button>
+            <button id="teamTodayBtn" class="btn-pill btn-secondary"><i class="fa-solid fa-calendar-day"></i> 오늘</button>
+          </div>
+
+          <div class="shift-filter-group">
+            <button class="filter-chip active" data-filter="ALL">전체</button>
+            <button class="filter-chip" data-filter="DAY">주간 (D)</button>
+            <button class="filter-chip" data-filter="NIGHT">야간 (S)</button>
+            <button class="filter-chip" data-filter="OFF">휴무 (X)</button>
+          </div>
+        </div>
+
+        <div class="team-layout">
+          <!-- Team Calendar Grid (Prev 1st week + Current + Next 1st week) -->
+          <div class="calendar-wrapper team-calendar-col">
+            <div class="calendar-weekdays">
+              <div class="weekday sun">일</div>
+              <div class="weekday">월</div>
+              <div class="weekday">화</div>
+              <div class="weekday">수</div>
+              <div class="weekday">목</div>
+              <div class="weekday">금</div>
+              <div class="weekday sat">토</div>
+            </div>
+            <div id="teamCalendarGrid" class="calendar-grid">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- Selected Day Worker List Panel -->
+          <div class="worker-roster-col">
+            <div class="card roster-card">
+              <div class="card-header">
+                <h3 id="rosterDateTitle"><i class="fa-solid fa-user-group"></i> 당일 근무 편성 현황</h3>
+                <span id="rosterDayOfWeek" class="badge">오늘</span>
+              </div>
+              <div class="card-body">
+                <!-- Day Workers -->
+                <div class="roster-section">
+                  <h4 class="section-title day-title"><i class="fa-solid fa-sun"></i> 주간 근무 (09:00 ~ 18:00)</h4>
+                  <div id="dayWorkerList" class="worker-card-list">
+                    <!-- Cards -->
+                  </div>
+                </div>
+
+                <!-- Night Workers -->
+                <div class="roster-section">
+                  <h4 class="section-title night-title"><i class="fa-solid fa-moon"></i> 야간 근무 (18:00 ~ 익일 09:00)</h4>
+                  <div id="nightWorkerList" class="worker-card-list">
+                    <!-- Cards -->
+                  </div>
+                </div>
+
+                <!-- Off Workers -->
+                <div class="roster-section">
+                  <h4 class="section-title off-title"><i class="fa-solid fa-house-chimney"></i> 비번 / 휴무</h4>
+                  <div id="offWorkerList" class="worker-card-list">
+                    <!-- Cards -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 3. 대교직 신청·승인 (Shift Requests) ================= -->
+      <section id="tab-shiftRequests" class="tab-pane">
+        <div class="pane-header">
+          <div>
+            <h2><i class="fa-solid fa-arrow-right-arrow-left"></i> 대교직 신청 및 승인 관리</h2>
+            <p class="section-desc">동료와의 대직 근무, 교직 교환 및 연차 신청을 실시간으로 관리합니다.</p>
+          </div>
+          <button id="openNewRequestBtn" class="btn-pill btn-primary">
+            <i class="fa-solid fa-plus"></i> 새 대교직 신청
+          </button>
+        </div>
+
+        <div class="request-tabs-bar">
+          <button class="req-filter-btn active" data-req-filter="ALL">전체 내역 (<span id="countReqAll">0</span>)</button>
+          <button class="req-filter-btn" data-req-filter="PENDING">대기중 (<span id="countReqPending">0</span>)</button>
+          <button class="req-filter-btn" data-req-filter="APPROVED">승인 완료 (<span id="countReqApproved">0</span>)</button>
+          <button class="req-filter-btn" data-req-filter="REJECTED">반려됨 (<span id="countReqRejected">0</span>)</button>
+        </div>
+
+        <div id="requestsList" class="requests-grid">
+          <!-- Dynamically populated request cards -->
+        </div>
+      </section>
+
+      <!-- ================= 4. 업무 메모 / 주간 대시보드 (Admin Weekly) ================= -->
+      <section id="tab-adminWeekly" class="tab-pane">
+        <div class="pane-header">
+          <div class="month-controls">
+            <button id="prevWeekBtn" class="btn-icon"><i class="fa-solid fa-chevron-left"></i></button>
+            <h2 id="currentWeekTitle" class="calendar-title">주간 업무 일정</h2>
+            <button id="nextWeekBtn" class="btn-icon"><i class="fa-solid fa-chevron-right"></i></button>
+            <button id="currentWeekTodayBtn" class="btn-pill btn-secondary"><i class="fa-solid fa-calendar-day"></i> 이번 주</button>
+          </div>
+          <div class="sync-indicator">
+            <span class="dot-online"></span> Supabase 실시간 동기화
+          </div>
+        </div>
+
+        <div id="weeklyCardsContainer" class="weekly-cards-grid">
+          <!-- 7-day cards Monday to Sunday -->
+        </div>
+      </section>
+
+      <!-- ================= 5. 소통 게시판 (Bulletin Board) ================= -->
+      <section id="tab-bulletinBoard" class="tab-pane">
+        <div class="pane-header">
+          <div>
+            <h2><i class="fa-solid fa-comments"></i> 발전관리과 소통 게시판</h2>
+            <p class="section-desc">공지사항 및 조원 간의 자유로운 소통 공간입니다.</p>
+          </div>
+          <button id="openNewPostBtn" class="btn-pill btn-primary">
+            <i class="fa-solid fa-pen-to-square"></i> 새 글 쓰기
+          </button>
+        </div>
+
+        <div class="board-filter-bar">
+          <div class="category-filters">
+            <button class="board-cat-btn active" data-category="ALL">전체</button>
+            <button class="board-cat-btn" data-category="공지사항"><i class="fa-solid fa-bullhorn"></i> 공지사항</button>
+            <button class="board-cat-btn" data-category="대교직"><i class="fa-solid fa-repeat"></i> 대교직</button>
+            <button class="board-cat-btn" data-category="일반"><i class="fa-solid fa-message"></i> 일반</button>
+            <button class="board-cat-btn" data-category="건의"><i class="fa-solid fa-lightbulb"></i> 건의</button>
+          </div>
+          <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="postSearchInput" placeholder="제목 또는 내용 검색...">
+          </div>
+        </div>
+
+        <div id="postsList" class="posts-stream">
+          <!-- Dynamically populated post cards -->
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ================= Modal: 새 대교직 신청 ================= -->
+  <div id="newRequestModal" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-arrow-right-arrow-left"></i> 대교직 신청서 작성</h3>
+        <button class="modal-close" data-close="newRequestModal">&times;</button>
+      </div>
+      <form id="newRequestForm" class="modal-body">
+        <div class="form-group">
+          <label>신청 유형 <span class="required">*</span></label>
+          <div class="radio-cards">
+            <label class="radio-card">
+              <input type="radio" name="reqType" value="SUBSTITUTE" checked>
+              <div class="radio-content">
+                <strong>대직 (대신 근무)</strong>
+                <small>본인 휴무/연차 시 대상자가 대신 근무</small>
+              </div>
+            </label>
+            <label class="radio-card">
+              <input type="radio" name="reqType" value="EXCHANGE">
+              <div class="radio-content">
+                <strong>교직 (근무 맞교환)</strong>
+                <small>서로의 근무 일정을 맞바꿈</small>
+              </div>
+            </label>
+            <label class="radio-card">
+              <input type="radio" name="reqType" value="VACATION">
+              <div class="radio-content">
+                <strong>연차 신청</strong>
+                <small>개인 연차 및 특별 휴가</small>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="reqDate">신청(근무) 날짜 <span class="required">*</span></label>
+            <input type="date" id="reqDate" required class="form-input">
+          </div>
+          <div class="form-group flex-1" id="targetDateGroup">
+            <label for="targetDate">교환 대상 날짜</label>
+            <input type="date" id="targetDate" class="form-input">
+          </div>
+        </div>
+
+        <div class="form-group" id="targetUserGroup">
+          <label for="targetUser">대상 근무자 <span class="required">*</span></label>
+          <select id="targetUser" class="form-input" required>
+            <!-- Users list -->
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="reqReason">신청 사유</label>
+          <textarea id="reqReason" rows="3" class="form-input" placeholder="신청 사유를 구체적으로 기재하세요 (예: 경조사, 병원 진료 등)"></textarea>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-pill btn-secondary" data-close="newRequestModal">취소</button>
+          <button type="submit" class="btn-pill btn-primary"><i class="fa-solid fa-paper-plane"></i> 신청서 제출</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= Modal: 새 게시글 작성 ================= -->
+  <div id="newPostModal" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-pen-to-square"></i> 새 게시글 작성</h3>
+        <button class="modal-close" data-close="newPostModal">&times;</button>
+      </div>
+      <form id="newPostForm" class="modal-body">
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="postCategory">분류</label>
+            <select id="postCategory" class="form-input">
+              <option value="공지사항">공지사항</option>
+              <option value="대교직">대교직</option>
+              <option value="일반" selected>일반</option>
+              <option value="건의">건의</option>
+            </select>
+          </div>
+          <div class="form-group checkbox-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="postIsNotice"> 중요 공지 등록
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="postTitle">제목 <span class="required">*</span></label>
+          <input type="text" id="postTitle" required class="form-input" placeholder="게시글 제목을 입력하세요">
+        </div>
+
+        <div class="form-group">
+          <label for="postContent">내용 <span class="required">*</span></label>
+          <textarea id="postContent" rows="6" required class="form-input" placeholder="내용을 작성하세요..."></textarea>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-pill btn-secondary" data-close="newPostModal">취소</button>
+          <button type="submit" class="btn-pill btn-primary"><i class="fa-solid fa-check"></i> 등록하기</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= Modal: 게시글 상세 및 댓글 ================= -->
+  <div id="postDetailModal" class="modal-backdrop">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <div class="post-header-meta">
+          <span id="detailPostCategory" class="category-chip">카테고리</span>
+          <h3 id="detailPostTitle">게시글 제목</h3>
+          <div class="post-author-meta">
+            <span id="detailPostAuthor">작성자</span> &bull; <span id="detailPostDate">작성일</span>
+          </div>
+        </div>
+        <button class="modal-close" data-close="postDetailModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="detailPostContent" class="post-detail-body">
+          <!-- Content -->
+        </div>
+
+        <hr class="divider">
+
+        <!-- Comments Section -->
+        <div class="comments-section">
+          <h4><i class="fa-regular fa-comment-dots"></i> 댓글 (<span id="detailCommentCount">0</span>)</h4>
+          <div id="detailCommentsList" class="comments-list">
+            <!-- Dynamically populated comments -->
+          </div>
+
+          <!-- Add Comment Form -->
+          <form id="newCommentForm" class="new-comment-form">
+            <input type="text" id="commentInput" placeholder="댓글을 입력하세요..." required class="form-input flex-1">
+            <button type="submit" class="btn-pill btn-primary"><i class="fa-solid fa-reply"></i> 등록</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= Modal: Supabase 연결 설정 및 진단 ================= -->
+  <div id="supabaseSettingsModal" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-database"></i> Supabase 데이터베이스 연결 정보</h3>
+        <button class="modal-close" data-close="supabaseSettingsModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="background:#f8fafc; padding:1rem; border-radius:8px; margin-bottom:1.25rem; border:1px solid var(--border-color);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.65rem;">
+            <strong style="font-size:0.9rem;">현재 연결 상태:</strong>
+            <span id="modalSupabaseBadge" class="status-badge connecting">점검 중...</span>
+          </div>
+          <div style="font-size:0.825rem; color:var(--text-secondary); margin-bottom:0.35rem;">
+            <strong>서버 응답 속도:</strong> <span id="modalSupabasePing" style="font-weight:700; color:var(--primary);">-</span>
+          </div>
+          <div style="font-size:0.825rem; color:var(--text-secondary);">
+            <strong>진단 상세:</strong> <span id="modalSupabaseMsg">연결을 확인하고 있습니다.</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="cfgSupabaseUrl">Supabase Project URL</label>
+          <input type="text" id="cfgSupabaseUrl" class="form-input" placeholder="https://xxxx.supabase.co">
+        </div>
+
+        <div class="form-group">
+          <label for="cfgSupabaseKey">Supabase Public / Anon Key</label>
+          <textarea id="cfgSupabaseKey" rows="3" class="form-input" placeholder="eyJhbGciOi..."></textarea>
+          <small style="color:var(--text-muted); font-size:0.75rem; margin-top:0.25rem; display:block;">
+            * 브라우저 로컬 저장소(localStorage)에 안전하게 보관됩니다.
+          </small>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-pill btn-secondary" id="btnTestSupabase"><i class="fa-solid fa-arrows-rotate"></i> 다시 연결 테스트</button>
+        <button type="button" class="btn-pill btn-primary" id="btnSaveSupabaseConfig"><i class="fa-solid fa-check"></i> 설정 저장 및 재연결</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Application Logic -->
+  <script src="app.js"></script>
+</body>
+</html>

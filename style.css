@@ -643,6 +643,17 @@ body {
 .shift-tag.X { background: var(--shift-off-bg); color: var(--shift-off); border: 1px solid #a7f3d0; }
 .shift-tag.DS { background: var(--shift-ds-bg); color: var(--shift-ds); border: 1px solid #ddd6fe; }
 .shift-tag.H { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+.shift-tag.V { background: #eff6ff; color: #1d4ed8; border: 1px solid #93c5fd; }
+
+/* Admin Shift Quick Control Buttons */
+.btn-shift-h { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+.btn-shift-h:hover, .btn-shift-h.active { background: #d97706; color: #ffffff; border-color: #b45309; }
+.btn-shift-v { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+.btn-shift-v:hover, .btn-shift-v.active { background: #2563eb; color: #ffffff; border-color: #1d4ed8; }
+.btn-shift-d { background: #eaddff; color: #381e72; border: 1px solid #d8b4fe; }
+.btn-shift-d:hover, .btn-shift-d.active { background: #6750a4; color: #ffffff; border-color: #4f46e5; }
+.btn-shift-x { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+.btn-shift-x:hover, .btn-shift-x.active { background: #059669; color: #ffffff; border-color: #047857; }
 
 .cell-note {
   font-size: 0.7rem;

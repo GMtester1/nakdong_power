@@ -144,6 +144,20 @@
               <span class="detail-label">특이사항/메모:</span>
               <span id="selectedNote" class="detail-val">-</span>
             </div>
+
+            <!-- 통상근무자 전용 빠른 근무 코드 변경 버튼 -->
+            <div id="adminShiftControlRow" class="admin-shift-control-row" style="display:none; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+              <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 0.6rem; display: flex; align-items: center; justify-content: space-between;">
+                <span><i class="fa-solid fa-calendar-check" style="color:var(--primary);"></i> 통상근무자 근무 코드 변경</span>
+                <span style="font-size:0.75rem; color:var(--text-muted); font-weight:400;">캘린더 코드 클릭시에도 변경 가능</span>
+              </div>
+              <div class="admin-shift-buttons" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <button type="button" class="btn-pill btn-shift-h" id="btnAdminSetH" data-code="H"><i class="fa-solid fa-umbrella-beach"></i> 휴가 (H)</button>
+                <button type="button" class="btn-pill btn-shift-v" id="btnAdminSetV" data-code="V"><i class="fa-solid fa-plane"></i> 출장 (V)</button>
+                <button type="button" class="btn-pill btn-shift-d" id="btnAdminSetD" data-code="D"><i class="fa-solid fa-sun"></i> 주간 (D)</button>
+                <button type="button" class="btn-pill btn-shift-x" id="btnAdminSetX" data-code="X"><i class="fa-solid fa-bed"></i> 휴무 (X)</button>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -566,10 +580,58 @@
     </div>
   </div>
 
+  <!-- ================= Modal: 통상근무자 근무 코드 변경 ================= -->
+  <div id="adminShiftModal" class="modal-backdrop">
+    <div class="modal-dialog" style="max-width: 380px;">
+      <div class="modal-header">
+        <h3 id="adminShiftModalTitle"><i class="fa-solid fa-calendar-check" style="color:var(--primary);"></i> 근무 코드 변경</h3>
+        <button class="modal-close" data-close="adminShiftModal">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 1rem 1.25rem;">
+        <p id="adminShiftModalDesc" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+          통상근무자(김선영, 이상은)의 근무 형태를 선택하세요:
+        </p>
+        <div class="admin-modal-shift-options" style="display: flex; flex-direction: column; gap: 0.6rem;">
+          <button type="button" class="btn-modal-shift-option" data-code="H" style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; border-radius: 8px; border: 1.5px solid #d97706; background: #fffbeb; cursor: pointer; text-align: left; width: 100%;">
+            <div>
+              <strong style="color: #b45309; font-size: 0.95rem;"><i class="fa-solid fa-umbrella-beach"></i> 휴가 (H)</strong>
+              <div style="font-size: 0.75rem; color: #78350f;">전일 연차 및 유급 휴가</div>
+            </div>
+            <span class="shift-tag H" style="font-weight: 800;">H</span>
+          </button>
+          <button type="button" class="btn-modal-shift-option" data-code="V" style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; border-radius: 8px; border: 1.5px solid #2563eb; background: #eff6ff; cursor: pointer; text-align: left; width: 100%;">
+            <div>
+              <strong style="color: #1d4ed8; font-size: 0.95rem;"><i class="fa-solid fa-plane"></i> 출장 (V)</strong>
+              <div style="font-size: 0.75rem; color: #1e3a8a;">외부 출장 및 공무 수행</div>
+            </div>
+            <span class="shift-tag V" style="font-weight: 800;">V</span>
+          </button>
+          <button type="button" class="btn-modal-shift-option" data-code="D" style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; border-radius: 8px; border: 1.5px solid #4f46e5; background: #eef2ff; cursor: pointer; text-align: left; width: 100%;">
+            <div>
+              <strong style="color: #4338ca; font-size: 0.95rem;"><i class="fa-solid fa-sun"></i> 주간 (D)</strong>
+              <div style="font-size: 0.75rem; color: #312e81;">평일 정상 근무 (09:00~18:00)</div>
+            </div>
+            <span class="shift-tag D" style="font-weight: 800;">D</span>
+          </button>
+          <button type="button" class="btn-modal-shift-option" data-code="X" style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; border-radius: 8px; border: 1.5px solid #059669; background: #ecfdf5; cursor: pointer; text-align: left; width: 100%;">
+            <div>
+              <strong style="color: #047857; font-size: 0.95rem;"><i class="fa-solid fa-bed"></i> 휴무 (X)</strong>
+              <div style="font-size: 0.75rem; color: #064e3b;">주말 및 법정 공휴일 휴무</div>
+            </div>
+            <span class="shift-tag X" style="font-weight: 800;">X</span>
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer" style="padding: 0.75rem 1.25rem;">
+        <button type="button" class="btn-pill btn-secondary" data-close="adminShiftModal">취소</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Notification Container -->
   <div id="toastContainer" class="toast-container"></div>
 
   <!-- Application Logic -->
-  <script src="app.js?v=20260930_3"></script>
+  <script src="app.js?v=20261001_1"></script>
 </body>
 </html>

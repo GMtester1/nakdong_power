@@ -8,12 +8,10 @@
  * - 오프라인/로컬 자동 폴백 및 원클릭 연결 진단/재시도 모달 탑재
  */
 
-// 1. Supabase 접속 설정
-// ⚠️ 깃허브 공개 시 보안을 위해 소스코드 내 하드코딩된 API 키를 완전히 제거했습니다.
-// 로컬 서버 실행 시 .env 연동(/api/config) 또는 브라우저 로컬 저장소(localStorage)에서 안전하게 불러옵니다.
+// 1. Supabase 접속 설정 (기본값 내장으로 설정 없이 어디서든 즉시 자동 연결)
 const DEFAULT_SUPABASE_CONFIG = {
-  url: '',
-  anonKey: ''
+  url: 'https://yihwudxvoplamekroprx.supabase.co',
+  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpaHd1ZHh2b3BsYW1la3JvcHJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc4OTM0NDAsImV4cCI6MjEwMzQ2OTQ0MH0.FX2uU90oZClfiwTJX5S0hDMbPEKMepvGiougVStK7XI'
 };
 
 async function getActiveSupabaseConfig() {
@@ -26,7 +24,7 @@ async function getActiveSupabaseConfig() {
     }
   } catch (e) {}
 
-  // 2. 로컬 웹서버의 /api/config 엔드포인트에서 .env 파일 설정 읽기 (보안 권장)
+  // 2. 웹서버의 /api/config 엔드포인트에서 설정 읽기 (Vercel/Node 환경)
   try {
     const res = await fetch('/api/config');
     if (res.ok) {
@@ -37,6 +35,7 @@ async function getActiveSupabaseConfig() {
     }
   } catch (e) {}
 
+  // 3. 내장된 기본값 사용 (HTML 직접 열기, 깃허브 페이지, Vercel 무설정 배포 지원)
   return { ...DEFAULT_SUPABASE_CONFIG };
 }
 
@@ -180,8 +179,61 @@ const SHIFT_TYPES = {
   S: { name: '야간 (S)', short: 'S', hours: 13.5, timeRange: '18:00 ~ 익일 09:00', restTime: '23:30 ~ 01:30' },
   X: { name: '휴무 (X)', short: 'X', hours: 0.0, timeRange: '전일 휴무', restTime: '-' },
   DS: { name: '주야연속 (DS)', short: 'DS', hours: 21.5, timeRange: '09:00 ~ 익일 09:00', restTime: '휴게 3.5h' },
-  H: { name: '연차/휴가 (H)', short: 'H', hours: 8.0, timeRange: '유급 휴무', restTime: '-' }
+  H: { name: '휴가 (H)', short: 'H', hours: 8.0, timeRange: '전일 연차 및 유급 휴가', restTime: '-' },
+  V: { name: '출장 (V)', short: 'V', hours: 8.0, timeRange: '출장 업무', restTime: '-' }
 };
+
+// 대한민국 법정 공휴일 (2026년 기준)
+const KOREAN_HOLIDAYS = {
+  '2026-01-01': '신정',
+  '2026-02-16': '설날 연휴',
+  '2026-02-17': '설날',
+  '2026-02-18': '설날 연휴',
+  '2026-02-19': '대체공휴일',
+  '2026-03-01': '삼일절',
+  '2026-03-02': '대체공휴일',
+  '2026-05-05': '어린이날',
+  '2026-05-24': '부처님오신날',
+  '2026-05-25': '대체공휴일',
+  '2026-06-03': '지방선거',
+  '2026-06-06': '현충일',
+  '2026-08-15': '광복절',
+  '2026-08-17': '대체공휴일',
+  '2026-09-24': '추석 연휴',
+  '2026-09-25': '추석',
+  '2026-09-26': '추석 연휴',
+  '2026-09-28': '대체공휴일',
+  '2026-10-03': '개천절',
+  '2026-10-05': '대체공휴일',
+  '2026-10-09': '한글날',
+  '2026-12-25': '성탄절'
+};
+
+function isKoreanHoliday(dateObj) {
+  const y = dateObj.getFullYear();
+  const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+  const d = String(dateObj.getDate()).padStart(2, '0');
+  const key = `${y}-${m}-${d}`;
+  if (KOREAN_HOLIDAYS[key]) return true;
+  const recurring = `${m}-${d}`;
+  const fixed = ['01-01', '03-01', '05-05', '06-06', '08-15', '10-03', '10-09', '12-25'];
+  return fixed.includes(recurring);
+}
+
+function getKoreanHolidayName(dateObj) {
+  const y = dateObj.getFullYear();
+  const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+  const d = String(dateObj.getDate()).padStart(2, '0');
+  const key = `${y}-${m}-${d}`;
+  if (KOREAN_HOLIDAYS[key]) return KOREAN_HOLIDAYS[key];
+  return null;
+}
+
+// 통상근무자 판별 (김선영, 이상은)
+function isRegularWorker(user) {
+  if (!user) return false;
+  return user.team <= 0 || user.role === '관리자' || user.id === 99 || user.id === 100;
+}
 
 const AVATAR_COLORS = [
   '#4f46e5', '#0891b2', '#059669', '#d97706',
@@ -205,6 +257,7 @@ let requestsList = [];
 let adminNotesCache = {};     // key: dateString -> content
 let postsList = [];
 let currentPostDetail = null;
+let currentAdminTargetDate = null; // 모달 대상 일자
 
 let currentTeamFilter = 'ALL';
 let currentReqFilter = 'ALL';
@@ -212,10 +265,16 @@ let currentBoardCategory = 'ALL';
 let isAntigravityActive = false;
 
 // ==============================================================================
-// 6. 4조 3교대 근무 자동 연산 엔진
+// 6. 근무 자동 연산 엔진 (4조3교대 순환 및 통상근무자)
 // ==============================================================================
 function calculateShiftForDate(team, dateObj) {
-  if (!team || team <= 0 || team > 4) return 'X';
+  if (!team || team <= 0 || team > 4) {
+    // 통상근무자 (관리자: 김선영, 이상은): 평일 D, 휴일 X
+    const day = dateObj.getDay();
+    const isWeekend = (day === 0 || day === 6);
+    const isHoliday = isKoreanHoliday(dateObj);
+    return (isWeekend || isHoliday) ? 'X' : 'D';
+  }
 
   const d1 = new Date(2026, 7, 1); // 2026-08-01 (기점)
   const d2 = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
@@ -294,6 +353,9 @@ function startApp() {
   initBoardScreen();
   initAntigravity();
   initSupabaseSettingsModal();
+  initDaeguTrainModule();
+  initNotificationsModule();
+  initAdminShiftControls();
 
   // 1. 화면 즉시 렌더링 (지연 없이 즉시 4조3교대 근무표 표시)
   renderMyCalendar();
@@ -430,6 +492,21 @@ function initSupabaseSettingsModal() {
     btn.innerHTML = '<i class="fa-solid fa-arrows-rotate"></i> 다시 연결 테스트';
   });
 
+  // 기본값 복원 버튼
+  const resetBtn = document.getElementById('btnResetSupabaseConfig');
+  if (resetBtn) {
+    resetBtn.addEventListener('click', async () => {
+      try {
+        localStorage.removeItem('NAKDONG_SUPABASE_CONFIG');
+      } catch (e) {}
+      SUPABASE_CONFIG = { ...DEFAULT_SUPABASE_CONFIG };
+      document.getElementById('cfgSupabaseUrl').value = SUPABASE_CONFIG.url;
+      document.getElementById('cfgSupabaseKey').value = SUPABASE_CONFIG.anonKey;
+      showToast('기본 Supabase 설정으로 복원되었습니다. 재연결을 시도합니다.');
+      await checkAndSyncSupabase();
+    });
+  }
+
   // 설정 저장 버튼
   document.getElementById('btnSaveSupabaseConfig').addEventListener('click', async () => {
     const url = document.getElementById('cfgSupabaseUrl').value.trim();
@@ -472,24 +549,238 @@ function updateModalDiagnostics(result) {
 }
 
 // ==============================================================================
-// 10. 조원 선택 및 네비게이션
+// 10. 상단 메뉴 (프로필 전환, 대구역 열차, 알림 센터) 및 네비게이션
 // ==============================================================================
+function updateUserProfileUI() {
+  const avatarEl = document.getElementById('headerProfileAvatar');
+  const nameEl = document.getElementById('headerProfileName');
+  const teamEl = document.getElementById('headerProfileTeam');
+  if (avatarEl && currentUser) {
+    avatarEl.textContent = (currentUser.name || '조').slice(0, 1);
+    const colors = ['#2563eb', '#059669', '#d97706', '#7c3aed', '#dc2626', '#0891b2', '#4f46e5', '#be185d'];
+    avatarEl.style.backgroundColor = colors[(currentUser.avatar_color_index || 0) % colors.length];
+  }
+  if (nameEl && currentUser) {
+    nameEl.textContent = currentUser.name || '';
+  }
+  if (teamEl && currentUser) {
+    teamEl.textContent = currentUser.team > 0 ? `${currentUser.team}조` : '관리자';
+  }
+}
+
 function initUserSelector() {
   const select = document.getElementById('currentUserSelect');
-  select.innerHTML = usersList.map(u => {
-    const teamText = u.team > 0 ? `${u.team}조` : '관리';
-    return `<option value="${u.id}">${teamText} ${u.name}</option>`;
-  }).join('');
+  if (select) {
+    select.innerHTML = usersList.map(u => {
+      const teamText = u.team > 0 ? `${u.team}조` : '관리';
+      return `<option value="${u.id}">${teamText} ${u.name}</option>`;
+    }).join('');
 
-  select.value = currentUser.id;
-  select.addEventListener('change', (e) => {
-    const uid = parseInt(e.target.value, 10);
-    currentUser = usersList.find(u => u.id === uid) || usersList[0];
-    showToast(`작업자가 '${currentUser.name}'(으)로 전환되었습니다.`);
-    renderMyCalendar();
-    renderTeamSchedule();
-    renderRequestsList();
+    select.value = currentUser.id;
+    select.addEventListener('change', (e) => {
+      const uid = parseInt(e.target.value, 10);
+      currentUser = usersList.find(u => u.id === uid) || usersList[0];
+      updateUserProfileUI();
+      showToast(`작업자가 '${currentUser.name}'(으)로 전환되었습니다.`);
+      renderMyCalendar();
+      renderTeamSchedule();
+      renderRequestsList();
+    });
+  }
+  updateUserProfileUI();
+}
+
+// ------------------------------------------------------------------------------
+// 대구역 실시간 기차 및 광역전철 시간표 모듈 (Daegu Station Timetable)
+// ------------------------------------------------------------------------------
+const DAEGU_TIMETABLES = {
+  daegyeong: [
+    { time: "05:30", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "05:47", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "06:00", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "06:13", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "06:30", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "06:53", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "07:11", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "07:27", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "07:51", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "08:13", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "08:25", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "08:44", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "08:59", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "09:15", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "09:38", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "10:17", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "10:45", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "11:07", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "11:36", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "11:50", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "13:13", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "13:46", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "14:22", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "14:51", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "15:01", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "15:27", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "15:53", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "16:22", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "16:55", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "17:14", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "17:35", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "17:55", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "18:12", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "18:38", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "19:04", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "19:29", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "20:02", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "20:21", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "20:48", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "21:08", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "21:31", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "22:01", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "22:27", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "22:54", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "23:12", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "23:36", dest: "구미/경산 (대경선)", type: "광역전철" },
+    { time: "23:56", dest: "구미/경산 (대경선 막차)", type: "광역전철" }
+  ],
+  line1: [
+    { time: "05:41", dest: "하양 방면", type: "1호선" },
+    { time: "06:08", dest: "하양 방면", type: "1호선" },
+    { time: "06:31", dest: "하양 방면", type: "1호선" },
+    { time: "07:00", dest: "하양 방면", type: "1호선" },
+    { time: "07:17", dest: "안심 방면", type: "1호선" },
+    { time: "07:24", dest: "하양 방면", type: "1호선" },
+    { time: "07:36", dest: "하양 방면", type: "1호선" },
+    { time: "07:47", dest: "하양 방면", type: "1호선" },
+    { time: "08:07", dest: "하양 방면", type: "1호선" },
+    { time: "08:27", dest: "하양 방면", type: "1호선" },
+    { time: "08:47", dest: "하양 방면", type: "1호선" },
+    { time: "09:07", dest: "하양 방면", type: "1호선" },
+    { time: "09:27", dest: "하양 방면", type: "1호선" },
+    { time: "10:11", dest: "하양 방면", type: "1호선" },
+    { time: "11:15", dest: "하양 방면", type: "1호선" },
+    { time: "12:19", dest: "하양 방면", type: "1호선" },
+    { time: "13:23", dest: "하양 방면", type: "1호선" },
+    { time: "14:27", dest: "하양 방면", type: "1호선" },
+    { time: "15:31", dest: "하양 방면", type: "1호선" },
+    { time: "16:35", dest: "하양 방면", type: "1호선" },
+    { time: "17:15", dest: "하양 방면", type: "1호선" },
+    { time: "17:45", dest: "하양 방면", type: "1호선" },
+    { time: "18:15", dest: "하양 방면", type: "1호선" },
+    { time: "18:45", dest: "하양 방면", type: "1호선" },
+    { time: "19:20", dest: "하양 방면", type: "1호선" },
+    { time: "20:30", dest: "하양 방면", type: "1호선" },
+    { time: "21:40", dest: "하양 방면", type: "1호선" },
+    { time: "22:50", dest: "하양 방면 (막차)", type: "1호선" }
+  ],
+  korail: [
+    { time: "06:15", dest: "동대구/부산행", type: "무궁화호" },
+    { time: "06:42", dest: "구미/대전/서울행", type: "ITX-마음" },
+    { time: "07:20", dest: "동대구/마산행", type: "무궁화호" },
+    { time: "07:55", dest: "대전/서울행", type: "ITX-새마을" },
+    { time: "08:35", dest: "동대구/부산행", type: "무궁화호" },
+    { time: "09:12", dest: "김천/대전행", type: "ITX-마음" },
+    { time: "10:25", dest: "동대구/포항행", type: "무궁화호" },
+    { time: "11:40", dest: "서울/용산행", type: "ITX-새마을" },
+    { time: "13:50", dest: "동대구/부산행", type: "무궁화호" },
+    { time: "15:30", dest: "대전/서울행", type: "ITX-마음" },
+    { time: "17:25", dest: "동대구/부산행", type: "무궁화호" },
+    { time: "18:05", dest: "구미/대전행", type: "ITX-새마을" },
+    { time: "18:50", dest: "동대구/부산행", type: "무궁화호" },
+    { time: "20:20", dest: "대전/서울행", type: "ITX-마음" },
+    { time: "22:15", dest: "동대구행 (막차)", type: "무궁화호" }
+  ]
+};
+
+let currentTrainTab = 'daegyeong';
+let trainClockTimer = null;
+
+function renderTrainSchedule() {
+  const container = document.getElementById('trainScheduleList');
+  if (!container) return;
+
+  const now = new Date();
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+  const list = DAEGU_TIMETABLES[currentTrainTab] || [];
+  let foundNext = false;
+
+  container.innerHTML = list.map(item => {
+    const [h, m] = item.time.split(':').map(Number);
+    const trainMinutes = h * 60 + m;
+    const diff = trainMinutes - currentMinutes;
+
+    let remainingText = '';
+    let isNext = false;
+    let isSoon = false;
+
+    if (diff > 0 && !foundNext) {
+      foundNext = true;
+      isNext = true;
+      if (diff <= 15) isSoon = true;
+      remainingText = `${diff}분 후 출발`;
+    } else if (diff > 0) {
+      remainingText = `${diff}분 후`;
+    } else {
+      remainingText = '출발 완료';
+    }
+
+    const badgeClass = currentTrainTab === 'daegyeong' ? 'dg' : (currentTrainTab === 'line1' ? 'line1' : 'kr');
+
+    return `
+      <div class="train-item-card ${isNext ? 'next-train' : ''}">
+        <div class="train-item-left">
+          <span class="train-badge-pill ${badgeClass}">${item.type}</span>
+          <div class="train-dest-info">
+            <span class="train-dest-name">${item.dest}</span>
+            <span class="train-time-display"><i class="fa-regular fa-clock"></i> ${item.time} 출발</span>
+          </div>
+        </div>
+        <div class="train-remaining-tag ${isSoon ? 'soon' : ''}">
+          ${isNext ? '<i class="fa-solid fa-person-running"></i> ' : ''}${remainingText}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function initDaeguTrainModule() {
+  const trainBtn = document.getElementById('headerDaeguBtn');
+  if (trainBtn) {
+    trainBtn.addEventListener('click', () => {
+      openModal('daeguStationModal');
+      renderTrainSchedule();
+      if (!trainClockTimer) {
+        trainClockTimer = setInterval(() => {
+          const now = new Date();
+          const clockEl = document.getElementById('trainLiveClock');
+          if (clockEl) {
+            clockEl.textContent = now.toTimeString().split(' ')[0];
+          }
+        }, 1000);
+      }
+    });
+  }
+
+  document.querySelectorAll('.train-tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.train-tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentTrainTab = btn.dataset.trainTab;
+      renderTrainSchedule();
+    });
   });
+}
+
+function initNotificationsModule() {
+  const notifBtn = document.getElementById('headerNotifBtn');
+  if (notifBtn) {
+    notifBtn.addEventListener('click', () => {
+      openModal('notificationsModal');
+      const badge = document.getElementById('headerNotifBadge');
+      if (badge) badge.style.display = 'none';
+    });
+  }
 }
 
 function initNavigation() {
@@ -621,6 +912,20 @@ function createCalendarCell(dateObj, isOtherMonth) {
     </div>
   `;
 
+  const tagBox = cell.querySelector('.shift-tag-box');
+  if (tagBox && isRegularWorker(currentUser)) {
+    tagBox.style.cursor = 'pointer';
+    tagBox.title = '클릭하여 근무 코드(휴가, 출장 등) 변경';
+    tagBox.addEventListener('click', (e) => {
+      e.stopPropagation();
+      selectedDate = dateObj;
+      document.querySelectorAll('#myCalendarGrid .calendar-cell').forEach(c => c.classList.remove('selected'));
+      cell.classList.add('selected');
+      updateSelectedDateDetail(dateObj);
+      openAdminShiftModal(dateObj);
+    });
+  }
+
   cell.addEventListener('click', () => {
     selectedDate = dateObj;
     document.querySelectorAll('#myCalendarGrid .calendar-cell').forEach(c => c.classList.remove('selected'));
@@ -638,7 +943,7 @@ function updateSelectedDateDetail(dateObj) {
   const info = SHIFT_TYPES[shift] || SHIFT_TYPES.X;
 
   const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
-  const teamText = currentUser.team > 0 ? `${currentUser.team}조` : '관리';
+  const teamText = currentUser.team > 0 ? `${currentUser.team}조` : '통상근무';
   document.getElementById('selectedDateText').innerHTML = 
     `<i class="fa-regular fa-clock"></i> ${dateStr} (${dayNames[dateObj.getDay()]}) ${teamText} ${currentUser.name} 근무 상세`;
 
@@ -648,7 +953,97 @@ function updateSelectedDateDetail(dateObj) {
 
   document.getElementById('selectedTimeRange').textContent = info.timeRange;
   document.getElementById('selectedRestTime').textContent = info.restTime;
-  document.getElementById('selectedNote').textContent = sched.note || '특이사항 없음 (4조3교대 정상 순환)';
+  document.getElementById('selectedNote').textContent = sched.note || (isRegularWorker(currentUser) ? '통상근무 (평일 D, 휴일 X, 휴가 H, 출장 V)' : '특이사항 없음 (4조3교대 정상 순환)');
+
+  // 통상근무자 전용 퀵 변경 바 표시/숨김
+  const adminRow = document.getElementById('adminShiftControlRow');
+  if (adminRow) {
+    if (isRegularWorker(currentUser)) {
+      adminRow.style.display = 'block';
+      ['H', 'V', 'D', 'X'].forEach(c => {
+        const btn = document.getElementById(`btnAdminSet${c}`);
+        if (btn) {
+          if (shift === c) btn.classList.add('active');
+          else btn.classList.remove('active');
+        }
+      });
+    } else {
+      adminRow.style.display = 'none';
+    }
+  }
+}
+
+function openAdminShiftModal(dateObj) {
+  currentAdminTargetDate = dateObj;
+  const dateStr = formatDate(dateObj);
+  const titleElem = document.getElementById('adminShiftModalTitle');
+  if (titleElem) {
+    titleElem.innerHTML = `<i class="fa-solid fa-calendar-check" style="color:var(--primary);"></i> 근무 코드 변경 (${dateObj.getMonth() + 1}월 ${dateObj.getDate()}일)`;
+  }
+  const descElem = document.getElementById('adminShiftModalDesc');
+  if (descElem) {
+    descElem.textContent = `통상근무자(${currentUser.name})의 근무 형태를 선택하세요:`;
+  }
+  openModal('adminShiftModal');
+}
+
+async function updateAdminShift(userId, dateStr, shiftCode) {
+  const cacheKey = `${userId}_${dateStr}`;
+  const parts = dateStr.split('-');
+  const dateObj = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+  const origShift = calculateShiftForDate(0, dateObj);
+
+  schedulesCache[cacheKey] = {
+    user_id: userId,
+    date_string: dateStr,
+    shift_type: shiftCode,
+    original_shift_type: schedulesCache[cacheKey]?.original_shift_type || origShift,
+    note: ''
+  };
+
+  const shiftInfo = SHIFT_TYPES[shiftCode] || SHIFT_TYPES.X;
+  showToast(`${dateStr} 일정이 [${shiftInfo.name}]로 변경되었습니다.`);
+
+  // Push to Supabase if connected
+  if (isConnectedToSupabase && typeof SupabaseRest !== 'undefined') {
+    try {
+      await SupabaseRest.upsert('shift_schedules', {
+        user_id: userId,
+        date_string: dateStr,
+        shift_type: shiftCode,
+        original_shift_type: schedulesCache[cacheKey].original_shift_type,
+        note: ''
+      });
+    } catch (e) {
+      console.warn('Supabase schedule upsert failed:', e);
+    }
+  }
+
+  renderMyCalendar();
+  updateSelectedDateDetail(selectedDate);
+}
+
+function initAdminShiftControls() {
+  // Modal options
+  document.querySelectorAll('.btn-modal-shift-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (currentAdminTargetDate) {
+        const code = btn.dataset.code;
+        updateAdminShift(currentUser.id, formatDate(currentAdminTargetDate), code);
+        closeModal('adminShiftModal');
+      }
+    });
+  });
+
+  // Selected date quick buttons
+  ['H', 'V', 'D', 'X'].forEach(c => {
+    const btn = document.getElementById(`btnAdminSet${c}`);
+    if (btn) {
+      btn.addEventListener('click', () => {
+        updateAdminShift(currentUser.id, formatDate(selectedDate), c);
+      });
+    }
+  });
 }
 
 // ==============================================================================
@@ -1052,8 +1447,12 @@ function renderWeeklyDashboard() {
   const sunday = new Date(monday);
   sunday.setDate(sunday.getDate() + 6);
 
+  const mMonth = monday.getMonth() + 1;
+  const sMonth = sunday.getMonth() + 1;
+  const mDate = monday.getDate();
+  const sDate = sunday.getDate();
   document.getElementById('currentWeekTitle').textContent = 
-    `${formatDate(monday)} ~ ${formatDate(sunday)} 주간 업무 일정`;
+    `${monday.getFullYear()}년 ${mMonth}월 (${mMonth}.${mDate} ~ ${sMonth}.${sDate})`;
 
   const dayNames = ['월', '화', '수', '목', '금', '토', '일'];
   const todayStr = formatDate(new Date());
@@ -1237,7 +1636,7 @@ function renderPostsList() {
   const container = document.getElementById('postsList');
   container.innerHTML = '';
 
-  const searchKeyword = document.getElementById('postSearchInput').value.toLowerCase();
+  const searchKeyword = (document.getElementById('postSearchInput').value || '').trim().toLowerCase();
 
   const filtered = postsList.filter(p => {
     if (currentBoardCategory !== 'ALL' && p.category !== currentBoardCategory) return false;
@@ -1245,6 +1644,16 @@ function renderPostsList() {
       return false;
     }
     return true;
+  });
+
+  // 중요 공지사항 우선 + 새 글 / 최신 등록 글이 항상 위쪽에 배치되도록 내림차순(DESC) 정렬
+  filtered.sort((a, b) => {
+    if (a.is_notice && !b.is_notice) return -1;
+    if (!a.is_notice && b.is_notice) return 1;
+
+    const timeA = typeof a.created_at === 'number' ? a.created_at : (new Date(a.created_at).getTime() || a.id || 0);
+    const timeB = typeof b.created_at === 'number' ? b.created_at : (new Date(b.created_at).getTime() || b.id || 0);
+    return timeB - timeA;
   });
 
   if (filtered.length === 0) {

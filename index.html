@@ -76,12 +76,8 @@
       <button class="nav-tab" data-tab="teamSchedule">
         <i class="fa-solid fa-users"></i> 팀 일정표
       </button>
-      <button class="nav-tab" data-tab="shiftRequests">
-        <i class="fa-solid fa-arrow-right-arrow-left"></i> 대교직 신청·승인
-        <span id="pendingRequestBadge" class="nav-badge" style="display:none;">0</span>
-      </button>
-      <button class="nav-tab" data-tab="adminWeekly">
-        <i class="fa-solid fa-clipboard-list"></i> 업무 메모 / 주간일정
+      <button class="nav-tab" data-tab="dailySchedule">
+        <i class="fa-solid fa-calendar-day"></i> 일간 교대일정
       </button>
       <button class="nav-tab" data-tab="bulletinBoard">
         <i class="fa-solid fa-comments"></i> 소통 게시판
@@ -145,17 +141,33 @@
               <span id="selectedNote" class="detail-val">-</span>
             </div>
 
-            <!-- 통상근무자 전용 빠른 근무 코드 변경 버튼 -->
-            <div id="adminShiftControlRow" class="admin-shift-control-row" style="display:none; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+            <!-- 빠른 근무 코드 변경 버튼 (교대근무자 & 통상근무자 공통) -->
+            <div id="adminShiftControlRow" class="admin-shift-control-row" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
               <div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 0.6rem; display: flex; align-items: center; justify-content: space-between;">
-                <span><i class="fa-solid fa-calendar-check" style="color:var(--primary);"></i> 통상근무자 근무 코드 변경</span>
-                <span style="font-size:0.75rem; color:var(--text-muted); font-weight:400;">캘린더 코드 클릭시에도 변경 가능</span>
+                <span><i class="fa-solid fa-calendar-check" style="color:var(--primary);"></i> 근무 코드 변경 (휴가, 출장, 교대근무 등)</span>
+                <span style="font-size:0.75rem; color:var(--text-muted); font-weight:400;">달력 코드 클릭시에도 변경 가능</span>
               </div>
               <div class="admin-shift-buttons" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                 <button type="button" class="btn-pill btn-shift-h" id="btnAdminSetH" data-code="H"><i class="fa-solid fa-umbrella-beach"></i> 휴가 (H)</button>
                 <button type="button" class="btn-pill btn-shift-v" id="btnAdminSetV" data-code="V"><i class="fa-solid fa-plane"></i> 출장 (V)</button>
                 <button type="button" class="btn-pill btn-shift-d" id="btnAdminSetD" data-code="D"><i class="fa-solid fa-sun"></i> 주간 (D)</button>
+                <button type="button" class="btn-pill btn-shift-s" id="btnAdminSetS" data-code="S"><i class="fa-solid fa-moon"></i> 야간 (S)</button>
+                <button type="button" class="btn-pill btn-shift-ds" id="btnAdminSetDS" data-code="DS"><i class="fa-solid fa-clock"></i> 주야 (DS)</button>
                 <button type="button" class="btn-pill btn-shift-x" id="btnAdminSetX" data-code="X"><i class="fa-solid fa-bed"></i> 휴무 (X)</button>
+                <button type="button" class="btn-pill btn-secondary" id="btnAdminRestoreDefault"><i class="fa-solid fa-rotate-left"></i> 기본 복원</button>
+              </div>
+
+              <!-- 일자별 메모 입력 영역 -->
+              <div style="margin-top: 1rem; padding-top: 0.8rem; border-top: 1px dashed var(--border-color);">
+                <div style="font-size:0.825rem; font-weight:700; color:var(--text-secondary); margin-bottom:0.4rem;">
+                  <i class="fa-regular fa-note-sticky"></i> 일자별 개인 메모 / 특이사항 입력
+                </div>
+                <div style="display:flex; gap:0.5rem;">
+                  <input type="text" id="selectedDateMemoInput" class="form-input" style="flex:1; padding:0.45rem 0.75rem; font-size:0.85rem;" placeholder="해당 일자 특이사항 (예: 발전기 점검, 오전 연차 등) 입력...">
+                  <button type="button" id="btnSaveSelectedDateMemo" class="btn-pill btn-primary" style="white-space:nowrap; padding:0.45rem 0.9rem; font-size:0.85rem;">
+                    <i class="fa-solid fa-check"></i> 저장
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -234,46 +246,79 @@
         </div>
       </section>
 
-      <!-- ================= 3. 대교직 신청·승인 (Shift Requests) ================= -->
-      <section id="tab-shiftRequests" class="tab-pane">
-        <div class="pane-header">
-          <div>
-            <h2><i class="fa-solid fa-arrow-right-arrow-left"></i> 대교직 신청 및 승인 관리</h2>
-            <p class="section-desc">동료와의 대직 근무, 교직 교환 및 연차 신청을 실시간으로 관리합니다.</p>
-          </div>
-          <button id="openNewRequestBtn" class="btn-pill btn-primary">
-            <i class="fa-solid fa-plus"></i> 새 대교직 신청
-          </button>
-        </div>
-
-        <div class="request-tabs-bar">
-          <button class="req-filter-btn active" data-req-filter="ALL">전체 내역 (<span id="countReqAll">0</span>)</button>
-          <button class="req-filter-btn" data-req-filter="PENDING">대기중 (<span id="countReqPending">0</span>)</button>
-          <button class="req-filter-btn" data-req-filter="APPROVED">승인 완료 (<span id="countReqApproved">0</span>)</button>
-          <button class="req-filter-btn" data-req-filter="REJECTED">반려됨 (<span id="countReqRejected">0</span>)</button>
-        </div>
-
-        <div id="requestsList" class="requests-grid">
-          <!-- Dynamically populated request cards -->
-        </div>
-      </section>
-
-      <!-- ================= 4. 업무 메모 / 주간 대시보드 (Admin Weekly) ================= -->
-      <section id="tab-adminWeekly" class="tab-pane">
+      <!-- ================= 3. 일간 교대일정 (Daily Schedule: 좌 주간 / 우 야간 이분할) ================= -->
+      <section id="tab-dailySchedule" class="tab-pane">
         <div class="pane-header">
           <div class="month-controls">
-            <button id="prevWeekBtn" class="btn-icon"><i class="fa-solid fa-chevron-left"></i></button>
-            <h2 id="currentWeekTitle" class="calendar-title">주간 업무 일정</h2>
-            <button id="nextWeekBtn" class="btn-icon"><i class="fa-solid fa-chevron-right"></i></button>
-            <button id="currentWeekTodayBtn" class="btn-pill btn-secondary"><i class="fa-solid fa-calendar-day"></i> 이번 주</button>
+            <button id="dailyPrevBtn" class="btn-icon" title="이전 날"><i class="fa-solid fa-chevron-left"></i></button>
+            <h2 id="dailyDateTitle" class="calendar-title">2026년 10월 1일 (목)</h2>
+            <button id="dailyNextBtn" class="btn-icon" title="다음 날"><i class="fa-solid fa-chevron-right"></i></button>
+            <button id="dailyTodayBtn" class="btn-pill btn-secondary"><i class="fa-solid fa-calendar-day"></i> 오늘</button>
           </div>
           <div class="sync-indicator">
-            <span class="dot-online"></span> Supabase 실시간 동기화
+            <span class="dot-online"></span> 일간 주·야간 인수인계사항
           </div>
         </div>
 
-        <div id="weeklyCardsContainer" class="weekly-cards-grid">
-          <!-- 7-day cards Monday to Sunday -->
+        <!-- 7-Day Quick Strip Bar -->
+        <div id="dailyQuickStrip" class="daily-quick-strip" style="display:flex; justify-content:space-around; background:#0f172a; padding:0.5rem; border-radius:10px; margin-bottom:1rem; overflow-x:auto;">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- ================= 인수인계사항 2분할 (좌: 주간 인수인계 / 우: 야간 인수인계) ================= -->
+        <div class="daily-handover-split" style="display:grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
+          <!-- [왼쪽] 주간 인수인계 (09:00 ~ 18:00) -->
+          <div class="card daily-handover-card day-handover" style="border: 1.5px solid #f59e0b; background: #fffdf5; border-radius: 14px; box-shadow: var(--shadow-sm);">
+            <div class="card-header" style="background: transparent; border-bottom: 1px solid #fde68a; display: flex; justify-content: space-between; align-items: center; padding: 0.85rem 1rem;">
+              <div style="display: flex; align-items: center; gap: 0.4rem;">
+                <i class="fa-solid fa-sun" style="color: #b45309; font-size: 1.1rem;"></i>
+                <h3 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: #92400e;">주간 인수인계</h3>
+              </div>
+              <span class="badge" style="background: #fef3c7; color: #b45309; font-size: 0.75rem; font-weight: 700;">09:00 ~ 18:00</span>
+            </div>
+            <div class="card-body" style="padding: 1rem;">
+              <div style="font-size: 0.8rem; color: #b45309; margin-bottom: 0.6rem; font-weight: 500;">
+                주간 발전기 운전, 수로 순찰 및 일근 특이사항
+              </div>
+              <textarea id="dailyDayMemoTextarea" class="memo-textarea" style="min-height: 180px; width: 100%; border: 1.5px solid #fde68a; border-radius: 8px; padding: 0.75rem; font-size: 0.875rem;" placeholder="• 발전기 가동 현황&#10;• 수로 순찰 및 수위 점검&#10;• 일근 조치사항 및 지시사항 입력..."></textarea>
+              <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.75rem;">
+                <button id="dailyDeleteDayMemoBtn" class="btn-pill btn-secondary" style="font-size: 0.825rem;"><i class="fa-solid fa-trash-can"></i> 삭제</button>
+                <button id="dailySaveDayMemoBtn" class="btn-pill" style="background: #d97706; color: #ffffff; font-size: 0.825rem; font-weight: 700;"><i class="fa-solid fa-check"></i> 주간 저장</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- [오른쪽] 야간 인수인계 (18:00 ~ 익일 09:00) -->
+          <div class="card daily-handover-card night-handover" style="border: 1.5px solid #7c3aed; background: #faf8ff; border-radius: 14px; box-shadow: var(--shadow-sm);">
+            <div class="card-header" style="background: transparent; border-bottom: 1px solid #ddd6fe; display: flex; justify-content: space-between; align-items: center; padding: 0.85rem 1rem;">
+              <div style="display: flex; align-items: center; gap: 0.4rem;">
+                <i class="fa-solid fa-moon" style="color: #6d28d9; font-size: 1.1rem;"></i>
+                <h3 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: #5b21b6;">야간 인수인계</h3>
+              </div>
+              <span class="badge" style="background: #ede9fe; color: #6d28d9; font-size: 0.75rem; font-weight: 700;">18:00 ~ 익일 09:00</span>
+            </div>
+            <div class="card-body" style="padding: 1rem;">
+              <div style="font-size: 0.8rem; color: #6d28d9; margin-bottom: 0.6rem; font-weight: 500;">
+                야간 당직 점검, 심야 수위 모니터링 및 익일 사항
+              </div>
+              <textarea id="dailyNightMemoTextarea" class="memo-textarea" style="min-height: 180px; width: 100%; border: 1.5px solid #ddd6fe; border-radius: 8px; padding: 0.75rem; font-size: 0.875rem;" placeholder="• 야간 당직 교대 점검&#10;• 심야 수위 및 경보 모니터링&#10;• 익일 주간 조치사항 및 비상연락..."></textarea>
+              <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.75rem;">
+                <button id="dailyDeleteNightMemoBtn" class="btn-pill btn-secondary" style="font-size: 0.825rem;"><i class="fa-solid fa-trash-can"></i> 삭제</button>
+                <button id="dailySaveNightMemoBtn" class="btn-pill" style="background: #6d28d9; color: #ffffff; font-size: 0.825rem; font-weight: 700;"><i class="fa-solid fa-check"></i> 야간 저장</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 주간·야간 인수인계 일괄 저장 동기화 바 -->
+        <div class="card" style="background: #f8fafc; border-radius: 12px; padding: 0.85rem 1.25rem; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-color); margin-bottom: 1rem;">
+          <div>
+            <div style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary);"><i class="fa-solid fa-arrows-rotate" style="color: var(--primary);"></i> 일간 인수인계 실시간 동기화</div>
+            <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">주간 및 야간 인수인계사항을 서버에 일괄 저장합니다.</div>
+          </div>
+          <button id="dailySaveBothMemoBtn" class="btn-pill btn-primary" style="font-weight: 700; padding: 0.5rem 1.1rem;">
+            <i class="fa-solid fa-floppy-disk"></i> 주·야간 동시 저장
+          </button>
         </div>
       </section>
 
@@ -311,71 +356,7 @@
     </main>
   </div>
 
-  <!-- ================= Modal: 새 대교직 신청 ================= -->
-  <div id="newRequestModal" class="modal-backdrop">
-    <div class="modal-dialog">
-      <div class="modal-header">
-        <h3><i class="fa-solid fa-arrow-right-arrow-left"></i> 대교직 신청서 작성</h3>
-        <button class="modal-close" data-close="newRequestModal">&times;</button>
-      </div>
-      <form id="newRequestForm" class="modal-body">
-        <div class="form-group">
-          <label>신청 유형 <span class="required">*</span></label>
-          <div class="radio-cards">
-            <label class="radio-card">
-              <input type="radio" name="reqType" value="SUBSTITUTE" checked>
-              <div class="radio-content">
-                <strong>대직 (대신 근무)</strong>
-                <small>본인 휴무/연차 시 대상자가 대신 근무</small>
-              </div>
-            </label>
-            <label class="radio-card">
-              <input type="radio" name="reqType" value="EXCHANGE">
-              <div class="radio-content">
-                <strong>교직 (근무 맞교환)</strong>
-                <small>서로의 근무 일정을 맞바꿈</small>
-              </div>
-            </label>
-            <label class="radio-card">
-              <input type="radio" name="reqType" value="VACATION">
-              <div class="radio-content">
-                <strong>연차 신청</strong>
-                <small>개인 연차 및 특별 휴가</small>
-              </div>
-            </label>
-          </div>
-        </div>
 
-        <div class="form-row">
-          <div class="form-group flex-1">
-            <label for="reqDate">신청(근무) 날짜 <span class="required">*</span></label>
-            <input type="date" id="reqDate" required class="form-input">
-          </div>
-          <div class="form-group flex-1" id="targetDateGroup">
-            <label for="targetDate">교환 대상 날짜</label>
-            <input type="date" id="targetDate" class="form-input">
-          </div>
-        </div>
-
-        <div class="form-group" id="targetUserGroup">
-          <label for="targetUser">대상 근무자 <span class="required">*</span></label>
-          <select id="targetUser" class="form-input" required>
-            <!-- Users list -->
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="reqReason">신청 사유</label>
-          <textarea id="reqReason" rows="3" class="form-input" placeholder="신청 사유를 구체적으로 기재하세요 (예: 경조사, 병원 진료 등)"></textarea>
-        </div>
-
-        <div class="modal-footer">
-          <button type="button" class="btn-pill btn-secondary" data-close="newRequestModal">취소</button>
-          <button type="submit" class="btn-pill btn-primary"><i class="fa-solid fa-paper-plane"></i> 신청서 제출</button>
-        </div>
-      </form>
-    </div>
-  </div>
 
   <!-- ================= Modal: 새 게시글 작성 ================= -->
   <div id="newPostModal" class="modal-backdrop">
@@ -580,16 +561,16 @@
     </div>
   </div>
 
-  <!-- ================= Modal: 통상근무자 근무 코드 변경 ================= -->
+  <!-- ================= Modal: 근무 코드 변경 (교대근무자 & 통상근무자 공통) ================= -->
   <div id="adminShiftModal" class="modal-backdrop">
-    <div class="modal-dialog" style="max-width: 380px;">
+    <div class="modal-dialog" style="max-width: 400px;">
       <div class="modal-header">
         <h3 id="adminShiftModalTitle"><i class="fa-solid fa-calendar-check" style="color:var(--primary);"></i> 근무 코드 변경</h3>
         <button class="modal-close" data-close="adminShiftModal">&times;</button>
       </div>
       <div class="modal-body" style="padding: 1rem 1.25rem;">
         <p id="adminShiftModalDesc" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
-          통상근무자(김선영, 이상은)의 근무 형태를 선택하세요:
+          근무 형태를 선택하세요:
         </p>
         <div class="admin-modal-shift-options" style="display: flex; flex-direction: column; gap: 0.6rem;">
           <button type="button" class="btn-modal-shift-option" data-code="H" style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; border-radius: 8px; border: 1.5px solid #d97706; background: #fffbeb; cursor: pointer; text-align: left; width: 100%;">
@@ -609,21 +590,62 @@
           <button type="button" class="btn-modal-shift-option" data-code="D" style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; border-radius: 8px; border: 1.5px solid #4f46e5; background: #eef2ff; cursor: pointer; text-align: left; width: 100%;">
             <div>
               <strong style="color: #4338ca; font-size: 0.95rem;"><i class="fa-solid fa-sun"></i> 주간 (D)</strong>
-              <div style="font-size: 0.75rem; color: #312e81;">평일 정상 근무 (09:00~18:00)</div>
+              <div style="font-size: 0.75rem; color: #312e81;">주간 정상 근무 (09:00~18:00)</div>
             </div>
             <span class="shift-tag D" style="font-weight: 800;">D</span>
+          </button>
+          <button type="button" class="btn-modal-shift-option" data-code="S" style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; border-radius: 8px; border: 1.5px solid #7c3aed; background: #f5f3ff; cursor: pointer; text-align: left; width: 100%;">
+            <div>
+              <strong style="color: #6d28d9; font-size: 0.95rem;"><i class="fa-solid fa-moon"></i> 야간 (S)</strong>
+              <div style="font-size: 0.75rem; color: #4c1d95;">야간 교대 근무 (18:00~익일 09:00)</div>
+            </div>
+            <span class="shift-tag S" style="font-weight: 800;">S</span>
+          </button>
+          <button type="button" class="btn-modal-shift-option" data-code="DS" style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; border-radius: 8px; border: 1.5px solid #c05621; background: #fffaf0; cursor: pointer; text-align: left; width: 100%;">
+            <div>
+              <strong style="color: #c05621; font-size: 0.95rem;"><i class="fa-solid fa-clock"></i> 주야 (DS)</strong>
+              <div style="font-size: 0.75rem; color: #7b341e;">주간+야간 연속 근무 (09:00~익일 09:00)</div>
+            </div>
+            <span class="shift-tag DS" style="font-weight: 800;">DS</span>
           </button>
           <button type="button" class="btn-modal-shift-option" data-code="X" style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; border-radius: 8px; border: 1.5px solid #059669; background: #ecfdf5; cursor: pointer; text-align: left; width: 100%;">
             <div>
               <strong style="color: #047857; font-size: 0.95rem;"><i class="fa-solid fa-bed"></i> 휴무 (X)</strong>
-              <div style="font-size: 0.75rem; color: #064e3b;">주말 및 법정 공휴일 휴무</div>
+              <div style="font-size: 0.75rem; color: #064e3b;">비번 및 주말/공휴일 휴무</div>
             </div>
             <span class="shift-tag X" style="font-weight: 800;">X</span>
+          </button>
+          <button type="button" class="btn-modal-shift-option" data-code="RESTORE" style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; border-radius: 8px; border: 1.5px solid #94a3b8; background: #f8fafc; cursor: pointer; text-align: left; width: 100%;">
+            <div>
+              <strong style="color: #334155; font-size: 0.95rem;"><i class="fa-solid fa-rotate-left"></i> 기본 근무 복원</strong>
+              <div style="font-size: 0.75rem; color: #64748b;">기존 4조3교대 기본 패턴으로 초기화</div>
+            </div>
+            <span class="badge" style="background:#64748b; color:#fff;">복원</span>
           </button>
         </div>
       </div>
       <div class="modal-footer" style="padding: 0.75rem 1.25rem;">
         <button type="button" class="btn-pill btn-secondary" data-close="adminShiftModal">취소</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= Modal: 일자별 메모 입력 ================= -->
+  <div id="dateMemoModal" class="modal-backdrop">
+    <div class="modal-dialog" style="max-width: 400px;">
+      <div class="modal-header">
+        <h3 id="dateMemoModalTitle"><i class="fa-regular fa-note-sticky" style="color:var(--primary);"></i> 일자 메모 입력</h3>
+        <button class="modal-close" data-close="dateMemoModal">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 1rem 1.25rem;">
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+          해당 일자의 개인 메모 또는 업무 특이사항을 입력하세요:
+        </p>
+        <textarea id="modalDateMemoTextarea" class="memo-textarea" rows="4" placeholder="예: 오전 발전기 점검, 출장 보고, 업무 인수인계 등..."></textarea>
+      </div>
+      <div class="modal-footer" style="padding: 0.75rem 1.25rem; display:flex; justify-content:flex-end; gap:0.5rem;">
+        <button type="button" class="btn-pill btn-secondary" data-close="dateMemoModal">취소</button>
+        <button type="button" id="btnSaveDateModalMemo" class="btn-pill btn-primary"><i class="fa-solid fa-check"></i> 저장</button>
       </div>
     </div>
   </div>

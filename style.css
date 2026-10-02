@@ -625,6 +625,34 @@ body {
   margin-top: 0.2rem;
 }
 
+.cell-memo-input {
+  margin-top: 0.2rem;
+  font-size: 0.65rem;
+  padding: 0.15rem 0.25rem;
+  border-radius: 4px;
+  background: #f1f5f9;
+  color: #64748b;
+  text-align: center;
+  border: 1px dashed #cbd5e1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cell-memo-input:hover {
+  background: #e2e8f0;
+  border-color: #94a3b8;
+}
+
+.cell-memo-input.has-memo {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-weight: 600;
+}
+
 .shift-tag {
   display: inline-flex;
   align-items: center;
@@ -652,6 +680,10 @@ body {
 .btn-shift-v:hover, .btn-shift-v.active { background: #2563eb; color: #ffffff; border-color: #1d4ed8; }
 .btn-shift-d { background: #eaddff; color: #381e72; border: 1px solid #d8b4fe; }
 .btn-shift-d:hover, .btn-shift-d.active { background: #6750a4; color: #ffffff; border-color: #4f46e5; }
+.btn-shift-s { background: #ede9fe; color: #5b21b6; border: 1px solid #c4b5fd; }
+.btn-shift-s:hover, .btn-shift-s.active { background: #7c3aed; color: #ffffff; border-color: #6d28d9; }
+.btn-shift-ds { background: #feebc8; color: #7b341e; border: 1px solid #fbd38d; }
+.btn-shift-ds:hover, .btn-shift-ds.active { background: #c05621; color: #ffffff; border-color: #9c4221; }
 .btn-shift-x { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
 .btn-shift-x:hover, .btn-shift-x.active { background: #059669; color: #ffffff; border-color: #047857; }
 

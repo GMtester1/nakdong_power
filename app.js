@@ -348,8 +348,7 @@ function startApp() {
   initNavigation();
   initCalendarControls();
   initTeamScheduleControls();
-  initRequestsScreen();
-  initWeeklyNotesControls();
+  initDailyScheduleControls();
   initBoardScreen();
   initAntigravity();
   initSupabaseSettingsModal();
@@ -360,7 +359,7 @@ function startApp() {
   // 1. 화면 즉시 렌더링 (지연 없이 즉시 4조3교대 근무표 표시)
   renderMyCalendar();
   renderTeamSchedule();
-  renderWeeklyDashboard();
+  renderDailySchedule();
 
   // 2. Supabase 연결 점검 및 데이터 로드 (비동기)
   checkAndSyncSupabase();
@@ -796,8 +795,7 @@ function initNavigation() {
 
       if (tab.dataset.tab === 'myCalendar') renderMyCalendar();
       if (tab.dataset.tab === 'teamSchedule') renderTeamSchedule();
-      if (tab.dataset.tab === 'shiftRequests') renderRequestsList();
-      if (tab.dataset.tab === 'adminWeekly') renderWeeklyDashboard();
+      if (tab.dataset.tab === 'dailySchedule') renderDailySchedule();
       if (tab.dataset.tab === 'bulletinBoard') renderPostsList();
     });
   });
@@ -899,23 +897,23 @@ function createCalendarCell(dateObj, isOtherMonth) {
   const dateStr = formatDate(dateObj);
   const sched = getSchedule(currentUser.id, dateStr);
   const shiftType = sched.shift_type;
-  const note = sched.note || '';
+  const memoText = adminNotesCache[dateStr] || sched.note || '';
 
   cell.innerHTML = `
     <div class="day-header">
       <span class="day-number">${dateObj.getDate()}</span>
       ${isOtherMonth ? `<span style="font-size:0.65rem; color:#94a3b8;">${dateObj.getMonth()+1}월</span>` : ''}
     </div>
-    <div class="shift-tag-box">
+    <div class="shift-tag-box" title="클릭하여 근무 코드(휴가, 출장, 교대 등) 변경" style="cursor: pointer;">
       <span class="shift-tag ${shiftType}">${shiftType}</span>
-      ${note ? `<div class="cell-note">${note}</div>` : ''}
+    </div>
+    <div class="cell-memo-input ${memoText ? 'has-memo' : ''}" title="일자별 메모 입력 및 확인">
+      ${memoText ? escapeHtml(memoText) : '+입력'}
     </div>
   `;
 
   const tagBox = cell.querySelector('.shift-tag-box');
-  if (tagBox && isRegularWorker(currentUser)) {
-    tagBox.style.cursor = 'pointer';
-    tagBox.title = '클릭하여 근무 코드(휴가, 출장 등) 변경';
+  if (tagBox) {
     tagBox.addEventListener('click', (e) => {
       e.stopPropagation();
       selectedDate = dateObj;
@@ -923,6 +921,18 @@ function createCalendarCell(dateObj, isOtherMonth) {
       cell.classList.add('selected');
       updateSelectedDateDetail(dateObj);
       openAdminShiftModal(dateObj);
+    });
+  }
+
+  const memoBox = cell.querySelector('.cell-memo-input');
+  if (memoBox) {
+    memoBox.addEventListener('click', (e) => {
+      e.stopPropagation();
+      selectedDate = dateObj;
+      document.querySelectorAll('#myCalendarGrid .calendar-cell').forEach(c => c.classList.remove('selected'));
+      cell.classList.add('selected');
+      updateSelectedDateDetail(dateObj);
+      openDateMemoModal(dateObj);
     });
   }
 
@@ -941,6 +951,7 @@ function updateSelectedDateDetail(dateObj) {
   const sched = getSchedule(currentUser.id, dateStr);
   const shift = sched.shift_type;
   const info = SHIFT_TYPES[shift] || SHIFT_TYPES.X;
+  const memoText = adminNotesCache[dateStr] || sched.note || '';
 
   const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
   const teamText = currentUser.team > 0 ? `${currentUser.team}조` : '통상근무';
@@ -953,24 +964,42 @@ function updateSelectedDateDetail(dateObj) {
 
   document.getElementById('selectedTimeRange').textContent = info.timeRange;
   document.getElementById('selectedRestTime').textContent = info.restTime;
-  document.getElementById('selectedNote').textContent = sched.note || (isRegularWorker(currentUser) ? '통상근무 (평일 D, 휴일 X, 휴가 H, 출장 V)' : '특이사항 없음 (4조3교대 정상 순환)');
+  document.getElementById('selectedNote').textContent = memoText || (isRegularWorker(currentUser) ? '통상근무 (평일 D, 휴일 X, 휴가 H, 출장 V)' : '특이사항 없음');
 
-  // 통상근무자 전용 퀵 변경 바 표시/숨김
+  // 빠른 근무 코드 변경 바 (교대근무자 & 통상근무자 공통 항상 표시)
   const adminRow = document.getElementById('adminShiftControlRow');
   if (adminRow) {
-    if (isRegularWorker(currentUser)) {
-      adminRow.style.display = 'block';
-      ['H', 'V', 'D', 'X'].forEach(c => {
-        const btn = document.getElementById(`btnAdminSet${c}`);
-        if (btn) {
-          if (shift === c) btn.classList.add('active');
-          else btn.classList.remove('active');
-        }
-      });
-    } else {
-      adminRow.style.display = 'none';
-    }
+    adminRow.style.display = 'block';
+    ['H', 'V', 'D', 'S', 'DS', 'X'].forEach(c => {
+      const btn = document.getElementById(`btnAdminSet${c}`);
+      if (btn) {
+        if (shift === c) btn.classList.add('active');
+        else btn.classList.remove('active');
+      }
+    });
   }
+
+  // 일자 메모 입력 필드
+  const memoInput = document.getElementById('selectedDateMemoInput');
+  if (memoInput) {
+    memoInput.value = memoText;
+  }
+}
+
+let currentDateMemoTarget = null;
+
+function openDateMemoModal(dateObj) {
+  currentDateMemoTarget = dateObj;
+  const dateStr = formatDate(dateObj);
+  const title = document.getElementById('dateMemoModalTitle');
+  if (title) {
+    title.innerHTML = `<i class="fa-regular fa-note-sticky" style="color:var(--primary);"></i> ${dateObj.getMonth() + 1}월 ${dateObj.getDate()}일 메모 입력`;
+  }
+  const textarea = document.getElementById('modalDateMemoTextarea');
+  if (textarea) {
+    textarea.value = adminNotesCache[dateStr] || '';
+  }
+  openModal('dateMemoModal');
 }
 
 function openAdminShiftModal(dateObj) {
@@ -982,7 +1011,7 @@ function openAdminShiftModal(dateObj) {
   }
   const descElem = document.getElementById('adminShiftModalDesc');
   if (descElem) {
-    descElem.textContent = `통상근무자(${currentUser.name})의 근무 형태를 선택하세요:`;
+    descElem.textContent = `${currentUser.name}님의 근무 형태를 선택하세요:`;
   }
   openModal('adminShiftModal');
 }
@@ -991,17 +1020,24 @@ async function updateAdminShift(userId, dateStr, shiftCode) {
   const cacheKey = `${userId}_${dateStr}`;
   const parts = dateStr.split('-');
   const dateObj = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
-  const origShift = calculateShiftForDate(0, dateObj);
+  const origShift = calculateShiftForDate(currentUser.team || 0, dateObj);
+
+  let finalShift = shiftCode;
+  if (shiftCode === 'RESTORE') {
+    finalShift = origShift;
+  }
+
+  const existingNote = schedulesCache[cacheKey]?.note || adminNotesCache[dateStr] || '';
 
   schedulesCache[cacheKey] = {
     user_id: userId,
     date_string: dateStr,
-    shift_type: shiftCode,
+    shift_type: finalShift,
     original_shift_type: schedulesCache[cacheKey]?.original_shift_type || origShift,
-    note: ''
+    note: existingNote
   };
 
-  const shiftInfo = SHIFT_TYPES[shiftCode] || SHIFT_TYPES.X;
+  const shiftInfo = SHIFT_TYPES[finalShift] || SHIFT_TYPES.X;
   showToast(`${dateStr} 일정이 [${shiftInfo.name}]로 변경되었습니다.`);
 
   // Push to Supabase if connected
@@ -1010,9 +1046,9 @@ async function updateAdminShift(userId, dateStr, shiftCode) {
       await SupabaseRest.upsert('shift_schedules', {
         user_id: userId,
         date_string: dateStr,
-        shift_type: shiftCode,
+        shift_type: finalShift,
         original_shift_type: schedulesCache[cacheKey].original_shift_type,
-        note: ''
+        note: existingNote
       });
     } catch (e) {
       console.warn('Supabase schedule upsert failed:', e);
@@ -1036,7 +1072,7 @@ function initAdminShiftControls() {
   });
 
   // Selected date quick buttons
-  ['H', 'V', 'D', 'X'].forEach(c => {
+  ['H', 'V', 'D', 'S', 'DS', 'X'].forEach(c => {
     const btn = document.getElementById(`btnAdminSet${c}`);
     if (btn) {
       btn.addEventListener('click', () => {
@@ -1044,6 +1080,59 @@ function initAdminShiftControls() {
       });
     }
   });
+
+  const restoreBtn = document.getElementById('btnAdminRestoreDefault');
+  if (restoreBtn) {
+    restoreBtn.addEventListener('click', () => {
+      updateAdminShift(currentUser.id, formatDate(selectedDate), 'RESTORE');
+    });
+  }
+
+  // Selected date memo save button
+  const saveMemoBtn = document.getElementById('btnSaveSelectedDateMemo');
+  if (saveMemoBtn) {
+    saveMemoBtn.addEventListener('click', async () => {
+      const input = document.getElementById('selectedDateMemoInput');
+      const val = input ? input.value.trim() : '';
+      const dateStr = formatDate(selectedDate);
+      adminNotesCache[dateStr] = val;
+
+      if (isConnectedToSupabase) {
+        await SupabaseRest.upsert('admin_weekly_notes', {
+          date_string: dateStr,
+          content: val,
+          updated_at: Date.now()
+        }, 'date_string');
+      }
+      showToast(`${dateStr} 메모가 저장되었습니다.`);
+      renderMyCalendar();
+      updateSelectedDateDetail(selectedDate);
+    });
+  }
+
+  // Date memo modal save button
+  const saveModalMemoBtn = document.getElementById('btnSaveDateModalMemo');
+  if (saveModalMemoBtn) {
+    saveModalMemoBtn.addEventListener('click', async () => {
+      if (!currentDateMemoTarget) return;
+      const textarea = document.getElementById('modalDateMemoTextarea');
+      const val = textarea ? textarea.value.trim() : '';
+      const dateStr = formatDate(currentDateMemoTarget);
+      adminNotesCache[dateStr] = val;
+
+      if (isConnectedToSupabase) {
+        await SupabaseRest.upsert('admin_weekly_notes', {
+          date_string: dateStr,
+          content: val,
+          updated_at: Date.now()
+        }, 'date_string');
+      }
+      showToast(`${dateStr} 메모가 저장되었습니다.`);
+      closeModal('dateMemoModal');
+      renderMyCalendar();
+      updateSelectedDateDetail(selectedDate);
+    });
+  }
 }
 
 // ==============================================================================
@@ -1418,93 +1507,196 @@ window.handleRejectRequest = async function(reqId) {
 };
 
 // ==============================================================================
-// 14. [메뉴 4] 업무 메모 / 주간 대시보드 (Admin Weekly Notes)
+// 14. [메뉴 3] 일간 교대일정 (Daily Schedule: 좌 주간 / 우 야간 이분할)
 // ==============================================================================
-function initWeeklyNotesControls() {
-  document.getElementById('prevWeekBtn').addEventListener('click', () => {
-    weeklySelectedDate.setDate(weeklySelectedDate.getDate() - 7);
-    renderWeeklyDashboard();
-  });
-  document.getElementById('nextWeekBtn').addEventListener('click', () => {
-    weeklySelectedDate.setDate(weeklySelectedDate.getDate() + 7);
-    renderWeeklyDashboard();
-  });
-  document.getElementById('currentWeekTodayBtn').addEventListener('click', () => {
-    weeklySelectedDate = new Date();
-    renderWeeklyDashboard();
-  });
+let dailySelectedDate = new Date();
+
+function initDailyScheduleControls() {
+  const prevBtn = document.getElementById('dailyPrevBtn');
+  if (prevBtn) {
+    prevBtn.addEventListener('click', () => {
+      dailySelectedDate.setDate(dailySelectedDate.getDate() - 1);
+      renderDailySchedule();
+    });
+  }
+  const nextBtn = document.getElementById('dailyNextBtn');
+  if (nextBtn) {
+    nextBtn.addEventListener('click', () => {
+      dailySelectedDate.setDate(dailySelectedDate.getDate() + 1);
+      renderDailySchedule();
+    });
+  }
+  const todayBtn = document.getElementById('dailyTodayBtn');
+  if (todayBtn) {
+    todayBtn.addEventListener('click', () => {
+      dailySelectedDate = new Date();
+      renderDailySchedule();
+    });
+  }
+
+  // 주간 인수인계 저장
+  const saveDayBtn = document.getElementById('dailySaveDayMemoBtn');
+  if (saveDayBtn) {
+    saveDayBtn.addEventListener('click', async () => {
+      const textarea = document.getElementById('dailyDayMemoTextarea');
+      const val = textarea ? textarea.value.trim() : '';
+      const dateStr = formatDate(dailySelectedDate);
+      const dayKey = `${dateStr}_DAY`;
+      adminNotesCache[dayKey] = val;
+
+      if (isConnectedToSupabase) {
+        await SupabaseRest.upsert('admin_weekly_notes', {
+          date_string: dayKey,
+          content: val,
+          updated_at: Date.now()
+        }, 'date_string');
+      }
+      showToast(`${dateStr} 주간 인수인계가 저장되었습니다.`);
+    });
+  }
+
+  // 주간 인수인계 삭제
+  const deleteDayBtn = document.getElementById('dailyDeleteDayMemoBtn');
+  if (deleteDayBtn) {
+    deleteDayBtn.addEventListener('click', async () => {
+      const dateStr = formatDate(dailySelectedDate);
+      const dayKey = `${dateStr}_DAY`;
+      if (!confirm(`${dateStr} 주간 인수인계를 삭제하시겠습니까?`)) return;
+      delete adminNotesCache[dayKey];
+      delete adminNotesCache[dateStr];
+      const textarea = document.getElementById('dailyDayMemoTextarea');
+      if (textarea) textarea.value = '';
+
+      if (isConnectedToSupabase) {
+        await SupabaseRest.delete('admin_weekly_notes', 'date_string', dayKey);
+        await SupabaseRest.delete('admin_weekly_notes', 'date_string', dateStr);
+      }
+      showToast(`${dateStr} 주간 인수인계가 삭제되었습니다.`);
+    });
+  }
+
+  // 야간 인수인계 저장
+  const saveNightBtn = document.getElementById('dailySaveNightMemoBtn');
+  if (saveNightBtn) {
+    saveNightBtn.addEventListener('click', async () => {
+      const textarea = document.getElementById('dailyNightMemoTextarea');
+      const val = textarea ? textarea.value.trim() : '';
+      const dateStr = formatDate(dailySelectedDate);
+      const nightKey = `${dateStr}_NIGHT`;
+      adminNotesCache[nightKey] = val;
+
+      if (isConnectedToSupabase) {
+        await SupabaseRest.upsert('admin_weekly_notes', {
+          date_string: nightKey,
+          content: val,
+          updated_at: Date.now()
+        }, 'date_string');
+      }
+      showToast(`${dateStr} 야간 인수인계가 저장되었습니다.`);
+    });
+  }
+
+  // 야간 인수인계 삭제
+  const deleteNightBtn = document.getElementById('dailyDeleteNightMemoBtn');
+  if (deleteNightBtn) {
+    deleteNightBtn.addEventListener('click', async () => {
+      const dateStr = formatDate(dailySelectedDate);
+      const nightKey = `${dateStr}_NIGHT`;
+      if (!confirm(`${dateStr} 야간 인수인계를 삭제하시겠습니까?`)) return;
+      delete adminNotesCache[nightKey];
+      const textarea = document.getElementById('dailyNightMemoTextarea');
+      if (textarea) textarea.value = '';
+
+      if (isConnectedToSupabase) {
+        await SupabaseRest.delete('admin_weekly_notes', 'date_string', nightKey);
+      }
+      showToast(`${dateStr} 야간 인수인계가 삭제되었습니다.`);
+    });
+  }
+
+  // 주·야간 동시 저장
+  const saveBothBtn = document.getElementById('dailySaveBothMemoBtn');
+  if (saveBothBtn) {
+    saveBothBtn.addEventListener('click', async () => {
+      const dateStr = formatDate(dailySelectedDate);
+      const dayKey = `${dateStr}_DAY`;
+      const nightKey = `${dateStr}_NIGHT`;
+      const dayVal = document.getElementById('dailyDayMemoTextarea')?.value.trim() || '';
+      const nightVal = document.getElementById('dailyNightMemoTextarea')?.value.trim() || '';
+
+      adminNotesCache[dayKey] = dayVal;
+      adminNotesCache[nightKey] = nightVal;
+
+      if (isConnectedToSupabase) {
+        await Promise.all([
+          SupabaseRest.upsert('admin_weekly_notes', {
+            date_string: dayKey,
+            content: dayVal,
+            updated_at: Date.now()
+          }, 'date_string'),
+          SupabaseRest.upsert('admin_weekly_notes', {
+            date_string: nightKey,
+            content: nightVal,
+            updated_at: Date.now()
+          }, 'date_string')
+        ]);
+      }
+      showToast(`${dateStr} 주간·야간 인수인계가 동시 저장되었습니다.`);
+    });
+  }
 }
 
-function renderWeeklyDashboard() {
-  const container = document.getElementById('weeklyCardsContainer');
-  container.innerHTML = '';
+function renderDailySchedule() {
+  const dateStr = formatDate(dailySelectedDate);
+  const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+  const dayOfWeekName = dayNames[dailySelectedDate.getDay()];
+  const isHoliday = isKoreanHoliday(dailySelectedDate);
+  const holidayName = getHolidayName(dailySelectedDate);
 
-  const curr = new Date(weeklySelectedDate);
-  const day = curr.getDay();
-  const diff = curr.getDate() - day + (day === 0 ? -6 : 1);
-  const monday = new Date(curr.setDate(diff));
+  // 1. Date Title
+  const titleElem = document.getElementById('dailyDateTitle');
+  if (titleElem) {
+    titleElem.innerHTML = `${dailySelectedDate.getFullYear()}년 ${dailySelectedDate.getMonth() + 1}월 ${dailySelectedDate.getDate()}일 (${dayOfWeekName}) ${holidayName ? `<span class="badge" style="background:#dc2626; color:#fff; font-size:0.75rem; margin-left:6px;">${holidayName}</span>` : ''}`;
+  }
 
-  const sunday = new Date(monday);
-  sunday.setDate(sunday.getDate() + 6);
+  // 2. 7-Day Quick Strip
+  const strip = document.getElementById('dailyQuickStrip');
+  if (strip) {
+    strip.innerHTML = '';
+    for (let offset = -3; offset <= 3; offset++) {
+      const d = new Date(dailySelectedDate);
+      d.setDate(dailySelectedDate.getDate() + offset);
+      const dStr = formatDate(d);
+      const isSel = dStr === dateStr;
+      const isTod = dStr === formatDate(new Date());
 
-  const mMonth = monday.getMonth() + 1;
-  const sMonth = sunday.getMonth() + 1;
-  const mDate = monday.getDate();
-  const sDate = sunday.getDate();
-  document.getElementById('currentWeekTitle').textContent = 
-    `${monday.getFullYear()}년 ${mMonth}월 (${mMonth}.${mDate} ~ ${sMonth}.${sDate})`;
+      const item = document.createElement('div');
+      item.style.cssText = `cursor:pointer; text-align:center; padding:0.35rem 0.65rem; border-radius:8px; background:${isSel ? '#2563eb' : 'transparent'}; color:${isSel ? '#ffffff' : '#94a3b8'}; transition:all 0.2s;`;
+      item.innerHTML = `
+        <div style="font-size:0.7rem; font-weight:${isSel ? '700' : '500'};">${dayNames[d.getDay()]}</div>
+        <div style="font-size:0.9rem; font-weight:700; color:${isSel ? '#fff' : (d.getDay() === 0 || d.getDay() === 6 || isKoreanHoliday(d) ? '#ef4444' : '#f8fafc')}">${d.getDate()}</div>
+        ${isTod ? `<div style="width:4px; height:4px; border-radius:50%; background:#38bdf8; margin:2px auto 0;"></div>` : ''}
+      `;
+      item.addEventListener('click', () => {
+        dailySelectedDate = new Date(d);
+        renderDailySchedule();
+      });
+      strip.appendChild(item);
+    }
+  }
 
-  const dayNames = ['월', '화', '수', '목', '금', '토', '일'];
-  const todayStr = formatDate(new Date());
+  // 3. 인수인계사항 2분할 (주간 / 야간) 로드
+  const dayKey = `${dateStr}_DAY`;
+  const nightKey = `${dateStr}_NIGHT`;
 
-  for (let i = 0; i < 7; i++) {
-    const cardDate = new Date(monday);
-    cardDate.setDate(monday.getDate() + i);
-    const dateStr = formatDate(cardDate);
-    const isToday = dateStr === todayStr;
+  const dayTextarea = document.getElementById('dailyDayMemoTextarea');
+  if (dayTextarea) {
+    dayTextarea.value = adminNotesCache[dayKey] || adminNotesCache[dateStr] || '';
+  }
 
-    let dayWorkers = [];
-    let nightWorkers = [];
-    usersList.filter(u => u.team > 0).forEach(u => {
-      const sched = getSchedule(u.id, dateStr);
-      if (sched.shift_type.includes('D')) dayWorkers.push(u.name);
-      if (sched.shift_type.includes('S')) nightWorkers.push(u.name);
-    });
-
-    const memoContent = adminNotesCache[dateStr] || '';
-
-    const card = document.createElement('div');
-    card.className = 'weekly-day-card';
-    card.innerHTML = `
-      <div class="weekly-day-header ${isToday ? 'today' : ''}">
-        <span>${dateStr} (${dayNames[i]}요일)</span>
-        ${isToday ? '<span class="badge" style="background:var(--primary); color:#fff; font-size:0.7rem; padding:0.15rem 0.4rem; border-radius:4px;">오늘</span>' : ''}
-      </div>
-      <div style="padding: 0.85rem; display: flex; flex-direction: column; gap: 0.65rem;">
-        <div style="font-size:0.8rem; background:#f8fafc; padding:0.5rem; border-radius:6px; border:1px solid var(--border-color);">
-          <div><strong style="color:var(--shift-day);">주간 (D):</strong> ${dayWorkers.join(', ') || '없음'}</div>
-          <div><strong style="color:var(--shift-night);">야간 (S):</strong> ${nightWorkers.join(', ') || '없음'}</div>
-        </div>
-
-        <div>
-          <label style="font-size:0.8rem; font-weight:700; color:var(--text-secondary); margin-bottom:0.25rem; display:block;">
-            <i class="fa-regular fa-note-sticky"></i> 업무 인수인계 및 특이사항
-          </label>
-          <textarea id="memo_${dateStr}" class="memo-textarea" placeholder="발전기 점검, 수로 수위, 안전 점검 등 메모 입력...">${memoContent}</textarea>
-        </div>
-
-        <div style="display:flex; justify-content:flex-end; gap:0.35rem;">
-          <button class="btn-pill btn-secondary" style="padding:0.3rem 0.6rem; font-size:0.75rem;" onclick="handleDeleteMemo('${dateStr}')">
-            <i class="fa-solid fa-trash-can"></i> 삭제
-          </button>
-          <button class="btn-pill btn-primary" style="padding:0.3rem 0.75rem; font-size:0.75rem;" onclick="handleSaveMemo('${dateStr}')">
-            <i class="fa-solid fa-floppy-disk"></i> 저장
-          </button>
-        </div>
-      </div>
-    `;
-
-    container.appendChild(card);
+  const nightTextarea = document.getElementById('dailyNightMemoTextarea');
+  if (nightTextarea) {
+    nightTextarea.value = adminNotesCache[nightKey] || '';
   }
 }
 

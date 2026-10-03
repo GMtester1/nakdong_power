@@ -263,6 +263,12 @@ let weeklySelectedDate = new Date(2026, 9, 1);
 
 let usersList = [...DEFAULT_USERS];
 let schedulesCache = {};      // key: `${userId}_${dateString}` -> schedule object
+try {
+  const savedSchedules = localStorage.getItem('NAKDONG_SCHEDULES_CACHE');
+  if (savedSchedules) {
+    schedulesCache = JSON.parse(savedSchedules) || {};
+  }
+} catch (e) {}
 let requestsList = [];
 let adminNotesCache = {};     // key: dateString -> content
 let postsList = [];
@@ -805,8 +811,14 @@ function initNavigation() {
       if (targetPane) targetPane.classList.add('active');
 
       if (tab.dataset.tab === 'myCalendar') renderMyCalendar();
-      if (tab.dataset.tab === 'teamSchedule') renderTeamSchedule();
-      if (tab.dataset.tab === 'dailySchedule') renderDailySchedule();
+      if (tab.dataset.tab === 'teamSchedule') {
+        teamSelectedDate = new Date(selectedDate);
+        renderTeamSchedule();
+      }
+      if (tab.dataset.tab === 'dailySchedule') {
+        dailySelectedDate = new Date(selectedDate);
+        renderDailySchedule();
+      }
       if (tab.dataset.tab === 'bulletinBoard') renderPostsList();
       if (tab.dataset.tab === 'powerGeneration') renderPowerGeneration();
     });
@@ -1049,6 +1061,10 @@ async function updateAdminShift(userId, dateStr, shiftCode) {
     note: existingNote
   };
 
+  try {
+    localStorage.setItem('NAKDONG_SCHEDULES_CACHE', JSON.stringify(schedulesCache));
+  } catch (e) {}
+
   const shiftInfo = SHIFT_TYPES[finalShift] || SHIFT_TYPES.X;
   showToast(`${dateStr} 일정이 [${shiftInfo.name}]로 변경되었습니다.`);
 
@@ -1068,6 +1084,8 @@ async function updateAdminShift(userId, dateStr, shiftCode) {
   }
 
   renderMyCalendar();
+  renderTeamSchedule();
+  renderDailySchedule();
   updateSelectedDateDetail(selectedDate);
 }
 
@@ -1238,18 +1256,21 @@ function createTeamCalendarCell(dateObj, isOtherMonth) {
   const dayWorkers = [];
   const nightWorkers = [];
 
-  usersList.filter(u => u.team > 0).forEach(u => {
+  usersList.forEach(u => {
     const sched = getSchedule(u.id, dateStr);
     const st = sched.shift_type;
     const cleanName = u.name.replace(/\(.*?\)/, '').trim();
 
-    if (st.includes('D') && !st.includes('DS')) {
-      dayWorkers.push(cleanName);
-    } else if (st.includes('S') && !st.includes('DS')) {
-      nightWorkers.push(cleanName);
-    } else if (st.includes('DS')) {
-      dayWorkers.push(cleanName);
-      nightWorkers.push(cleanName);
+    // Include shift workers (u.team > 0) or any user who has an active shift on this date
+    if (u.team > 0 || (st && st !== 'X')) {
+      if (st === 'DS' || st.includes('DS')) {
+        dayWorkers.push(cleanName);
+        nightWorkers.push(cleanName);
+      } else if (st === 'D' || (st.includes('D') && !st.includes('S'))) {
+        dayWorkers.push(cleanName);
+      } else if (st === 'S' || (st.includes('S') && !st.includes('D'))) {
+        nightWorkers.push(cleanName);
+      }
     }
   });
 
@@ -1484,26 +1505,72 @@ window.handleRejectRequest = async function(reqId) {
 let dailySelectedDate = new Date();
 
 function initDailyScheduleControls() {
+  const prevWeekBtn = document.getElementById('dailyPrevWeekBtn');
+  if (prevWeekBtn) {
+    prevWeekBtn.onclick = (e) => {
+      e.preventDefault();
+      dailySelectedDate = new Date(dailySelectedDate.getTime() - 7 * 24 * 60 * 60 * 1000);
+      selectedDate = new Date(dailySelectedDate);
+      renderDailySchedule();
+    };
+  }
+  const nextWeekBtn = document.getElementById('dailyNextWeekBtn');
+  if (nextWeekBtn) {
+    nextWeekBtn.onclick = (e) => {
+      e.preventDefault();
+      dailySelectedDate = new Date(dailySelectedDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+      selectedDate = new Date(dailySelectedDate);
+      renderDailySchedule();
+    };
+  }
   const prevBtn = document.getElementById('dailyPrevBtn');
   if (prevBtn) {
-    prevBtn.addEventListener('click', () => {
-      dailySelectedDate.setDate(dailySelectedDate.getDate() - 1);
+    prevBtn.onclick = (e) => {
+      e.preventDefault();
+      dailySelectedDate = new Date(dailySelectedDate.getTime() - 24 * 60 * 60 * 1000);
+      selectedDate = new Date(dailySelectedDate);
       renderDailySchedule();
-    });
+    };
   }
   const nextBtn = document.getElementById('dailyNextBtn');
   if (nextBtn) {
-    nextBtn.addEventListener('click', () => {
-      dailySelectedDate.setDate(dailySelectedDate.getDate() + 1);
+    nextBtn.onclick = (e) => {
+      e.preventDefault();
+      dailySelectedDate = new Date(dailySelectedDate.getTime() + 24 * 60 * 60 * 1000);
+      selectedDate = new Date(dailySelectedDate);
       renderDailySchedule();
-    });
+    };
   }
   const todayBtn = document.getElementById('dailyTodayBtn');
   if (todayBtn) {
-    todayBtn.addEventListener('click', () => {
+    todayBtn.onclick = (e) => {
+      e.preventDefault();
       dailySelectedDate = new Date();
+      selectedDate = new Date();
       renderDailySchedule();
-    });
+    };
+  }
+
+  // Date picker click on title
+  const dateTitle = document.getElementById('dailyDateTitle');
+  const datePicker = document.getElementById('dailyDatePickerInput');
+  if (dateTitle && datePicker) {
+    dateTitle.onclick = () => {
+      datePicker.value = formatDate(dailySelectedDate);
+      if (typeof datePicker.showPicker === 'function') {
+        datePicker.showPicker();
+      } else {
+        datePicker.click();
+      }
+    };
+    datePicker.onchange = (e) => {
+      if (e.target.value) {
+        const parts = e.target.value.split('-');
+        dailySelectedDate = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        selectedDate = new Date(dailySelectedDate);
+        renderDailySchedule();
+      }
+    };
   }
 
   // 주간 인수인계 저장
@@ -1623,15 +1690,18 @@ function renderDailySchedule() {
   const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
   const dayOfWeekName = dayNames[dailySelectedDate.getDay()];
   const isHoliday = isKoreanHoliday(dailySelectedDate);
-  const holidayName = getHolidayName(dailySelectedDate);
+  const holidayName = getKoreanHolidayName(dailySelectedDate);
 
   // 1. Date Title
   const titleElem = document.getElementById('dailyDateTitle');
   if (titleElem) {
-    titleElem.innerHTML = `${dailySelectedDate.getFullYear()}년 ${dailySelectedDate.getMonth() + 1}월 ${dailySelectedDate.getDate()}일 (${dayOfWeekName}) ${holidayName ? `<span class="badge" style="background:#dc2626; color:#fff; font-size:0.75rem; margin-left:6px;">${holidayName}</span>` : ''}`;
+    const isWeekend = dailySelectedDate.getDay() === 0 || dailySelectedDate.getDay() === 6;
+    const titleColor = (isWeekend || isHoliday) ? '#ef4444' : 'inherit';
+    titleElem.style.color = titleColor;
+    titleElem.innerHTML = `${dailySelectedDate.getFullYear()}년 ${dailySelectedDate.getMonth() + 1}월 ${dailySelectedDate.getDate()}일 (${dayOfWeekName}) ${holidayName ? `<span class="badge" style="background:#fee2e2; color:#dc2626; font-size:0.75rem; font-weight:700; margin-left:6px; border:1px solid #fca5a5;">${holidayName}</span>` : ''}`;
   }
 
-  // 2. 7-Day Quick Strip
+  // 2. 7-Day Quick Strip Bar (안드로이드앱 스타일 주단위 툴바)
   const strip = document.getElementById('dailyQuickStrip');
   if (strip) {
     strip.innerHTML = '';
@@ -1641,23 +1711,96 @@ function renderDailySchedule() {
       const dStr = formatDate(d);
       const isSel = dStr === dateStr;
       const isTod = dStr === formatDate(new Date());
+      const isSun = d.getDay() === 0;
+      const isSat = d.getDay() === 6;
+      const isHol = isKoreanHoliday(d);
+
+      let dayTextColor = '#94a3b8';
+      let numColor = '#f8fafc';
+      if (isSel) {
+        dayTextColor = 'rgba(255, 255, 255, 0.9)';
+        numColor = '#ffffff';
+      } else if (isSun || isSat || isHol) {
+        dayTextColor = '#ef4444';
+        numColor = '#ef4444';
+      }
 
       const item = document.createElement('div');
-      item.style.cssText = `cursor:pointer; text-align:center; padding:0.35rem 0.65rem; border-radius:8px; background:${isSel ? '#2563eb' : 'transparent'}; color:${isSel ? '#ffffff' : '#94a3b8'}; transition:all 0.2s;`;
+      item.style.cssText = `cursor:pointer; text-align:center; padding:0.45rem 0.2rem; border-radius:10px; background:${isSel ? '#2563eb' : 'transparent'}; border:${isSel ? '1px solid #3b82f6' : '1px solid transparent'}; transition:all 0.15s ease; user-select:none;`;
       item.innerHTML = `
-        <div style="font-size:0.7rem; font-weight:${isSel ? '700' : '500'};">${dayNames[d.getDay()]}</div>
-        <div style="font-size:0.9rem; font-weight:700; color:${isSel ? '#fff' : (d.getDay() === 0 || d.getDay() === 6 || isKoreanHoliday(d) ? '#ef4444' : '#f8fafc')}">${d.getDate()}</div>
-        ${isTod ? `<div style="width:4px; height:4px; border-radius:50%; background:#38bdf8; margin:2px auto 0;"></div>` : ''}
+        <div style="font-size:0.75rem; font-weight:${isSel ? '700' : '600'}; color:${dayTextColor}; margin-bottom:2px;">${dayNames[d.getDay()]}</div>
+        <div style="font-size:1.05rem; font-weight:800; color:${numColor}; line-height:1.2;">${d.getDate()}</div>
+        ${isTod ? `<div style="width:5px; height:5px; border-radius:50%; background:${isSel ? '#ffffff' : '#38bdf8'}; margin:4px auto 0;"></div>` : '<div style="width:5px; height:5px; margin:4px auto 0;"></div>'}
       `;
+      item.addEventListener('mouseenter', () => {
+        if (!isSel) item.style.background = '#1e293b';
+      });
+      item.addEventListener('mouseleave', () => {
+        if (!isSel) item.style.background = 'transparent';
+      });
       item.addEventListener('click', () => {
         dailySelectedDate = new Date(d);
+        selectedDate = new Date(d);
         renderDailySchedule();
       });
       strip.appendChild(item);
     }
   }
 
-  // 3. 인수인계사항 2분할 (주간 / 야간) 로드
+  // 3. 일간 근무자 요약 (주간 근무자 / 야간 근무자 - DS 근무자는 주간과 야간에 모두 포함)
+  const workersSummaryBox = document.getElementById('dailyWorkersSummary');
+  if (workersSummaryBox) {
+    const dayWorkers = [];
+    const nightWorkers = [];
+
+    usersList.forEach(u => {
+      const sched = getSchedule(u.id, dateStr);
+      const st = sched.shift_type;
+      const cleanName = u.name.replace(/\(.*?\)/, '').trim();
+
+      if (u.team > 0 || (st && st !== 'X')) {
+        if (st === 'DS' || (st && st.includes('DS'))) {
+          dayWorkers.push({ name: cleanName, team: u.team, st: 'DS' });
+          nightWorkers.push({ name: cleanName, team: u.team, st: 'DS' });
+        } else if (st === 'D' || (st && st.includes('D') && !st.includes('S'))) {
+          dayWorkers.push({ name: cleanName, team: u.team, st: st });
+        } else if (st === 'S' || (st && st.includes('S') && !st.includes('D'))) {
+          nightWorkers.push({ name: cleanName, team: u.team, st: st });
+        }
+      }
+    });
+
+    const dayBadges = dayWorkers.length > 0
+      ? dayWorkers.map(w => `<span class="badge" style="background:#fef3c7; color:#b45309; font-weight:700; font-size:0.8rem; padding:0.25rem 0.55rem; border:1px solid #fde68a; border-radius:6px;">${w.team > 0 ? `${w.team}조 ` : ''}${w.name}${w.st === 'DS' ? ' <strong style="color:#c05621;">[DS]</strong>' : ''}</span>`).join(' ')
+      : '<span style="color:#94a3b8; font-size:0.8rem;">주간 근무자 없음</span>';
+
+    const nightBadges = nightWorkers.length > 0
+      ? nightWorkers.map(w => `<span class="badge" style="background:#ede9fe; color:#6d28d9; font-weight:700; font-size:0.8rem; padding:0.25rem 0.55rem; border:1px solid #ddd6fe; border-radius:6px;">${w.team > 0 ? `${w.team}조 ` : ''}${w.name}${w.st === 'DS' ? ' <strong style="color:#c05621;">[DS]</strong>' : ''}</span>`).join(' ')
+      : '<span style="color:#94a3b8; font-size:0.8rem;">야간 근무자 없음</span>';
+
+    workersSummaryBox.innerHTML = `
+      <div style="background:#fffdf5; border:1.5px solid #f59e0b; border-radius:12px; padding:0.75rem 1rem; box-shadow:var(--shadow-sm);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.45rem;">
+          <strong style="color:#92400e; font-size:0.92rem;"><i class="fa-solid fa-sun" style="color:#b45309;"></i> ☀️ 주간 근무자 (${dayWorkers.length}명)</strong>
+          <span class="badge" style="background:#fef3c7; color:#b45309; font-size:0.75rem; font-weight:700;">09:00 ~ 18:00</span>
+        </div>
+        <div style="display:flex; flex-wrap:wrap; gap:0.35rem; align-items:center;">
+          ${dayBadges}
+        </div>
+      </div>
+      <div style="background:#faf8ff; border:1.5px solid #7c3aed; border-radius:12px; padding:0.75rem 1rem; box-shadow:var(--shadow-sm);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.45rem;">
+          <strong style="color:#5b21b6; font-size:0.92rem;"><i class="fa-solid fa-moon" style="color:#6d28d9;"></i> 🌙 야간 근무자 (${nightWorkers.length}명)</strong>
+          <span class="badge" style="background:#ede9fe; color:#6d28d9; font-size:0.75rem; font-weight:700;">18:00 ~ 익일 09:00</span>
+        </div>
+        <div style="display:flex; flex-wrap:wrap; gap:0.35rem; align-items:center;">
+          ${nightBadges}
+        </div>
+      </div>
+    `;
+  }
+
+  // 4. 인수인계사항 2분할 (주간 / 야간) 로드
   const dayKey = `${dateStr}_DAY`;
   const nightKey = `${dateStr}_NIGHT`;
 
@@ -2103,9 +2246,18 @@ function initPowerGenerationControls() {
   if (refreshBtn) {
     refreshBtn.addEventListener('click', async () => {
       const badge = document.getElementById('powerGenLastUpdated');
-      if (badge) badge.textContent = `실시간 수신중...`;
-      await syncLiveWaterData();
-      showToast('MyWater 수문포털 실시간 발전현황 및 조정지 수위가 갱신되었습니다.');
+      const prevHtml = badge ? badge.innerHTML : '';
+      if (badge) badge.innerHTML = `<i class="fa-solid fa-arrows-rotate fa-spin"></i> 실시간 수신중...`;
+      refreshBtn.disabled = true;
+      try {
+        await syncLiveWaterData(true);
+        showToast('MyWater 수문포털 실시간 발전현황 및 조정지 수위가 갱신되었습니다.');
+      } catch (err) {
+        if (badge) badge.innerHTML = prevHtml;
+        showToast('실시간 데이터 갱신 중 오류가 발생했습니다.');
+      } finally {
+        refreshBtn.disabled = false;
+      }
     });
   }
 
@@ -2127,7 +2279,7 @@ async function queryWaterPortalApi(damCd, count = 1, startDate = '', endDate = '
     cntPerPage: count.toString()
   });
 
-  // 1. Try server proxy endpoint
+  // 1. Try server proxy endpoint POST
   try {
     const res = await fetch('/api/water-proxy', {
       method: 'POST',
@@ -2142,7 +2294,18 @@ async function queryWaterPortalApi(damCd, count = 1, startDate = '', endDate = '
     }
   } catch (_) {}
 
-  // 2. Direct fetch fallback
+  // 2. Try server proxy endpoint GET fallback
+  try {
+    const res = await fetch(`/api/water-proxy?${formBody.toString()}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.list && Array.isArray(data.list) && data.list.length > 0) {
+        return data.list;
+      }
+    }
+  } catch (_) {}
+
+  // 3. Direct fetch fallback
   try {
     const res = await fetch('https://www.water.or.kr/kor/realtime/sumun/ajaxProc.do', {
       method: 'POST',
@@ -2160,17 +2323,19 @@ async function queryWaterPortalApi(damCd, count = 1, startDate = '', endDate = '
   return null;
 }
 
-async function syncLiveWaterData() {
+async function syncLiveWaterData(force = false) {
   if (isFetchingLiveWater) return;
   isFetchingLiveWater = true;
 
   try {
-    // 1. 12개 발전기 실시간 10분 총방류량 수신 (총방류량 > 0 CMS 이면 ON, 아니면 OFF)
+    // 1. 12개 발전기 실시간 10분 총방류량 수신 (총방류량 > 0.4 CMS 이면 ON, 아니면 OFF)
     const updates = await Promise.allSettled(
       POWER_GEN_DAMS.map(dam => queryWaterPortalApi(dam.damCd, 1))
     );
 
     let changed = false;
+    let latestDataTimeStr = '16:50';
+
     updates.forEach((result, idx) => {
       if (result.status === 'fulfilled' && result.value && result.value.length > 0) {
         const item = result.value[0];
@@ -2181,12 +2346,23 @@ async function syncLiveWaterData() {
         if (item.DATA6 !== undefined && item.DATA6 !== null) {
           dam.discharge = parseFloat(item.DATA6) || 0.0;
         }
+        if (item.SDATE && item.SDATE.length >= 12) {
+          dam.lastUpdatedTime = `${item.SDATE.substring(8, 10)}:${item.SDATE.substring(10, 12)}`;
+          if (dam.id === 'andong') {
+            latestDataTimeStr = dam.lastUpdatedTime;
+          }
+        }
         changed = true;
       }
     });
 
-    // 2. 3개 조정지 10월 1일 00시부터 10분단위 실시간 수위 데이터 수신
-    const resList = await queryWaterPortalApi(powerGenSelectedDamCd, 500, '2026-10-01', '2026-10-02');
+    // 2. 3개 조정지 최근 24시간 실시간 수위 데이터 수신 (현재기준 24시간)
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+
+    const resList = await queryWaterPortalApi(powerGenSelectedDamCd, 150, yesterdayStr, todayStr);
     if (resList && resList.length > 0) {
       const mapped = resList.map(item => {
         const s = item.SDATE || '';
@@ -2195,6 +2371,7 @@ async function syncLiveWaterData() {
         const h = s.substring(8, 10);
         const min = s.substring(10, 12);
         return {
+          sdate: s,
           time: `${m}/${d} ${h}:${min}`,
           fullTime: `${s.substring(0, 4)}-${m}-${d} ${h}:${min}`,
           waterLevel: parseFloat(item.DATA1) || 0.0,
@@ -2208,13 +2385,13 @@ async function syncLiveWaterData() {
       changed = true;
     }
 
-    if (changed) {
-      const badge = document.getElementById('powerGenLastUpdated');
-      if (badge) {
-        const now = new Date();
-        const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
-        badge.innerHTML = `<i class="fa-solid fa-clock-rotate-left"></i> 실시간 갱신: ${timeStr} (수문포털 연동)`;
-      }
+    // 갱신 시간 표시 (안동댐 실시간 수위/방류량 관측시간 기준)
+    const badge = document.getElementById('powerGenLastUpdated');
+    if (badge) {
+      badge.innerHTML = `<i class="fa-solid fa-clock-rotate-left"></i> 실시간 갱신: ${latestDataTimeStr} 기준 (수문포털 연동)`;
+    }
+
+    if (changed || force) {
       if (powerGenCurrentSubTab === 'generators') {
         renderGeneratorsStatus();
       } else {
@@ -2223,6 +2400,10 @@ async function syncLiveWaterData() {
     }
   } catch (err) {
     console.warn('Sync live water data error:', err);
+    const badge = document.getElementById('powerGenLastUpdated');
+    if (badge) {
+      badge.innerHTML = `<i class="fa-solid fa-clock-rotate-left"></i> 실시간 갱신: 16:50 기준 (수문포털 연동)`;
+    }
   } finally {
     isFetchingLiveWater = false;
   }
@@ -2257,6 +2438,8 @@ function renderGeneratorsStatus() {
       ? `<span class="badge" style="background:#ede9fe; color:#6d28d9; font-size:0.75rem; margin-left:4px;">조정지</span>` 
       : `<span class="badge" style="background:#dbeafe; color:#1e40af; font-size:0.75rem; margin-left:4px;">본댐</span>`;
 
+    const timeLabel = dam.lastUpdatedTime ? `${dam.lastUpdatedTime} 기준` : '16:50 기준';
+
     return `
       <div class="card" style="border: 1.5px solid ${borderColor}; background: ${cardBg}; border-radius: 12px; padding: 1rem; box-shadow: var(--shadow-sm);">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
@@ -2278,7 +2461,7 @@ function renderGeneratorsStatus() {
 
         <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.75rem; color:#64748b;">
           <span>판정 기준: ${isOnline ? '<strong style="color:#059669;">방류량 > 0.4 CMS (발전 ON)</strong>' : '<span style="color:#64748b;">방류량 ≤ 0.4 CMS (정지 OFF)</span>'}</span>
-          <span style="color:#2563eb; font-weight:600;">16:50 기준</span>
+          <span style="color:#2563eb; font-weight:600;">${timeLabel}</span>
         </div>
       </div>
     `;
@@ -2292,15 +2475,17 @@ function renderGeneratorsStatus() {
 }
 
 function generateReservoirHistory(damCd) {
-  if (reservoirHistoryCache[damCd]) return reservoirHistoryCache[damCd];
+  if (reservoirHistoryCache[damCd] && reservoirHistoryCache[damCd].length > 0) {
+    return reservoirHistoryCache[damCd];
+  }
 
   const meta = RESERVOIR_METAS[damCd] || RESERVOIR_METAS['2001611'];
   const baseL = meta.baseLevel;
   const baseD = meta.baseDischarge;
   const list = [];
 
-  // 현재기준 최근 24시간 실시간 수위만 표시 (2026-10-01 16:50 ~ 2026-10-02 16:50)
-  const end = new Date(2026, 9, 2, 16, 50);
+  // 현재기준 최근 24시간 실시간 수위만 표시
+  const end = new Date();
   const start = new Date(end.getTime() - 24 * 60 * 60 * 1000);
 
   let current = new Date(start);
@@ -2333,7 +2518,9 @@ function generateReservoirHistory(damCd) {
 
 function renderReservoirWaterLevels() {
   const meta = RESERVOIR_METAS[powerGenSelectedDamCd] || RESERVOIR_METAS['2001611'];
-  const history = generateReservoirHistory(meta.damCd);
+  const history = (reservoirHistoryCache[meta.damCd] && reservoirHistoryCache[meta.damCd].length > 0)
+    ? reservoirHistoryCache[meta.damCd]
+    : generateReservoirHistory(meta.damCd);
   const current = history[history.length - 1] || { waterLevel: meta.normalLevel, discharge: 0, inflow: 0, time: '-' };
 
   // 1. Overview Card

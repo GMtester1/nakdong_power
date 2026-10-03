@@ -88,6 +88,17 @@ class AntigravityHTTPHandler(SimpleHTTPRequestHandler):
             post_body = self.rfile.read(content_length)
             try:
                 import urllib.request
+                import urllib.parse
+                try:
+                    params = urllib.parse.parse_qs(post_body.decode('utf-8'))
+                    flat_params = {k: v[0] for k, v in params.items()}
+                    if 'mode' not in flat_params:
+                        flat_params['mode'] = 'getHydr'
+                    if 'param1' not in flat_params:
+                        flat_params['param1'] = 'M'
+                    post_body = urllib.parse.urlencode(flat_params).encode('utf-8')
+                except Exception:
+                    pass
                 req = urllib.request.Request(
                     "https://www.water.or.kr/kor/realtime/sumun/ajaxProc.do",
                     data=post_body,

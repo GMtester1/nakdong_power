@@ -216,19 +216,27 @@
       <!-- ================= 3. 일간 교대일정 (Daily Schedule: 좌 주간 / 우 야간 이분할) ================= -->
       <section id="tab-dailySchedule" class="tab-pane">
         <div class="pane-header">
-          <div class="month-controls">
-            <button id="dailyPrevBtn" class="btn-icon" title="이전 날"><i class="fa-solid fa-chevron-left"></i></button>
-            <h2 id="dailyDateTitle" class="calendar-title">2026년 10월 1일 (목)</h2>
-            <button id="dailyNextBtn" class="btn-icon" title="다음 날"><i class="fa-solid fa-chevron-right"></i></button>
-            <button id="dailyTodayBtn" class="btn-pill btn-secondary"><i class="fa-solid fa-calendar-day"></i> 오늘</button>
+          <div class="month-controls" style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
+            <button type="button" id="dailyPrevWeekBtn" class="btn-pill btn-secondary" title="1주 전" style="font-size:0.8rem; padding:0.35rem 0.65rem;"><i class="fa-solid fa-angles-left"></i> 이전주</button>
+            <button type="button" id="dailyPrevBtn" class="btn-icon" title="이전 날"><i class="fa-solid fa-chevron-left"></i></button>
+            <h2 id="dailyDateTitle" class="calendar-title" style="margin:0 0.4rem; cursor:pointer;" title="클릭하여 날짜 직접 선택">2026년 10월 1일 (목)</h2>
+            <input type="date" id="dailyDatePickerInput" style="position: absolute; opacity: 0; pointer-events: none; width: 0; height: 0;" />
+            <button type="button" id="dailyNextBtn" class="btn-icon" title="다음 날"><i class="fa-solid fa-chevron-right"></i></button>
+            <button type="button" id="dailyNextWeekBtn" class="btn-pill btn-secondary" title="1주 후" style="font-size:0.8rem; padding:0.35rem 0.65rem;">다음주 <i class="fa-solid fa-angles-right"></i></button>
+            <button type="button" id="dailyTodayBtn" class="btn-pill btn-secondary"><i class="fa-solid fa-calendar-day"></i> 오늘</button>
           </div>
           <div class="sync-indicator">
             <span class="dot-online"></span> 일간 주·야간 인수인계사항
           </div>
         </div>
 
-        <!-- 7-Day Quick Strip Bar -->
-        <div id="dailyQuickStrip" class="daily-quick-strip" style="display:flex; justify-content:space-around; background:#0f172a; padding:0.5rem; border-radius:10px; margin-bottom:1rem; overflow-x:auto;">
+        <!-- 7-Day Quick Strip Bar (안드로이드앱 스타일 주단위 툴바) -->
+        <div id="dailyQuickStrip" class="daily-quick-strip" style="display:grid; grid-template-columns:repeat(7, 1fr); gap:0.5rem; background:#0f172a; padding:0.65rem 0.5rem; border-radius:12px; margin-bottom:1.25rem;">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- 일간 근무자 현황 (주간 / 야간 - DS 근무자는 주간과 야간 모두 표출) -->
+        <div id="dailyWorkersSummary" style="display:grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
           <!-- Populated by JS -->
         </div>
 

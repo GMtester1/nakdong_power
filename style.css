@@ -570,17 +570,21 @@ body {
   gap: 1px;
 }
 
-/* 캘린더 셀: 모바일앱처럼 한 화면에 다 보이도록 높이 및 패딩 컴팩트 조정 */
+/* 캘린더 셀: 모바일 및 데스크톱에서 크기 고정 및 내용 넘침 방지 */
 .calendar-cell {
   background: #ffffff;
-  min-height: 64px;
-  padding: 0.35rem;
+  min-height: 68px;
+  height: 68px;
+  max-height: 68px;
+  padding: 0.3rem;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   cursor: pointer;
   transition: var(--transition);
   position: relative;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .calendar-cell:hover {
@@ -628,7 +632,7 @@ body {
 .cell-memo-input {
   margin-top: 0.2rem;
   font-size: 0.65rem;
-  padding: 0.15rem 0.25rem;
+  padding: 0 0.25rem;
   border-radius: 4px;
   background: #f1f5f9;
   color: #64748b;
@@ -639,6 +643,13 @@ body {
   text-overflow: ellipsis;
   cursor: pointer;
   transition: all 0.2s;
+  height: 20px;
+  min-height: 20px;
+  max-height: 20px;
+  line-height: 18px;
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
 }
 
 .cell-memo-input:hover {
@@ -651,6 +662,13 @@ body {
   color: #1d4ed8;
   border: 1px solid #bfdbfe;
   font-weight: 600;
+}
+
+#modalDateMemoTextarea {
+  resize: none;
+  height: 120px;
+  min-height: 120px;
+  max-height: 120px;
 }
 
 .shift-tag {
@@ -697,17 +715,75 @@ body {
   text-overflow: ellipsis;
 }
 
-/* Team Schedule Layout */
+/* Team Schedule Layout (Full Width, No Right Roster Panel) */
 .team-layout {
-  display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
-  gap: 1.25rem;
-  align-items: start;
+  display: block;
+  width: 100%;
 }
-@media (max-width: 960px) {
-  .team-layout {
-    grid-template-columns: 1fr;
-  }
+
+.calendar-cell.team-cell {
+  min-height: 80px;
+  height: 80px;
+  padding: 0.3rem;
+  box-sizing: border-box;
+}
+
+.team-calendar-worker-box {
+  margin-top: 0.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+}
+
+.team-worker-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  padding: 1.5px 4px;
+  border-radius: 4px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.team-worker-row.day-worker-row {
+  background: var(--shift-day-bg);
+  color: var(--shift-day);
+  border: 1px solid #bfdbfe;
+}
+
+.team-worker-row.night-worker-row {
+  background: var(--shift-night-bg);
+  color: var(--shift-night);
+  border: 1px solid #fecaca;
+}
+
+.worker-shift-lbl {
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 0 3px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  line-height: 1.2;
+}
+
+.worker-shift-lbl.day {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.worker-shift-lbl.night {
+  background: #dc2626;
+  color: #ffffff;
+}
+
+.worker-names-text {
+  font-weight: 700;
+  font-size: 0.7rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .shift-filter-group {

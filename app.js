@@ -1173,12 +1173,12 @@ function initTeamScheduleControls() {
     renderTeamSchedule();
   });
 
-  document.querySelectorAll('.filter-chip').forEach(chip => {
+  document.querySelectorAll('#tab-teamSchedule .filter-chip').forEach(chip => {
     chip.addEventListener('click', () => {
-      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      document.querySelectorAll('#tab-teamSchedule .filter-chip').forEach(c => c.classList.remove('active'));
       chip.classList.add('active');
       currentTeamFilter = chip.dataset.filter;
-      renderWorkerRoster(teamSelectedDate);
+      renderTeamSchedule();
     });
   });
 }
@@ -1224,34 +1224,61 @@ function renderTeamSchedule() {
     const nDate = new Date(year, month + 1, d);
     grid.appendChild(createTeamCalendarCell(nDate, true));
   }
-
-  renderWorkerRoster(teamSelectedDate);
 }
 
 function createTeamCalendarCell(dateObj, isOtherMonth) {
   const cell = document.createElement('div');
-  cell.className = `calendar-cell ${isOtherMonth ? 'other-month' : ''}`;
+  cell.className = `calendar-cell team-cell ${isOtherMonth ? 'other-month' : ''}`;
   const dayOfWeek = dateObj.getDay();
   if (dayOfWeek === 0) cell.classList.add('sunday');
   if (dayOfWeek === 6) cell.classList.add('saturday');
 
   const dateStr = formatDate(dateObj);
 
-  let dayW = 0, nightW = 0;
+  const dayWorkers = [];
+  const nightWorkers = [];
+
   usersList.filter(u => u.team > 0).forEach(u => {
     const sched = getSchedule(u.id, dateStr);
-    if (sched.shift_type.includes('D')) dayW++;
-    if (sched.shift_type.includes('S')) nightW++;
+    const st = sched.shift_type;
+    const cleanName = u.name.replace(/\(.*?\)/, '').trim();
+
+    if (st.includes('D') && !st.includes('DS')) {
+      dayWorkers.push(cleanName);
+    } else if (st.includes('S') && !st.includes('DS')) {
+      nightWorkers.push(cleanName);
+    } else if (st.includes('DS')) {
+      dayWorkers.push(cleanName);
+      nightWorkers.push(cleanName);
+    }
   });
+
+  const showDay = (currentTeamFilter === 'ALL' || currentTeamFilter === 'DAY') && dayWorkers.length > 0;
+  const showNight = (currentTeamFilter === 'ALL' || currentTeamFilter === 'NIGHT') && nightWorkers.length > 0;
+
+  const dayHtml = showDay ? `
+    <div class="team-worker-row day-worker-row" title="주간 근무자: ${dayWorkers.join(', ')}">
+      <span class="worker-shift-lbl day">주</span>
+      <span class="worker-names-text">${dayWorkers.join(', ')}</span>
+    </div>
+  ` : '';
+
+  const nightHtml = showNight ? `
+    <div class="team-worker-row night-worker-row" title="야간 근무자: ${nightWorkers.join(', ')}">
+      <span class="worker-shift-lbl night">야</span>
+      <span class="worker-names-text">${nightWorkers.join(', ')}</span>
+    </div>
+  ` : '';
 
   cell.innerHTML = `
     <div class="day-header">
       <span class="day-number">${dateObj.getDate()}</span>
       ${isOtherMonth ? `<span style="font-size:0.65rem; color:#94a3b8;">${dateObj.getMonth()+1}월</span>` : ''}
     </div>
-    <div style="font-size: 0.725rem; margin-top: 0.25rem; display: flex; flex-direction: column; gap: 2px;">
-      <span style="color:var(--shift-day); font-weight:700;">주간 ${dayW}명</span>
-      <span style="color:var(--shift-night); font-weight:700;">야간 ${nightW}명</span>
+    <div class="team-calendar-worker-box">
+      ${dayHtml}
+      ${nightHtml}
+      ${!dayHtml && !nightHtml ? '<span style="font-size:0.65rem; color:#94a3b8; text-align:center; padding:2px 0;">-</span>' : ''}
     </div>
   `;
 
@@ -1259,89 +1286,13 @@ function createTeamCalendarCell(dateObj, isOtherMonth) {
     teamSelectedDate = dateObj;
     document.querySelectorAll('#teamCalendarGrid .calendar-cell').forEach(c => c.classList.remove('selected'));
     cell.classList.add('selected');
-    renderWorkerRoster(dateObj);
   });
 
   return cell;
 }
 
 function renderWorkerRoster(dateObj) {
-  const dateStr = formatDate(dateObj);
-  const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
-  document.getElementById('rosterDateTitle').innerHTML = 
-    `<i class="fa-solid fa-user-group"></i> ${dateStr} (${dayNames[dateObj.getDay()]}) 근무 편성`;
-
-  const dayList = document.getElementById('dayWorkerList');
-  const nightList = document.getElementById('nightWorkerList');
-  const offList = document.getElementById('offWorkerList');
-
-  dayList.innerHTML = '';
-  nightList.innerHTML = '';
-  offList.innerHTML = '';
-
-  const approvedReqs = requestsList.filter(r => r.status === 'APPROVED');
-
-  usersList.filter(u => u.team > 0).forEach(user => {
-    const sched = getSchedule(user.id, dateStr);
-    const shift = sched.shift_type;
-    const note = sched.note || '';
-
-    const isSubstitute = note.includes('대직') || approvedReqs.some(r => 
-      r.type === 'SUBSTITUTE' && (r.target_user_id === user.id && r.request_date === dateStr)
-    );
-    const isExchange = note.includes('교직') || approvedReqs.some(r => 
-      r.type === 'EXCHANGE' && ((r.requester_id === user.id && r.target_date === dateStr) || (r.target_user_id === user.id && r.request_date === dateStr))
-    );
-
-    if (currentTeamFilter === 'DAY' && !shift.includes('D')) return;
-    if (currentTeamFilter === 'NIGHT' && !shift.includes('S')) return;
-    if (currentTeamFilter === 'OFF' && shift !== 'X') return;
-
-    const card = document.createElement('div');
-    card.className = `worker-item-card ${user.id === currentUser.id ? 'is-current' : ''}`;
-    const avatarBg = AVATAR_COLORS[user.avatar_color_index % AVATAR_COLORS.length];
-
-    card.innerHTML = `
-      <div class="worker-info">
-        <div class="worker-avatar" style="background-color: ${avatarBg};">
-          ${user.name.charAt(0)}
-        </div>
-        <div class="worker-name-group">
-          <span class="worker-name">
-            ${user.name}
-            ${user.id === currentUser.id ? '<span style="font-size:0.7rem; color:var(--primary); font-weight:700;">(본인)</span>' : ''}
-          </span>
-          <span class="worker-role-team">${user.team}조 &bull; 사번 ${user.employee_id} &bull; ${user.car_number}</span>
-        </div>
-      </div>
-      <div class="worker-badges">
-        <span class="shift-tag ${shift}">${shift}</span>
-        ${isSubstitute ? `
-          <span class="role-badge substitute">
-            <i class="fa-solid fa-arrow-right-arrow-left"></i> 대직자
-          </span>` : ''}
-        ${isExchange ? `
-          <span class="role-badge exchange">
-            <i class="fa-solid fa-arrows-rotate"></i> 교직자
-          </span>` : ''}
-      </div>
-    `;
-
-    if (shift.includes('D') && !shift.includes('DS')) {
-      dayList.appendChild(card);
-    } else if (shift.includes('S') && !shift.includes('DS')) {
-      nightList.appendChild(card);
-    } else if (shift.includes('DS')) {
-      dayList.appendChild(card.cloneNode(true));
-      nightList.appendChild(card);
-    } else {
-      offList.appendChild(card);
-    }
-  });
-
-  if (!dayList.hasChildNodes()) dayList.innerHTML = `<div style="font-size:0.8rem; color:var(--text-muted); padding:0.5rem;">편성된 주간 근무자가 없습니다.</div>`;
-  if (!nightList.hasChildNodes()) nightList.innerHTML = `<div style="font-size:0.8rem; color:var(--text-muted); padding:0.5rem;">편성된 야간 근무자가 없습니다.</div>`;
-  if (!offList.hasChildNodes()) offList.innerHTML = `<div style="font-size:0.8rem; color:var(--text-muted); padding:0.5rem;">비번자가 없습니다.</div>`;
+  // 우측 근무편성표 삭제됨: 캘린더 내 주/야 근무자 표시로 대체됨
 }
 
 // ==============================================================================
@@ -2076,7 +2027,7 @@ function formatDate(date) {
 // 19. [메뉴 5] 실시간 발전현황 및 조정지 실시간 수위 모듈
 // ==============================================================================
 const POWER_GEN_DAMS = [
-  { id: 'andong', damCd: '2001110', name: '안동댐', capacity: '90MW', capacityMw: 90.0, discharge: 28.1, waterLevel: 144.40, isRegulating: false },
+  { id: 'andong', damCd: '2001110', name: '안동댐', capacity: '90MW', capacityMw: 90.0, discharge: 0.0, waterLevel: 144.37, isRegulating: false },
   { id: 'andong_reg', damCd: '2001611', name: '안동조정지', capacity: '1.5MW', capacityMw: 1.5, discharge: 14.0, waterLevel: 95.33, isRegulating: true },
   { id: 'imha', damCd: '2002110', name: '임하댐', capacity: '50MW', capacityMw: 50.0, discharge: 30.1, waterLevel: 148.78, isRegulating: false },
   { id: 'imha_reg', damCd: '2002610', name: '임하조정지', capacity: '1.06MW', capacityMw: 1.06, discharge: 0.0, waterLevel: 101.67, isRegulating: true },
@@ -2252,7 +2203,8 @@ async function syncLiveWaterData() {
         };
       }).sort((a, b) => a.fullTime.localeCompare(b.fullTime));
 
-      reservoirHistoryCache[powerGenSelectedDamCd] = mapped;
+      // 최근 24시간 (최대 144건) 데이터만 유지
+      reservoirHistoryCache[powerGenSelectedDamCd] = mapped.slice(-144);
       changed = true;
     }
 
@@ -2261,7 +2213,7 @@ async function syncLiveWaterData() {
       if (badge) {
         const now = new Date();
         const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
-        badge.textContent = `MyWater 실시간 연동 (${timeStr})`;
+        badge.innerHTML = `<i class="fa-solid fa-clock-rotate-left"></i> 실시간 갱신: ${timeStr} (수문포털 연동)`;
       }
       if (powerGenCurrentSubTab === 'generators') {
         renderGeneratorsStatus();
@@ -2293,18 +2245,11 @@ function renderGeneratorsStatus() {
   let totalDischargeSum = 0;
 
   grid.innerHTML = POWER_GEN_DAMS.map(dam => {
-    const customVal = customDischarges[dam.id];
-    const effDischarge = (customVal !== undefined && customVal !== '') ? parseFloat(customVal) || 0.0 : dam.discharge;
-    
-    let isOnline;
-    if (manualOverrides[dam.id] !== undefined) {
-      isOnline = manualOverrides[dam.id];
-    } else {
-      isOnline = effDischarge > 0.0;
-    }
+    // 규칙 수정: 총방류량 > 0.4 CMS 이면 ON, 아니면 OFF
+    const isOnline = dam.discharge > 0.4;
 
     if (isOnline) totalOnline++;
-    totalDischargeSum += effDischarge;
+    totalDischargeSum += dam.discharge;
 
     const borderColor = isOnline ? '#10b981' : '#cbd5e1';
     const cardBg = isOnline ? '#f0fdf4' : '#f8fafc';
@@ -2326,25 +2271,14 @@ function renderGeneratorsStatus() {
           </span>
         </div>
 
-        <div style="background:rgba(255,255,255,0.85); border-radius:8px; padding:0.5rem 0.75rem; font-size:0.8rem; margin-bottom:0.75rem; display:flex; justify-content:space-between;">
+        <div style="background:rgba(255,255,255,0.85); border-radius:8px; padding:0.6rem 0.75rem; font-size:0.85rem; display:flex; justify-content:space-between; align-items:center; border:1px solid #e2e8f0; margin-bottom:0.5rem;">
           <span>실시간 수위: <strong>EL. ${dam.waterLevel.toFixed(2)} m</strong></span>
-          <span>측정방류량: <strong style="color:${dam.discharge > 0 ? '#059669' : '#64748b'}">${dam.discharge.toFixed(1)} CMS</strong></span>
+          <span>총방류량: <strong style="color:${isOnline ? '#059669' : '#64748b'}; font-size:0.95rem;">${dam.discharge.toFixed(1)} CMS</strong></span>
         </div>
 
-        <div style="display:flex; align-items:center; gap:0.4rem;">
-          <div style="flex:1;">
-            <label style="font-size:0.72rem; color:#64748b; display:block; margin-bottom:2px;">방류량 입력 (CMS)</label>
-            <input type="number" step="0.1" min="0" id="inputDischarge_${dam.id}" class="form-input" 
-              style="padding:0.35rem 0.6rem; font-size:0.85rem; width:100%; border:1px solid #cbd5e1; border-radius:6px;" 
-              value="${customVal !== undefined ? customVal : dam.discharge.toFixed(1)}" 
-              placeholder="방류량 입력...">
-          </div>
-          <button type="button" class="btn-pill btn-primary" onclick="window.saveGeneratorDischarge('${dam.id}')" style="margin-top:14px; padding:0.4rem 0.75rem; font-size:0.8rem; white-space:nowrap;">
-            <i class="fa-solid fa-check"></i> 저장
-          </button>
-          <button type="button" class="btn-pill ${isOnline ? 'btn-secondary' : 'btn-primary'}" onclick="window.toggleGeneratorOverride('${dam.id}')" style="margin-top:14px; padding:0.4rem 0.65rem; font-size:0.75rem; white-space:nowrap;" title="수동 ON/OFF 전환">
-            ${isOnline ? 'OFF 전환' : 'ON 전환'}
-          </button>
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.75rem; color:#64748b;">
+          <span>판정 기준: ${isOnline ? '<strong style="color:#059669;">방류량 > 0.4 CMS (발전 ON)</strong>' : '<span style="color:#64748b;">방류량 ≤ 0.4 CMS (정지 OFF)</span>'}</span>
+          <span style="color:#2563eb; font-weight:600;">16:50 기준</span>
         </div>
       </div>
     `;
@@ -2357,28 +2291,6 @@ function renderGeneratorsStatus() {
   if (kpiDischarge) kpiDischarge.textContent = `${totalDischargeSum.toFixed(1)} CMS`;
 }
 
-window.saveGeneratorDischarge = function(id) {
-  const input = document.getElementById(`inputDischarge_${id}`);
-  if (input) {
-    const val = input.value.trim();
-    customDischarges[id] = val;
-    showToast(`방류량이 [${val} CMS]로 설정되었습니다.`);
-    renderGeneratorsStatus();
-  }
-};
-
-window.toggleGeneratorOverride = function(id) {
-  const current = manualOverrides[id];
-  if (current === undefined) {
-    const dam = POWER_GEN_DAMS.find(d => d.id === id);
-    const eff = (customDischarges[id] !== undefined && customDischarges[id] !== '') ? parseFloat(customDischarges[id]) || 0 : dam.discharge;
-    manualOverrides[id] = !(eff > 0);
-  } else {
-    manualOverrides[id] = !current;
-  }
-  renderGeneratorsStatus();
-};
-
 function generateReservoirHistory(damCd) {
   if (reservoirHistoryCache[damCd]) return reservoirHistoryCache[damCd];
 
@@ -2387,9 +2299,9 @@ function generateReservoirHistory(damCd) {
   const baseD = meta.baseDischarge;
   const list = [];
 
-  // Generate 10-minute records from 2026-10-01 00:00 to 2026-10-02 17:20
-  const start = new Date(2026, 9, 1, 0, 0);
-  const end = new Date(2026, 9, 2, 17, 20);
+  // 현재기준 최근 24시간 실시간 수위만 표시 (2026-10-01 16:50 ~ 2026-10-02 16:50)
+  const end = new Date(2026, 9, 2, 16, 50);
+  const start = new Date(end.getTime() - 24 * 60 * 60 * 1000);
 
   let current = new Date(start);
   let idx = 0;
@@ -2427,7 +2339,7 @@ function renderReservoirWaterLevels() {
   // 1. Overview Card
   const overview = document.getElementById('reservoirOverviewCard');
   if (overview) {
-    const isOnline = current.discharge > 0;
+    const isOnline = current.discharge > 0.4;
     overview.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #334155; padding-bottom:0.75rem; margin-bottom:0.75rem;">
         <div>
@@ -2438,7 +2350,7 @@ function renderReservoirWaterLevels() {
           <div style="font-size:0.8rem; color:#94a3b8; margin-top:2px;">${meta.desc}</div>
         </div>
         <span class="badge" style="background:${isOnline ? '#059669' : '#475569'}; color:#fff; font-size:0.85rem; font-weight:800; padding:0.3rem 0.75rem; border-radius:20px;">
-          ${isOnline ? '● 발전 ON (운전중)' : '○ 발전 OFF (정지)'}
+          ${isOnline ? '● 발전 ON (방류량 > 0.4 CMS)' : '○ 발전 OFF (방류량 ≤ 0.4 CMS)'}
         </span>
       </div>
 
@@ -2450,7 +2362,7 @@ function renderReservoirWaterLevels() {
         </div>
         <div>
           <div style="font-size:0.75rem; color:#94a3b8;">총 방류량</div>
-          <div style="font-size:1.5rem; font-weight:800; color:${current.discharge > 0 ? '#34d399' : '#94a3b8'};">${current.discharge.toFixed(1)} CMS</div>
+          <div style="font-size:1.5rem; font-weight:800; color:${current.discharge > 0.4 ? '#34d399' : '#94a3b8'};">${current.discharge.toFixed(1)} CMS</div>
           <div style="font-size:0.75rem; color:#64748b;">계획홍수위 ${meta.floodLevel} m</div>
         </div>
         <div>
@@ -2461,7 +2373,7 @@ function renderReservoirWaterLevels() {
         <div>
           <div style="font-size:0.75rem; color:#94a3b8;">최신 측정 일시</div>
           <div style="font-size:1.1rem; font-weight:700; color:#f8fafc; margin-top:3px;">${current.time}</div>
-          <div style="font-size:0.75rem; color:#38bdf8;">10분 주기 실시간</div>
+          <div style="font-size:0.75rem; color:#38bdf8;">최근 24시간 실시간</div>
         </div>
       </div>
     `;
@@ -2481,7 +2393,7 @@ function renderReservoirWaterLevels() {
     if (tableCount) tableCount.textContent = `총 ${history.length} 건 (최근 25건 표시)`;
     const recent = history.slice(-25).reverse();
     tableBody.innerHTML = recent.map((row, idx) => {
-      const isOnline = row.discharge > 0;
+      const isOnline = row.discharge > 0.4;
       return `
         <tr style="border-bottom:1px solid #f1f5f9; background:${idx % 2 === 1 ? '#f8fafc' : '#fff'};">
           <td style="padding:0.5rem 0.8rem; font-weight:600; color:#1e293b;">${row.time}</td>

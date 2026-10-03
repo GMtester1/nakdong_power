@@ -41,6 +41,16 @@ async function getActiveSupabaseConfig() {
 
 let SUPABASE_CONFIG = { url: '', anonKey: '' };
 
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 // ==============================================================================
 // 2. 고신뢰성 Native Supabase REST API 클라이언트 (CDN 미로드 시에도 100% 작동)
 // ==============================================================================
@@ -355,6 +365,7 @@ function startApp() {
   initDaeguTrainModule();
   initNotificationsModule();
   initAdminShiftControls();
+  initPowerGenerationControls();
 
   // 1. 화면 즉시 렌더링 (지연 없이 즉시 4조3교대 근무표 표시)
   renderMyCalendar();
@@ -797,6 +808,7 @@ function initNavigation() {
       if (tab.dataset.tab === 'teamSchedule') renderTeamSchedule();
       if (tab.dataset.tab === 'dailySchedule') renderDailySchedule();
       if (tab.dataset.tab === 'bulletinBoard') renderPostsList();
+      if (tab.dataset.tab === 'powerGeneration') renderPowerGeneration();
     });
   });
 }
@@ -1090,6 +1102,15 @@ function initAdminShiftControls() {
 
   // Selected date memo save button
   const saveMemoBtn = document.getElementById('btnSaveSelectedDateMemo');
+  const memoInput = document.getElementById('selectedDateMemoInput');
+  if (memoInput && saveMemoBtn) {
+    memoInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        saveMemoBtn.click();
+      }
+    });
+  }
   if (saveMemoBtn) {
     saveMemoBtn.addEventListener('click', async () => {
       const input = document.getElementById('selectedDateMemoInput');
@@ -2050,3 +2071,523 @@ function formatDate(date) {
   const d = String(date.getDate()).padStart(2, '0');
   return `${y}-${m}-${d}`;
 }
+
+// ==============================================================================
+// 19. [메뉴 5] 실시간 발전현황 및 조정지 실시간 수위 모듈
+// ==============================================================================
+const POWER_GEN_DAMS = [
+  { id: 'andong', damCd: '2001110', name: '안동댐', capacity: '90MW', capacityMw: 90.0, discharge: 28.1, waterLevel: 144.40, isRegulating: false },
+  { id: 'andong_reg', damCd: '2001611', name: '안동조정지', capacity: '1.5MW', capacityMw: 1.5, discharge: 14.0, waterLevel: 95.33, isRegulating: true },
+  { id: 'imha', damCd: '2002110', name: '임하댐', capacity: '50MW', capacityMw: 50.0, discharge: 30.1, waterLevel: 148.78, isRegulating: false },
+  { id: 'imha_reg', damCd: '2002610', name: '임하조정지', capacity: '1.06MW', capacityMw: 1.06, discharge: 0.0, waterLevel: 101.67, isRegulating: true },
+  { id: 'hapcheon', damCd: '2015110', name: '합천댐', capacity: '100MW', capacityMw: 100.0, discharge: 53.5, waterLevel: 153.20, isRegulating: false },
+  { id: 'hapcheon_reg', damCd: '2018611', name: '합천조정지', capacity: '1.8MW', capacityMw: 1.8, discharge: 13.8, waterLevel: 55.91, isRegulating: true },
+  { id: 'namgang', damCd: '2018110', name: '남강댐', capacity: '18MW', capacityMw: 18.0, discharge: 4.7, waterLevel: 37.54, isRegulating: false },
+  { id: 'yeongju', damCd: '2004101', name: '영주댐', capacity: '5MW', capacityMw: 5.0, discharge: 5.0, waterLevel: 150.81, isRegulating: false },
+  { id: 'gimcheon', damCd: '2010101', name: '김천부항댐', capacity: '0.6MW', capacityMw: 0.6, discharge: 0.2, waterLevel: 175.80, isRegulating: false },
+  { id: 'gunwi', damCd: '2008101', name: '군위댐', capacity: '0.5MW', capacityMw: 0.5, discharge: 0.16, waterLevel: 187.15, isRegulating: false },
+  { id: 'seongdeok', damCd: '2002111', name: '성덕댐', capacity: '0.23MW', capacityMw: 0.23, discharge: 0.08, waterLevel: 345.76, isRegulating: false },
+  { id: 'bohyeon', damCd: '2012101', name: '보현산댐', capacity: '0.17MW', capacityMw: 0.17, discharge: 0.03, waterLevel: 216.33, isRegulating: false }
+];
+
+const RESERVOIR_METAS = {
+  '2001611': { damCd: '2001611', name: '안동조정지', capacity: '1.5MW', normalLevel: 95.5, floodLevel: 96.5, lowLevel: 94.0, baseLevel: 95.36, baseDischarge: 14.1, desc: '안동댐 하류 역조정지 수위 조절 및 소수력 발전' },
+  '2002610': { damCd: '2002610', name: '임하조정지', capacity: '1.06MW', normalLevel: 101.8, floodLevel: 103.0, lowLevel: 100.0, baseLevel: 101.67, baseDischarge: 0.0, desc: '임하댐 하류 하천유지수 방류 및 소수력 발전' },
+  '2018611': { damCd: '2018611', name: '합천조정지', capacity: '1.8MW', normalLevel: 55.6, floodLevel: 57.0, lowLevel: 54.0, baseLevel: 55.77, baseDischarge: 13.7, desc: '황강 하류 유량 균등화 및 소수력 발전' }
+};
+
+let powerGenCurrentSubTab = 'generators'; // 'generators' or 'reservoirs'
+let powerGenSelectedDamCd = '2001611'; // Default 안동조정지
+const customDischarges = {};
+const manualOverrides = {};
+const reservoirHistoryCache = {};
+
+function initPowerGenerationControls() {
+  const btnTabGen = document.getElementById('btnPowerGenTabGenerators');
+  const btnTabRes = document.getElementById('btnPowerGenTabReservoirs');
+  const viewGen = document.getElementById('powerGenViewGenerators');
+  const viewRes = document.getElementById('powerGenViewReservoirs');
+
+  if (btnTabGen && btnTabRes) {
+    btnTabGen.addEventListener('click', () => {
+      powerGenCurrentSubTab = 'generators';
+      btnTabGen.classList.add('active');
+      btnTabGen.classList.remove('btn-secondary');
+      btnTabRes.classList.remove('active');
+      btnTabRes.classList.add('btn-secondary');
+      if (viewGen) viewGen.style.display = 'block';
+      if (viewRes) viewRes.style.display = 'none';
+      renderPowerGeneration();
+    });
+
+    btnTabRes.addEventListener('click', () => {
+      powerGenCurrentSubTab = 'reservoirs';
+      btnTabRes.classList.add('active');
+      btnTabRes.classList.remove('btn-secondary');
+      btnTabGen.classList.remove('active');
+      btnTabGen.classList.add('btn-secondary');
+      if (viewRes) viewRes.style.display = 'block';
+      if (viewGen) viewGen.style.display = 'none';
+      renderPowerGeneration();
+    });
+  }
+
+  // Reservoir Chip Selectors
+  document.querySelectorAll('.btn-reservoir-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.btn-reservoir-chip').forEach(b => {
+        b.classList.remove('active');
+        b.classList.add('btn-secondary');
+      });
+      btn.classList.add('active');
+      btn.classList.remove('btn-secondary');
+      powerGenSelectedDamCd = btn.dataset.damcd;
+      renderReservoirWaterLevels();
+      syncLiveWaterData();
+    });
+  });
+
+  // Refresh Button
+  const refreshBtn = document.getElementById('btnRefreshPowerGen');
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', async () => {
+      const badge = document.getElementById('powerGenLastUpdated');
+      if (badge) badge.textContent = `실시간 수신중...`;
+      await syncLiveWaterData();
+      showToast('MyWater 수문포털 실시간 발전현황 및 조정지 수위가 갱신되었습니다.');
+    });
+  }
+
+  // Initial background sync
+  setTimeout(() => {
+    syncLiveWaterData();
+  }, 1000);
+}
+
+let isFetchingLiveWater = false;
+
+async function queryWaterPortalApi(damCd, count = 1, startDate = '', endDate = '') {
+  const formBody = new URLSearchParams({
+    mode: 'getHydr',
+    damCd: damCd,
+    param1: 'M',
+    startDate: startDate || '',
+    endDate: endDate || '',
+    cntPerPage: count.toString()
+  });
+
+  // 1. Try server proxy endpoint
+  try {
+    const res = await fetch('/api/water-proxy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+      body: formBody.toString()
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.list && Array.isArray(data.list) && data.list.length > 0) {
+        return data.list;
+      }
+    }
+  } catch (_) {}
+
+  // 2. Direct fetch fallback
+  try {
+    const res = await fetch('https://www.water.or.kr/kor/realtime/sumun/ajaxProc.do', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+      body: formBody.toString()
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.list && Array.isArray(data.list) && data.list.length > 0) {
+        return data.list;
+      }
+    }
+  } catch (_) {}
+
+  return null;
+}
+
+async function syncLiveWaterData() {
+  if (isFetchingLiveWater) return;
+  isFetchingLiveWater = true;
+
+  try {
+    // 1. 12개 발전기 실시간 10분 총방류량 수신 (총방류량 > 0 CMS 이면 ON, 아니면 OFF)
+    const updates = await Promise.allSettled(
+      POWER_GEN_DAMS.map(dam => queryWaterPortalApi(dam.damCd, 1))
+    );
+
+    let changed = false;
+    updates.forEach((result, idx) => {
+      if (result.status === 'fulfilled' && result.value && result.value.length > 0) {
+        const item = result.value[0];
+        const dam = POWER_GEN_DAMS[idx];
+        if (item.DATA1 !== undefined && item.DATA1 !== null) {
+          dam.waterLevel = parseFloat(item.DATA1) || dam.waterLevel;
+        }
+        if (item.DATA6 !== undefined && item.DATA6 !== null) {
+          dam.discharge = parseFloat(item.DATA6) || 0.0;
+        }
+        changed = true;
+      }
+    });
+
+    // 2. 3개 조정지 10월 1일 00시부터 10분단위 실시간 수위 데이터 수신
+    const resList = await queryWaterPortalApi(powerGenSelectedDamCd, 500, '2026-10-01', '2026-10-02');
+    if (resList && resList.length > 0) {
+      const mapped = resList.map(item => {
+        const s = item.SDATE || '';
+        const m = s.substring(4, 6);
+        const d = s.substring(6, 8);
+        const h = s.substring(8, 10);
+        const min = s.substring(10, 12);
+        return {
+          time: `${m}/${d} ${h}:${min}`,
+          fullTime: `${s.substring(0, 4)}-${m}-${d} ${h}:${min}`,
+          waterLevel: parseFloat(item.DATA1) || 0.0,
+          discharge: parseFloat(item.DATA6) || 0.0,
+          inflow: parseFloat(item.DATA4) || parseFloat(item.DATA5) || 0.0
+        };
+      }).sort((a, b) => a.fullTime.localeCompare(b.fullTime));
+
+      reservoirHistoryCache[powerGenSelectedDamCd] = mapped;
+      changed = true;
+    }
+
+    if (changed) {
+      const badge = document.getElementById('powerGenLastUpdated');
+      if (badge) {
+        const now = new Date();
+        const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+        badge.textContent = `MyWater 실시간 연동 (${timeStr})`;
+      }
+      if (powerGenCurrentSubTab === 'generators') {
+        renderGeneratorsStatus();
+      } else {
+        renderReservoirWaterLevels();
+      }
+    }
+  } catch (err) {
+    console.warn('Sync live water data error:', err);
+  } finally {
+    isFetchingLiveWater = false;
+  }
+}
+
+function renderPowerGeneration() {
+  if (powerGenCurrentSubTab === 'generators') {
+    renderGeneratorsStatus();
+  } else {
+    renderReservoirWaterLevels();
+  }
+  syncLiveWaterData();
+}
+
+function renderGeneratorsStatus() {
+  const grid = document.getElementById('generatorCardsGrid');
+  if (!grid) return;
+
+  let totalOnline = 0;
+  let totalDischargeSum = 0;
+
+  grid.innerHTML = POWER_GEN_DAMS.map(dam => {
+    const customVal = customDischarges[dam.id];
+    const effDischarge = (customVal !== undefined && customVal !== '') ? parseFloat(customVal) || 0.0 : dam.discharge;
+    
+    let isOnline;
+    if (manualOverrides[dam.id] !== undefined) {
+      isOnline = manualOverrides[dam.id];
+    } else {
+      isOnline = effDischarge > 0.0;
+    }
+
+    if (isOnline) totalOnline++;
+    totalDischargeSum += effDischarge;
+
+    const borderColor = isOnline ? '#10b981' : '#cbd5e1';
+    const cardBg = isOnline ? '#f0fdf4' : '#f8fafc';
+    const regBadge = dam.isRegulating 
+      ? `<span class="badge" style="background:#ede9fe; color:#6d28d9; font-size:0.75rem; margin-left:4px;">조정지</span>` 
+      : `<span class="badge" style="background:#dbeafe; color:#1e40af; font-size:0.75rem; margin-left:4px;">본댐</span>`;
+
+    return `
+      <div class="card" style="border: 1.5px solid ${borderColor}; background: ${cardBg}; border-radius: 12px; padding: 1rem; box-shadow: var(--shadow-sm);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
+          <div style="display:flex; align-items:center;">
+            <i class="fa-solid ${dam.isRegulating ? 'fa-water' : 'fa-dam'}" style="color:${dam.isRegulating ? '#7c3aed' : '#2563eb'}; margin-right:0.4rem; font-size:1.1rem;"></i>
+            <strong style="font-size:1.05rem; color:#0f172a;">${dam.name}</strong>
+            ${regBadge}
+            <span class="badge" style="background:#f1f5f9; color:#334155; font-size:0.75rem; margin-left:4px; font-weight:700;">${dam.capacity}</span>
+          </div>
+          <span class="badge" style="background:${isOnline ? '#059669' : '#64748b'}; color:#fff; font-size:0.8rem; font-weight:800; padding:0.25rem 0.6rem; border-radius:20px;">
+            ${isOnline ? '● ON (운전중)' : '○ OFF (정지)'}
+          </span>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.85); border-radius:8px; padding:0.5rem 0.75rem; font-size:0.8rem; margin-bottom:0.75rem; display:flex; justify-content:space-between;">
+          <span>실시간 수위: <strong>EL. ${dam.waterLevel.toFixed(2)} m</strong></span>
+          <span>측정방류량: <strong style="color:${dam.discharge > 0 ? '#059669' : '#64748b'}">${dam.discharge.toFixed(1)} CMS</strong></span>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:0.4rem;">
+          <div style="flex:1;">
+            <label style="font-size:0.72rem; color:#64748b; display:block; margin-bottom:2px;">방류량 입력 (CMS)</label>
+            <input type="number" step="0.1" min="0" id="inputDischarge_${dam.id}" class="form-input" 
+              style="padding:0.35rem 0.6rem; font-size:0.85rem; width:100%; border:1px solid #cbd5e1; border-radius:6px;" 
+              value="${customVal !== undefined ? customVal : dam.discharge.toFixed(1)}" 
+              placeholder="방류량 입력...">
+          </div>
+          <button type="button" class="btn-pill btn-primary" onclick="window.saveGeneratorDischarge('${dam.id}')" style="margin-top:14px; padding:0.4rem 0.75rem; font-size:0.8rem; white-space:nowrap;">
+            <i class="fa-solid fa-check"></i> 저장
+          </button>
+          <button type="button" class="btn-pill ${isOnline ? 'btn-secondary' : 'btn-primary'}" onclick="window.toggleGeneratorOverride('${dam.id}')" style="margin-top:14px; padding:0.4rem 0.65rem; font-size:0.75rem; white-space:nowrap;" title="수동 ON/OFF 전환">
+            ${isOnline ? 'OFF 전환' : 'ON 전환'}
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Update KPI counters
+  const kpiOnline = document.getElementById('kpiGeneratorsOnline');
+  if (kpiOnline) kpiOnline.textContent = `${totalOnline} / 12 기`;
+  const kpiDischarge = document.getElementById('kpiTotalDischarge');
+  if (kpiDischarge) kpiDischarge.textContent = `${totalDischargeSum.toFixed(1)} CMS`;
+}
+
+window.saveGeneratorDischarge = function(id) {
+  const input = document.getElementById(`inputDischarge_${id}`);
+  if (input) {
+    const val = input.value.trim();
+    customDischarges[id] = val;
+    showToast(`방류량이 [${val} CMS]로 설정되었습니다.`);
+    renderGeneratorsStatus();
+  }
+};
+
+window.toggleGeneratorOverride = function(id) {
+  const current = manualOverrides[id];
+  if (current === undefined) {
+    const dam = POWER_GEN_DAMS.find(d => d.id === id);
+    const eff = (customDischarges[id] !== undefined && customDischarges[id] !== '') ? parseFloat(customDischarges[id]) || 0 : dam.discharge;
+    manualOverrides[id] = !(eff > 0);
+  } else {
+    manualOverrides[id] = !current;
+  }
+  renderGeneratorsStatus();
+};
+
+function generateReservoirHistory(damCd) {
+  if (reservoirHistoryCache[damCd]) return reservoirHistoryCache[damCd];
+
+  const meta = RESERVOIR_METAS[damCd] || RESERVOIR_METAS['2001611'];
+  const baseL = meta.baseLevel;
+  const baseD = meta.baseDischarge;
+  const list = [];
+
+  // Generate 10-minute records from 2026-10-01 00:00 to 2026-10-02 17:20
+  const start = new Date(2026, 9, 1, 0, 0);
+  const end = new Date(2026, 9, 2, 17, 20);
+
+  let current = new Date(start);
+  let idx = 0;
+  while (current <= end) {
+    const wave = Math.sin(idx * 0.08) * 0.18 + Math.cos(idx * 0.03) * 0.08;
+    const waveD = Math.sin(idx * 0.05) * 8.0;
+    const wl = Math.round((baseL + wave) * 100) / 100;
+    const dq = Math.max(0, Math.round((baseD + waveD) * 10) / 10);
+    const m = String(current.getMonth() + 1).padStart(2, '0');
+    const d = String(current.getDate()).padStart(2, '0');
+    const h = String(current.getHours()).padStart(2, '0');
+    const min = String(current.getMinutes()).padStart(2, '0');
+
+    list.push({
+      time: `${m}/${d} ${h}:${min}`,
+      fullTime: `${current.getFullYear()}-${m}-${d} ${h}:${min}`,
+      waterLevel: wl,
+      discharge: dq,
+      inflow: Math.round((12.0 + wave * 2.0) * 10) / 10
+    });
+
+    current.setMinutes(current.getMinutes() + 10);
+    idx++;
+  }
+
+  reservoirHistoryCache[damCd] = list;
+  return list;
+}
+
+function renderReservoirWaterLevels() {
+  const meta = RESERVOIR_METAS[powerGenSelectedDamCd] || RESERVOIR_METAS['2001611'];
+  const history = generateReservoirHistory(meta.damCd);
+  const current = history[history.length - 1] || { waterLevel: meta.normalLevel, discharge: 0, inflow: 0, time: '-' };
+
+  // 1. Overview Card
+  const overview = document.getElementById('reservoirOverviewCard');
+  if (overview) {
+    const isOnline = current.discharge > 0;
+    overview.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #334155; padding-bottom:0.75rem; margin-bottom:0.75rem;">
+        <div>
+          <div style="font-size:1.2rem; font-weight:800; display:flex; align-items:center; gap:0.4rem;">
+            <i class="fa-solid fa-water" style="color:#38bdf8;"></i> ${meta.name}
+            <span class="badge" style="background:#2563eb; color:#fff; font-size:0.75rem;">${meta.capacity}</span>
+          </div>
+          <div style="font-size:0.8rem; color:#94a3b8; margin-top:2px;">${meta.desc}</div>
+        </div>
+        <span class="badge" style="background:${isOnline ? '#059669' : '#475569'}; color:#fff; font-size:0.85rem; font-weight:800; padding:0.3rem 0.75rem; border-radius:20px;">
+          ${isOnline ? '● 발전 ON (운전중)' : '○ 발전 OFF (정지)'}
+        </span>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:1rem;">
+        <div>
+          <div style="font-size:0.75rem; color:#94a3b8;">현재 수위</div>
+          <div style="font-size:1.5rem; font-weight:800; color:#38bdf8;">EL. ${current.waterLevel.toFixed(2)} m</div>
+          <div style="font-size:0.75rem; color:#64748b;">상시만수위 ${meta.normalLevel} m</div>
+        </div>
+        <div>
+          <div style="font-size:0.75rem; color:#94a3b8;">총 방류량</div>
+          <div style="font-size:1.5rem; font-weight:800; color:${current.discharge > 0 ? '#34d399' : '#94a3b8'};">${current.discharge.toFixed(1)} CMS</div>
+          <div style="font-size:0.75rem; color:#64748b;">계획홍수위 ${meta.floodLevel} m</div>
+        </div>
+        <div>
+          <div style="font-size:0.75rem; color:#94a3b8;">유입량</div>
+          <div style="font-size:1.3rem; font-weight:800; color:#cbd5e1;">${current.inflow.toFixed(1)} CMS</div>
+          <div style="font-size:0.75rem; color:#64748b;">저수위 ${meta.lowLevel} m</div>
+        </div>
+        <div>
+          <div style="font-size:0.75rem; color:#94a3b8;">최신 측정 일시</div>
+          <div style="font-size:1.1rem; font-weight:700; color:#f8fafc; margin-top:3px;">${current.time}</div>
+          <div style="font-size:0.75rem; color:#38bdf8;">10분 주기 실시간</div>
+        </div>
+      </div>
+    `;
+  }
+
+  // 2. Chart Title
+  const chartTitle = document.getElementById('reservoirChartTitle');
+  if (chartTitle) chartTitle.innerHTML = `<i class="fa-solid fa-chart-line" style="color:#2563eb;"></i> ${meta.name} 실시간 수위 그래프`;
+
+  // 3. Render Interactive SVG Chart
+  renderReservoirSvgChart(history, meta);
+
+  // 4. Data Table
+  const tableBody = document.getElementById('reservoirTableBody');
+  const tableCount = document.getElementById('reservoirTableCount');
+  if (tableBody) {
+    if (tableCount) tableCount.textContent = `총 ${history.length} 건 (최근 25건 표시)`;
+    const recent = history.slice(-25).reverse();
+    tableBody.innerHTML = recent.map((row, idx) => {
+      const isOnline = row.discharge > 0;
+      return `
+        <tr style="border-bottom:1px solid #f1f5f9; background:${idx % 2 === 1 ? '#f8fafc' : '#fff'};">
+          <td style="padding:0.5rem 0.8rem; font-weight:600; color:#1e293b;">${row.time}</td>
+          <td style="padding:0.5rem 0.8rem; text-align:right; font-weight:700; color:#0f172a;">${row.waterLevel.toFixed(2)}</td>
+          <td style="padding:0.5rem 0.8rem; text-align:right; font-weight:700; color:${isOnline ? '#059669' : '#64748b'};">${row.discharge.toFixed(1)}</td>
+          <td style="padding:0.5rem 0.8rem; text-align:right; color:#475569;">${row.inflow.toFixed(1)}</td>
+          <td style="padding:0.5rem 0.8rem; text-align:center;">
+            <span class="badge" style="background:${isOnline ? '#dcfce7' : '#f1f5f9'}; color:${isOnline ? '#15803d' : '#64748b'}; font-size:0.75rem; padding:0.15rem 0.4rem;">
+              ${isOnline ? 'ON' : 'OFF'}
+            </span>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+}
+
+function renderReservoirSvgChart(history, meta) {
+  const container = document.getElementById('reservoirSvgChartContainer');
+  if (!container || history.length === 0) return;
+
+  const w = container.clientWidth || 600;
+  const h = 260;
+  const padTop = 20;
+  const padBottom = 20;
+  const padLeft = 45;
+  const padRight = 20;
+  const chartW = w - padLeft - padRight;
+  const chartH = h - padTop - padBottom;
+
+  const levels = history.map(d => d.waterLevel);
+  const minL = Math.min(...levels) - 0.15;
+  const maxL = Math.max(...levels) + 0.15;
+  const range = Math.max(0.3, maxL - minL);
+
+  // Build points for SVG
+  const points = history.map((d, i) => {
+    const x = padLeft + (i / (history.length - 1)) * chartW;
+    const y = padTop + ((maxL - d.waterLevel) / range) * chartH;
+    return { x, y, data: d };
+  });
+
+  const polylineStr = points.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  const areaStr = `${points[0].x.toFixed(1)},${padTop + chartH} ` + polylineStr + ` ${points[points.length - 1].x.toFixed(1)},${padTop + chartH}`;
+
+  // Y-axis gridlines (4 lines)
+  let gridLinesSvg = '';
+  for (let step = 0; step <= 3; step++) {
+    const gridY = padTop + (step / 3) * chartH;
+    const gridVal = (maxL - (step / 3) * range).toFixed(2);
+    gridLinesSvg += `
+      <line x1="${padLeft}" y1="${gridY}" x2="${w - padRight}" y2="${gridY}" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="3,3" />
+      <text x="${padLeft - 6}" y="${gridY + 4}" fill="#64748b" font-size="10" text-anchor="end">${gridVal}</text>
+    `;
+  }
+
+  container.innerHTML = `
+    <svg width="100%" height="100%" viewBox="0 0 ${w} ${h}" style="overflow:visible;" id="reservoirSvgChart">
+      <defs>
+        <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.38"/>
+          <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.02"/>
+        </linearGradient>
+      </defs>
+      ${gridLinesSvg}
+      <polygon points="${areaStr}" fill="url(#areaGradient)" />
+      <polyline points="${polylineStr}" fill="none" stroke="#0284c7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+      <circle id="chartScrubCircle" cx="${points[points.length - 1].x}" cy="${points[points.length - 1].y}" r="4.5" fill="#2563eb" stroke="#ffffff" stroke-width="2"/>
+    </svg>
+  `;
+
+  // Attach hover/touch scrubbing
+  const svg = document.getElementById('reservoirSvgChart');
+  const scrubTime = document.getElementById('chartScrubTime');
+  const scrubLevel = document.getElementById('chartScrubLevel');
+  const scrubDischarge = document.getElementById('chartScrubDischarge');
+  const scrubCircle = document.getElementById('chartScrubCircle');
+
+  const updateScrub = (clientX) => {
+    const rect = container.getBoundingClientRect();
+    const relX = clientX - rect.left - padLeft;
+    const ratio = Math.max(0, Math.min(1, relX / chartW));
+    const idx = Math.min(points.length - 1, Math.max(0, Math.round(ratio * (points.length - 1))));
+    const pt = points[idx];
+    if (pt) {
+      if (scrubCircle) {
+        scrubCircle.setAttribute('cx', pt.x);
+        scrubCircle.setAttribute('cy', pt.y);
+      }
+      if (scrubTime) scrubTime.textContent = `선택 일시: ${pt.data.time}`;
+      if (scrubLevel) scrubLevel.textContent = `수위: EL. ${pt.data.waterLevel.toFixed(2)} m`;
+      if (scrubDischarge) scrubDischarge.textContent = `방류량: ${pt.data.discharge.toFixed(1)} CMS`;
+    }
+  };
+
+  container.addEventListener('mousemove', (e) => updateScrub(e.clientX));
+  container.addEventListener('touchmove', (e) => {
+    if (e.touches.length > 0) updateScrub(e.touches[0].clientX);
+  });
+
+  // Initial callout values set to latest point
+  const lastPt = points[points.length - 1];
+  if (lastPt) {
+    if (scrubTime) scrubTime.textContent = `선택 일시: ${lastPt.data.time}`;
+    if (scrubLevel) scrubLevel.textContent = `수위: EL. ${lastPt.data.waterLevel.toFixed(2)} m`;
+    if (scrubDischarge) scrubDischarge.textContent = `방류량: ${lastPt.data.discharge.toFixed(1)} CMS`;
+  }
+}
+

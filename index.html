@@ -82,6 +82,9 @@
       <button class="nav-tab" data-tab="bulletinBoard">
         <i class="fa-solid fa-comments"></i> 소통 게시판
       </button>
+      <button class="nav-tab" data-tab="powerGeneration">
+        <i class="fa-solid fa-bolt"></i> 발전현황
+      </button>
     </nav>
 
     <!-- Main Content Area -->
@@ -350,6 +353,139 @@
 
         <div id="postsList" class="posts-stream">
           <!-- Dynamically populated post cards -->
+        </div>
+      </section>
+
+      <!-- ================= 6. 실시간 발전현황 (Power Generation Status & Regulating Reservoirs) ================= -->
+      <section id="tab-powerGeneration" class="tab-pane">
+        <div class="pane-header">
+          <div>
+            <h2 style="display:flex; align-items:center; gap:0.5rem;">
+              <i class="fa-solid fa-bolt" style="color:#eab308;"></i> 낙동강 수계 실시간 발전현황
+            </h2>
+            <p class="section-desc">MyWater 수문포털 10분 주기 실시간 방류량 및 조정지 수위 연동 (총방류량 > 0 CMS 이면 ON)</p>
+          </div>
+          <div style="display:flex; align-items:center; gap:0.75rem;">
+            <span id="powerGenLastUpdated" style="font-size:0.8rem; color:var(--text-muted);">10분 주기 실시간</span>
+            <button id="btnRefreshPowerGen" class="btn-pill btn-secondary" title="실시간 데이터 갱신">
+              <i class="fa-solid fa-arrows-rotate"></i> 새로고침
+            </button>
+          </div>
+        </div>
+
+        <!-- 발전현황 서브 탭 (1. 발전기 운전현황 / 2. 조정지 실시간 수위) -->
+        <div style="display:flex; gap:0.5rem; margin-bottom:1.25rem; border-bottom:1px solid var(--border-color); padding-bottom:0.75rem;">
+          <button id="btnPowerGenTabGenerators" class="btn-pill active" style="font-weight:700; padding:0.5rem 1.25rem;">
+            <i class="fa-solid fa-bolt"></i> 발전기 운전현황 (12기)
+          </button>
+          <button id="btnPowerGenTabReservoirs" class="btn-pill btn-secondary" style="font-weight:700; padding:0.5rem 1.25rem;">
+            <i class="fa-solid fa-water"></i> 조정지 실시간 수위 (3개소)
+          </button>
+        </div>
+
+        <!-- View 1: 발전기 운전현황 (12기) -->
+        <div id="powerGenViewGenerators">
+          <!-- Top KPI Banner -->
+          <div class="card" style="margin-bottom:1.25rem; background:#f8fafc; border:1px solid var(--border-color); padding:1rem 1.25rem;">
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:1rem; text-align:center;">
+              <div>
+                <div style="font-size:0.8rem; color:#64748b;">총 관할 발전기</div>
+                <div style="font-size:1.35rem; font-weight:800; color:#0f172a;">12기 <span style="font-size:0.85rem; color:#2563eb; font-weight:700;">(280.96 MW)</span></div>
+              </div>
+              <div style="border-left:1px solid var(--border-color);">
+                <div style="font-size:0.8rem; color:#64748b;">운전중 발전기 (ON)</div>
+                <div id="kpiGeneratorsOnline" style="font-size:1.35rem; font-weight:800; color:#059669;">-</div>
+              </div>
+              <div style="border-left:1px solid var(--border-color);">
+                <div style="font-size:0.8rem; color:#64748b;">실시간 총 방류량 합계</div>
+                <div id="kpiTotalDischarge" style="font-size:1.35rem; font-weight:800; color:#d97706;">-</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 12 Generator Cards Grid -->
+          <div id="generatorCardsGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:1rem;">
+            <!-- Dynamically rendered generator cards -->
+          </div>
+        </div>
+
+        <!-- View 2: 조정지 실시간 수위 (3개소) -->
+        <div id="powerGenViewReservoirs" style="display:none;">
+          <!-- 3개소 선택 칩 -->
+          <div style="display:flex; gap:0.6rem; margin-bottom:1rem; flex-wrap:wrap;">
+            <button class="btn-pill btn-reservoir-chip active" data-damcd="2001611">
+              <i class="fa-solid fa-water"></i> 안동조정지 (1.5MW)
+            </button>
+            <button class="btn-pill btn-reservoir-chip btn-secondary" data-damcd="2002610">
+              <i class="fa-solid fa-water"></i> 임하조정지 (1.06MW)
+            </button>
+            <button class="btn-pill btn-reservoir-chip btn-secondary" data-damcd="2018611">
+              <i class="fa-solid fa-water"></i> 합천조정지 (1.8MW)
+            </button>
+          </div>
+
+          <!-- Reservoir Overview Card -->
+          <div class="card" id="reservoirOverviewCard" style="background:#0f172a; color:#fff; border-radius:14px; padding:1.25rem; margin-bottom:1.25rem;">
+            <!-- Populated by JS -->
+          </div>
+
+          <!-- Real-time Water Level Graph Card (10월 1일 00시부터 10분단위) -->
+          <div class="card" style="margin-bottom:1.25rem; padding:1.25rem; border:1px solid var(--border-color);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+              <div>
+                <h3 id="reservoirChartTitle" style="margin:0; font-size:1.1rem; font-weight:800; color:#0f172a;">
+                  <i class="fa-solid fa-chart-line" style="color:#2563eb;"></i> 안동조정지 실시간 수위 그래프
+                </h3>
+                <div style="font-size:0.8rem; color:#64748b; margin-top:2px;">10월 1일 00:00 ~ 현재 (10분 주기 실시간 수위 표출)</div>
+              </div>
+              <span class="badge" style="background:#eff6ff; color:#1d4ed8; font-weight:700; font-size:0.8rem;">10분 주기 연동</span>
+            </div>
+
+            <!-- Interactive Scrub Callout Info -->
+            <div id="chartScrubInfo" style="background:#f1f5f9; border-radius:8px; padding:0.5rem 0.75rem; font-size:0.85rem; font-weight:700; color:#0f172a; margin-bottom:0.75rem; display:flex; justify-content:space-between; align-items:center;">
+              <span id="chartScrubTime">선택 일시: -</span>
+              <span>
+                <span id="chartScrubLevel" style="color:#2563eb; margin-right:0.75rem;">수위: -</span>
+                <span id="chartScrubDischarge" style="color:#059669;">방류량: -</span>
+              </span>
+            </div>
+
+            <!-- SVG Line Graph Container -->
+            <div id="reservoirSvgChartContainer" style="width:100%; height:260px; position:relative; background:#f8fafc; border-radius:8px; border:1px solid #e2e8f0; overflow:hidden;">
+              <!-- SVG chart populated by JS -->
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#64748b; margin-top:0.4rem; padding:0 0.5rem;">
+              <span>10/01 00:00</span>
+              <span>10/01 12:00</span>
+              <span>10/02 00:00</span>
+              <span>10/02 12:00</span>
+              <span style="color:#2563eb; font-weight:700;">현재</span>
+            </div>
+          </div>
+
+          <!-- 10분 주기 수문 현황 데이터 표 -->
+          <div class="card" style="padding:1.25rem; border:1px solid var(--border-color);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+              <h4 style="margin:0; font-size:1rem; font-weight:700; color:#0f172a;">10분별 실시간 수문 현황 데이터</h4>
+              <span id="reservoirTableCount" style="font-size:0.8rem; color:#64748b;">-</span>
+            </div>
+            <div style="overflow-x:auto; max-height:360px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:8px;">
+              <table style="width:100%; border-collapse:collapse; font-size:0.85rem; text-align:left;">
+                <thead style="position:sticky; top:0; background:#f1f5f9; color:#475569; font-weight:700; z-index:1;">
+                  <tr>
+                    <th style="padding:0.6rem 0.8rem;">일시</th>
+                    <th style="padding:0.6rem 0.8rem; text-align:right;">수위 (EL.m)</th>
+                    <th style="padding:0.6rem 0.8rem; text-align:right;">총방류량 (CMS)</th>
+                    <th style="padding:0.6rem 0.8rem; text-align:right;">유입량 (CMS)</th>
+                    <th style="padding:0.6rem 0.8rem; text-align:center;">상태</th>
+                  </tr>
+                </thead>
+                <tbody id="reservoirTableBody">
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </section>
 

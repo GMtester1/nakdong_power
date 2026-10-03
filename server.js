@@ -113,6 +113,12 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // MyWater 수문포털 실시간 수문/방류량/조정지 수위 프록시 엔드포인트
+  if (reqUrl === '/api/water-proxy') {
+    const proxyHandler = require('./api/water-proxy');
+    return proxyHandler(req, res);
+  }
+
   if (reqUrl === '/') {
     reqUrl = '/index.html';
   }

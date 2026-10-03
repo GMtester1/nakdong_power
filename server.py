@@ -78,7 +78,75 @@ class AntigravityHTTPHandler(SimpleHTTPRequestHandler):
     """
     UTF-8 인코딩 및 CORS 헤더를 지원하는 전용 HTTP 핸들러
     """
+    def do_OPTIONS(self):
+        self.send_response(204)
+        self.end_headers()
+
+    def do_POST(self):
+        if self.path.split("?")[0] == "/api/water-proxy":
+            content_length = int(self.headers.get('Content-Length', 0))
+            post_body = self.rfile.read(content_length)
+            try:
+                import urllib.request
+                req = urllib.request.Request(
+                    "https://www.water.or.kr/kor/realtime/sumun/ajaxProc.do",
+                    data=post_body,
+                    headers={
+                        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+                        "Referer": "https://www.water.or.kr/kor/realtime/sumun/index.do?mode=sumun&menuId=13_91_93_94"
+                    }
+                )
+                with urllib.request.urlopen(req, timeout=8) as response:
+                    data = response.read()
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json; charset=utf-8")
+                    self.send_header("Content-Length", str(len(data)))
+                    self.end_headers()
+                    self.wfile.write(data)
+                    return
+            except Exception as e:
+                err_payload = json.dumps({"error": True, "message": str(e), "list": []}).encode("utf-8")
+                self.send_response(500)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", str(len(err_payload)))
+                self.end_headers()
+                self.wfile.write(err_payload)
+                return
+
+        return super().do_GET()
+
     def do_GET(self):
+        if self.path.split("?")[0] == "/api/water-proxy":
+            query = self.path.split("?")[1] if "?" in self.path else "mode=getHydr&param1=M"
+            try:
+                import urllib.request
+                req = urllib.request.Request(
+                    "https://www.water.or.kr/kor/realtime/sumun/ajaxProc.do",
+                    data=query.encode("utf-8"),
+                    headers={
+                        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+                        "Referer": "https://www.water.or.kr/kor/realtime/sumun/index.do?mode=sumun&menuId=13_91_93_94"
+                    }
+                )
+                with urllib.request.urlopen(req, timeout=8) as response:
+                    data = response.read()
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json; charset=utf-8")
+                    self.send_header("Content-Length", str(len(data)))
+                    self.end_headers()
+                    self.wfile.write(data)
+                    return
+            except Exception as e:
+                err_payload = json.dumps({"error": True, "message": str(e), "list": []}).encode("utf-8")
+                self.send_response(500)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", str(len(err_payload)))
+                self.end_headers()
+                self.wfile.write(err_payload)
+                return
+
         if self.path.split("?")[0] == "/api/config":
             cfg = load_env_config()
             payload = json.dumps(cfg).encode("utf-8")

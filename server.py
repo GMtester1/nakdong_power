@@ -158,6 +158,30 @@ class AntigravityHTTPHandler(SimpleHTTPRequestHandler):
                 self.wfile.write(err_payload)
                 return
 
+        if self.path.split("?")[0] in ["/api/download-apk", "/download-apk", "/app-debug.apk", "/download/app-debug.apk", "/NakdongShift.apk"]:
+            web_dir = os.path.dirname(os.path.abspath(__file__))
+            candidates = [
+                os.path.join(web_dir, "app-debug.apk"),
+                os.path.join(web_dir, "download", "app-debug.apk"),
+                os.path.join(web_dir, "..", "app", "build", "outputs", "apk", "debug", "app-debug.apk")
+            ]
+            for p in candidates:
+                if os.path.isfile(p):
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/vnd.android.package-archive")
+                    self.send_header("Content-Disposition", 'attachment; filename="NakdongShift_v1.0.apk"')
+                    self.send_header("Content-Length", str(os.path.getsize(p)))
+                    self.end_headers()
+                    with open(p, "rb") as f:
+                        import shutil
+                        shutil.copyfileobj(f, self.wfile)
+                    return
+            self.send_response(404)
+            self.send_header("Content-Type", "text/plain; charset=utf-8")
+            self.end_headers()
+            self.wfile.write("APK 파일을 찾을 수 없습니다.".encode('utf-8'))
+            return
+
         if self.path.split("?")[0] == "/api/config":
             cfg = load_env_config()
             payload = json.dumps(cfg).encode("utf-8")
@@ -178,6 +202,8 @@ class AntigravityHTTPHandler(SimpleHTTPRequestHandler):
 
     def guess_type(self, path):
         # MIME 타입 보정 (UTF-8 인코딩 명시)
+        if path.endswith('.apk'):
+            return "application/vnd.android.package-archive"
         ctype = super().guess_type(path)
         if ctype.startswith('text/') or ctype in ['application/javascript', 'application/json']:
             return f"{ctype}; charset=utf-8"

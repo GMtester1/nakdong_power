@@ -86,7 +86,8 @@ const MIME_TYPES = {
   '.ico': 'image/x-icon',
   '.woff': 'font/woff',
   '.woff2': 'font/woff2',
-  '.ttf': 'font/ttf'
+  '.ttf': 'font/ttf',
+  '.apk': 'application/vnd.android.package-archive'
 };
 
 const server = http.createServer((req, res) => {
@@ -104,6 +105,35 @@ const server = http.createServer((req, res) => {
 
   // URL 디코딩 및 정규화
   let reqUrl = decodeURI(req.url.split('?')[0]);
+
+  // APK 직접 다운로드 엔드포인트
+  if (reqUrl === '/api/download-apk' || reqUrl === '/download-apk' || reqUrl === '/app-debug.apk' || reqUrl === '/download/app-debug.apk' || reqUrl === '/NakdongShift.apk') {
+    const candidates = [
+      path.join(BASE_DIR, 'app-debug.apk'),
+      path.join(BASE_DIR, 'download', 'app-debug.apk'),
+      path.join(BASE_DIR, '..', 'app', 'build', 'outputs', 'apk', 'debug', 'app-debug.apk')
+    ];
+    let foundPath = null;
+    for (const p of candidates) {
+      if (fs.existsSync(p)) {
+        foundPath = p;
+        break;
+      }
+    }
+    if (foundPath) {
+      const stat = fs.statSync(foundPath);
+      res.writeHead(200, {
+        'Content-Type': 'application/vnd.android.package-archive',
+        'Content-Disposition': 'attachment; filename="NakdongShift_v1.0.apk"',
+        'Content-Length': stat.size
+      });
+      return fs.createReadStream(foundPath).pipe(res);
+    } else {
+      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('APK 파일을 찾을 수 없습니다.');
+      return;
+    }
+  }
 
   // API Config (깃허브 공유 시 보안을 위해 서버 측 .env에서만 주입)
   if (reqUrl === '/api/config') {

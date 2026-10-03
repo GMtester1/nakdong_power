@@ -48,7 +48,13 @@
           <span>대구역</span>
         </button>
 
-        <!-- 3. 알림 버튼 및 카운트 배지 -->
+        <!-- 3. 안드로이드 APK 다운로드 버튼 -->
+        <a href="/api/download-apk" download="NakdongShift_v1.0.apk" id="headerApkDownloadBtn" class="header-pill-btn apk-download-btn" title="스마트폰용 안드로이드 APK 다운로드 (클릭 시 즉시 다운로드)" style="text-decoration:none; background:linear-gradient(135deg, #10b981 0%, #059669 100%); color:#ffffff; font-weight:700; border:none; box-shadow:0 2px 4px rgba(16,185,129,0.3); display:inline-flex; align-items:center; gap:0.35rem; padding:0.4rem 0.75rem; border-radius:20px; font-size:0.8rem;">
+          <i class="fa-brands fa-android" style="font-size:0.95rem;"></i>
+          <span>APK 다운로드</span>
+        </a>
+
+        <!-- 4. 알림 버튼 및 카운트 배지 -->
         <button id="headerNotifBtn" class="header-circle-btn" title="알림 확인">
           <i class="fa-solid fa-bell"></i>
           <span id="headerNotifBadge" class="header-badge-count">2</span>
@@ -338,7 +344,7 @@
             <p class="section-desc">MyWater 수문포털 10분 주기 실시간 방류량 및 조정지 수위 연동 (총방류량 > 0.4 CMS 이면 ON)</p>
           </div>
           <div style="display:flex; align-items:center; gap:0.75rem;">
-            <span id="powerGenLastUpdated" style="font-size:0.82rem; color:#2563eb; font-weight:800; background:#eff6ff; padding:0.35rem 0.75rem; border-radius:6px; border:1px solid #bfdbfe;"><i class="fa-solid fa-clock-rotate-left"></i> 실시간 갱신: 16:50 (수문포털 연동)</span>
+            <span id="powerGenLastUpdated" style="font-size:0.82rem; color:#2563eb; font-weight:800; background:#eff6ff; padding:0.35rem 0.75rem; border-radius:6px; border:1px solid #bfdbfe;"><i class="fa-solid fa-clock-rotate-left"></i> 실시간 갱신 (수문포털 연동)</span>
             <button id="btnRefreshPowerGen" class="btn-pill btn-secondary" title="실시간 데이터 갱신">
               <i class="fa-solid fa-arrows-rotate"></i> 새로고침
             </button>
@@ -431,7 +437,7 @@
               <span>18시간 전</span>
               <span>12시간 전</span>
               <span>6시간 전</span>
-              <span style="color:#2563eb; font-weight:700;">현재 (16:50)</span>
+              <span id="reservoirCurrentTimeLabel" style="color:#2563eb; font-weight:700;">실시간 관측</span>
             </div>
           </div>
 
@@ -754,6 +760,47 @@
       <div class="modal-footer" style="padding: 0.75rem 1.25rem; display:flex; justify-content:flex-end; gap:0.5rem;">
         <button type="button" class="btn-pill btn-secondary" data-close="dateMemoModal">취소</button>
         <button type="button" id="btnSaveDateModalMemo" class="btn-pill btn-primary"><i class="fa-solid fa-check"></i> 저장</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= Modal: 안드로이드 APK 다운로드 및 설치 안내 ================= -->
+  <div id="apkDownloadModal" class="modal-backdrop">
+    <div class="modal-dialog" style="max-width: 480px;">
+      <div class="modal-header" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color:#fff; border-radius:12px 12px 0 0;">
+        <h3 style="color:#fff; display:flex; align-items:center; gap:0.5rem;"><i class="fa-brands fa-android"></i> 안드로이드 모바일 앱 (APK) 다운로드</h3>
+        <button class="modal-close" data-close="apkDownloadModal" style="color:#fff;">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 1.25rem;">
+        <div style="text-align:center; margin-bottom:1.25rem;">
+          <div style="display:inline-flex; align-items:center; justify-content:center; width:64px; height:64px; border-radius:50%; background:#ecfdf5; color:#059669; font-size:2rem; margin-bottom:0.75rem;">
+            <i class="fa-brands fa-android"></i>
+          </div>
+          <h4 style="font-size:1.1rem; font-weight:800; color:#0f172a; margin-bottom:0.25rem;">낙동강 발전관리과 교대근무 포털</h4>
+          <p style="font-size:0.85rem; color:#64748b;">Android 전용 설치 패키지 (NakdongShift_v1.0.apk)</p>
+        </div>
+
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:0.9rem; margin-bottom:1.25rem;">
+          <h5 style="font-size:0.85rem; font-weight:700; color:#334155; margin-bottom:0.5rem;"><i class="fa-solid fa-circle-info" style="color:#059669;"></i> 스마트폰 간편 설치 방법:</h5>
+          <ol style="font-size:0.8rem; color:#475569; padding-left:1.2rem; line-height:1.6; margin:0;">
+            <li>아래 <strong>[APK 직접 다운로드]</strong> 버튼을 누릅니다.</li>
+            <li>다운로드 완료 후 알림창의 <code>NakdongShift_v1.0.apk</code>를 터치합니다.</li>
+            <li>'출처를 알 수 없는 앱 설치' 안내 시 <strong>'이번만 허용'</strong> 또는 <strong>'무시하고 설치'</strong>를 선택합니다.</li>
+            <li>설치 완료 후 바탕화면의 <strong>낙동강교대</strong> 앱을 실행합니다.</li>
+          </ol>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:0.6rem;">
+          <a href="/api/download-apk" download="NakdongShift_v1.0.apk" class="btn-pill" style="display:flex; align-items:center; justify-content:center; gap:0.5rem; text-decoration:none; background:#059669; color:#fff; font-weight:700; font-size:0.95rem; padding:0.75rem; border-radius:8px; text-align:center; box-shadow:0 4px 6px -1px rgba(5,150,105,0.4);">
+            <i class="fa-solid fa-download"></i> APK 파일 직접 다운로드 (23MB)
+          </a>
+          <a href="/download/app-debug.apk" download="NakdongShift_v1.0.apk" class="btn-pill btn-secondary" style="display:flex; align-items:center; justify-content:center; gap:0.5rem; text-decoration:none; font-size:0.85rem; padding:0.55rem; border-radius:8px; text-align:center;">
+            <i class="fa-solid fa-link"></i> 보조 다운로드 링크 (정적 파일)
+          </a>
+        </div>
+      </div>
+      <div class="modal-footer" style="padding: 0.75rem 1.25rem;">
+        <button type="button" class="btn-pill btn-secondary" data-close="apkDownloadModal">닫기</button>
       </div>
     </div>
   </div>

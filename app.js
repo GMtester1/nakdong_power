@@ -1253,12 +1253,26 @@ function createTeamCalendarCell(dateObj, isOtherMonth) {
 
   const dateStr = formatDate(dateObj);
 
+  const adminWorkers = [];
   const dayWorkers = [];
   const nightWorkers = [];
 
   usersList.forEach(u => {
     const sched = getSchedule(u.id, dateStr);
     const st = sched.shift_type;
+    const isAdmin = u.team === 0 || u.role === '관리자' || u.id === 99 || u.id === 100 || (u.name && u.name.includes('관리자'));
+
+    if (isAdmin) {
+      const isVacation = sched.note && (sched.note.includes('휴가') || st === 'VACATION') && !sched.note.includes('대직');
+      if (st && st !== 'X' && !isVacation) {
+        // 관리자 실제 성명 추출: '관리자(김선영)' -> '김선영', '관리자2(이상은)' -> '이상은'
+        const match = u.name.match(/\((.*?)\)/);
+        const realName = match ? match[1] : (u.name.replace(/관리자[0-9]*/g, '').trim() || u.name);
+        adminWorkers.push(realName);
+      }
+      return;
+    }
+
     const cleanName = u.name.replace(/\(.*?\)/, '').trim();
 
     // Include shift workers (u.team > 0) or any user who has an active shift on this date
@@ -1274,8 +1288,17 @@ function createTeamCalendarCell(dateObj, isOtherMonth) {
     }
   });
 
+  const showAdmin = (currentTeamFilter === 'ALL' || currentTeamFilter === 'DAY') && adminWorkers.length > 0;
   const showDay = (currentTeamFilter === 'ALL' || currentTeamFilter === 'DAY') && dayWorkers.length > 0;
   const showNight = (currentTeamFilter === 'ALL' || currentTeamFilter === 'NIGHT') && nightWorkers.length > 0;
+
+  const adminText = adminWorkers.length > 0 ? `(관) ${adminWorkers.join(',')}` : '';
+  const adminHtml = showAdmin ? `
+    <div class="team-worker-row admin-worker-row" title="관리자 근무현황: ${adminText}">
+      <span class="worker-shift-lbl admin">관</span>
+      <span class="worker-names-text">${adminText}</span>
+    </div>
+  ` : '';
 
   const dayHtml = showDay ? `
     <div class="team-worker-row day-worker-row" title="주간 근무자: ${dayWorkers.join(', ')}">
@@ -1297,9 +1320,10 @@ function createTeamCalendarCell(dateObj, isOtherMonth) {
       ${isOtherMonth ? `<span style="font-size:0.65rem; color:#94a3b8;">${dateObj.getMonth()+1}월</span>` : ''}
     </div>
     <div class="team-calendar-worker-box">
+      ${adminHtml}
       ${dayHtml}
       ${nightHtml}
-      ${!dayHtml && !nightHtml ? '<span style="font-size:0.65rem; color:#94a3b8; text-align:center; padding:2px 0;">-</span>' : ''}
+      ${!adminHtml && !dayHtml && !nightHtml ? '<span style="font-size:0.65rem; color:#94a3b8; text-align:center; padding:2px 0;">-</span>' : ''}
     </div>
   `;
 
@@ -2323,6 +2347,13 @@ async function queryWaterPortalApi(damCd, count = 1, startDate = '', endDate = '
   return null;
 }
 
+function getCurrentObservationTime() {
+  const d = new Date();
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  return `${hh}:${mm}`;
+}
+
 async function syncLiveWaterData(force = false) {
   if (isFetchingLiveWater) return;
   isFetchingLiveWater = true;
@@ -2334,7 +2365,7 @@ async function syncLiveWaterData(force = false) {
     );
 
     let changed = false;
-    let latestDataTimeStr = '16:50';
+    let latestDataTimeStr = getCurrentObservationTime();
 
     updates.forEach((result, idx) => {
       if (result.status === 'fulfilled' && result.value && result.value.length > 0) {
@@ -2391,6 +2422,11 @@ async function syncLiveWaterData(force = false) {
       badge.innerHTML = `<i class="fa-solid fa-clock-rotate-left"></i> 실시간 갱신: ${latestDataTimeStr} 기준 (수문포털 연동)`;
     }
 
+    const curTimeLbl = document.getElementById('reservoirCurrentTimeLabel');
+    if (curTimeLbl) {
+      curTimeLbl.textContent = `현재 (${latestDataTimeStr})`;
+    }
+
     if (changed || force) {
       if (powerGenCurrentSubTab === 'generators') {
         renderGeneratorsStatus();
@@ -2400,9 +2436,10 @@ async function syncLiveWaterData(force = false) {
     }
   } catch (err) {
     console.warn('Sync live water data error:', err);
+    const fallbackTime = getCurrentObservationTime();
     const badge = document.getElementById('powerGenLastUpdated');
     if (badge) {
-      badge.innerHTML = `<i class="fa-solid fa-clock-rotate-left"></i> 실시간 갱신: 16:50 기준 (수문포털 연동)`;
+      badge.innerHTML = `<i class="fa-solid fa-clock-rotate-left"></i> 실시간 갱신: ${fallbackTime} 기준 (수문포털 연동)`;
     }
   } finally {
     isFetchingLiveWater = false;
@@ -2438,7 +2475,7 @@ function renderGeneratorsStatus() {
       ? `<span class="badge" style="background:#ede9fe; color:#6d28d9; font-size:0.75rem; margin-left:4px;">조정지</span>` 
       : `<span class="badge" style="background:#dbeafe; color:#1e40af; font-size:0.75rem; margin-left:4px;">본댐</span>`;
 
-    const timeLabel = dam.lastUpdatedTime ? `${dam.lastUpdatedTime} 기준` : '16:50 기준';
+    const timeLabel = dam.lastUpdatedTime ? `${dam.lastUpdatedTime} 기준` : `${getCurrentObservationTime()} 기준`;
 
     return `
       <div class="card" style="border: 1.5px solid ${borderColor}; background: ${cardBg}; border-radius: 12px; padding: 1rem; box-shadow: var(--shadow-sm);">

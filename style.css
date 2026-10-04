@@ -591,7 +591,6 @@ body {
   min-height: 68px;
   height: 68px;
   max-height: 136px;
-  padding: 0.2rem 0.2rem;
 }
 
 #myCalendarGrid .cell-memo-input {
@@ -603,7 +602,6 @@ body {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  padding: 0.2rem;
 }
 
 .calendar-cell:hover {

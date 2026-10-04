@@ -743,7 +743,7 @@ body {
 
 .calendar-cell.team-cell {
   min-height: 90px;
-  height: 132px;
+  height: 110px;
   padding: 0.1rem;
   box-sizing: border-box;
 }

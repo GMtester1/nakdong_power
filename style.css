@@ -574,8 +574,9 @@ body {
 .calendar-cell {
   background: #ffffff;
   min-height: 68px;
-  height: auto;
-  max-height: 132px;
+  height: 68px;
+  max-height: 68px;
+padding: 0.3rem;
   display: flex;
   flex-direction: column;
   justify-content: space-between;

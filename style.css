@@ -749,7 +749,7 @@ body {
 }
 
 .team-calendar-worker-box {
-  margin-top: 0.1rem;
+  margin-top: 0.05rem;
   display: flex;
   flex-direction: column;
   gap: 2px;

@@ -573,9 +573,9 @@ body {
 /* 캘린더 셀: 모바일 및 데스크톱에서 크기 고정 및 내용 넘침 방지 */
 .calendar-cell {
   background: #ffffff;
-  min-height: 136px;
-  height: 136px;
-  max-height: 136px;
+  min-height: 68px;
+  height: 68px;
+  max-height: 132px;
   padding: 0.3rem;
   display: flex;
   flex-direction: column;
@@ -589,7 +589,7 @@ body {
 
 /* 개인캘린더 일자 칸 세로 크기 200% 조정 (기존 68px -> 136px) */
 #myCalendarGrid .calendar-cell {
-  min-height: 136px;
+  min-height: 68px;
   height: 136px;
   max-height: 136px;
   padding: 0.5rem 0.4rem;
@@ -1077,7 +1077,7 @@ body {
   font-size: 0.85rem;
   resize: vertical;
   background: #ffffff;
-  min-height: 132px;
+  min-height: 110px;
 }
 .memo-textarea:focus {
   outline: none;

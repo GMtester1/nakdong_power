@@ -605,7 +605,6 @@ body {
   -webkit-box-orient: vertical;
   overflow: hidden;
   padding: 0.2rem 0.35rem;
-   margin-top: 0.15rem;
 }
 
 .calendar-cell:hover {

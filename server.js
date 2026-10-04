@@ -107,10 +107,14 @@ const server = http.createServer((req, res) => {
   let reqUrl = decodeURI(req.url.split('?')[0]);
 
   // APK 직접 다운로드 엔드포인트
-  if (reqUrl === '/api/download-apk' || reqUrl === '/download-apk' || reqUrl === '/app-debug.apk' || reqUrl === '/download/app-debug.apk' || reqUrl === '/NakdongShift.apk') {
+  if (reqUrl === '/api/download-apk' || reqUrl === '/download-apk' || reqUrl === '/app-debug.apk' || reqUrl === '/download/app-debug.apk' || reqUrl === '/NakdongShift.apk' || reqUrl === '/NakdongShift_v1.0.apk' || reqUrl === '/download/NakdongShift_v1.0.apk') {
     const candidates = [
+      path.join(BASE_DIR, 'NakdongShift_v1.0.apk'),
+      path.join(BASE_DIR, 'download', 'NakdongShift_v1.0.apk'),
       path.join(BASE_DIR, 'app-debug.apk'),
       path.join(BASE_DIR, 'download', 'app-debug.apk'),
+      path.join(BASE_DIR, '..', 'NakdongShift_v1.0.apk'),
+      path.join(BASE_DIR, '..', 'app-debug.apk'),
       path.join(BASE_DIR, '..', 'app', 'build', 'outputs', 'apk', 'debug', 'app-debug.apk')
     ];
     let foundPath = null;
@@ -129,8 +133,8 @@ const server = http.createServer((req, res) => {
       });
       return fs.createReadStream(foundPath).pipe(res);
     } else {
-      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('APK 파일을 찾을 수 없습니다.');
+      res.writeHead(302, { 'Location': '/NakdongShift_v1.0.apk' });
+      res.end();
       return;
     }
   }

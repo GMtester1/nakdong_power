@@ -158,11 +158,15 @@ class AntigravityHTTPHandler(SimpleHTTPRequestHandler):
                 self.wfile.write(err_payload)
                 return
 
-        if self.path.split("?")[0] in ["/api/download-apk", "/download-apk", "/app-debug.apk", "/download/app-debug.apk", "/NakdongShift.apk"]:
+        if self.path.split("?")[0] in ["/api/download-apk", "/download-apk", "/app-debug.apk", "/download/app-debug.apk", "/NakdongShift.apk", "/NakdongShift_v1.0.apk", "/download/NakdongShift_v1.0.apk"]:
             web_dir = os.path.dirname(os.path.abspath(__file__))
             candidates = [
+                os.path.join(web_dir, "NakdongShift_v1.0.apk"),
+                os.path.join(web_dir, "download", "NakdongShift_v1.0.apk"),
                 os.path.join(web_dir, "app-debug.apk"),
                 os.path.join(web_dir, "download", "app-debug.apk"),
+                os.path.join(web_dir, "..", "NakdongShift_v1.0.apk"),
+                os.path.join(web_dir, "..", "app-debug.apk"),
                 os.path.join(web_dir, "..", "app", "build", "outputs", "apk", "debug", "app-debug.apk")
             ]
             for p in candidates:
@@ -176,10 +180,9 @@ class AntigravityHTTPHandler(SimpleHTTPRequestHandler):
                         import shutil
                         shutil.copyfileobj(f, self.wfile)
                     return
-            self.send_response(404)
-            self.send_header("Content-Type", "text/plain; charset=utf-8")
+            self.send_response(302)
+            self.send_header("Location", "/NakdongShift_v1.0.apk")
             self.end_headers()
-            self.wfile.write("APK 파일을 찾을 수 없습니다.".encode('utf-8'))
             return
 
         if self.path.split("?")[0] == "/api/config":

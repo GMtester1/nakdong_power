@@ -11,10 +11,14 @@ module.exports = (req, res) => {
   }
 
   const candidates = [
+    path.join(__dirname, '..', 'NakdongShift_v1.0.apk'),
     path.join(__dirname, '..', 'app-debug.apk'),
+    path.join(__dirname, '..', 'download', 'NakdongShift_v1.0.apk'),
     path.join(__dirname, '..', 'download', 'app-debug.apk'),
+    path.join(__dirname, '..', '..', 'NakdongShift_v1.0.apk'),
+    path.join(__dirname, '..', '..', 'app-debug.apk'),
     path.join(__dirname, '..', '..', 'app', 'build', 'outputs', 'apk', 'debug', 'app-debug.apk'),
-    path.join(__dirname, '..', '..', 'web', 'app-debug.apk')
+    path.join(__dirname, '..', '..', 'web', 'NakdongShift_v1.0.apk')
   ];
 
   let foundPath = null;
@@ -34,6 +38,10 @@ module.exports = (req, res) => {
     });
     return fs.createReadStream(foundPath).pipe(res);
   } else {
-    res.status(404).send('APK 파일을 찾을 수 없습니다.');
+    // 404 텍스트 대신 정적 파일 URL로 302 리다이렉트
+    res.writeHead(302, {
+      'Location': '/NakdongShift_v1.0.apk'
+    });
+    return res.end();
   }
 };

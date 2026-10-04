@@ -21,7 +21,7 @@
     }
   ],
   "rewrites": [
-    { "source": "/api/download-apk", "destination": "/NakdongShift_v1.0.apk" },
-    { "source": "/download-apk", "destination": "/NakdongShift_v1.0.apk" }
+    { "source": "/api/download-apk", "destination": "/apk/NakdongShift_v1.0.apk" },
+    { "source": "/download-apk", "destination": "/apk/NakdongShift_v1.0.apk" }
   ]
 }

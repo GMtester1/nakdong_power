@@ -180,8 +180,15 @@ const server = http.createServer((req, res) => {
 
     const ext = path.extname(filePath).toLowerCase();
     const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+    const respHeaders = {
+      'Content-Type': contentType,
+      'Content-Length': stats.size
+    };
+    if (ext === '.apk') {
+      respHeaders['Content-Disposition'] = `attachment; filename="${path.basename(filePath)}"`;
+    }
 
-    res.writeHead(200, { 'Content-Type': contentType });
+    res.writeHead(200, respHeaders);
     const readStream = fs.createReadStream(filePath);
     readStream.pipe(res);
   });

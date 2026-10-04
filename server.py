@@ -201,6 +201,9 @@ class AntigravityHTTPHandler(SimpleHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE')
         self.send_header('Access-Control-Allow-Headers', 'Content-Type, apikey, Authorization')
         self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
+        if hasattr(self, 'path') and self.path.endswith('.apk'):
+            filename = os.path.basename(self.path.split('?')[0])
+            self.send_header('Content-Disposition', f'attachment; filename="{filename}"')
         super().end_headers()
 
     def guess_type(self, path):

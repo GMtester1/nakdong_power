@@ -589,7 +589,7 @@ body {
 
 /* 개인캘린더 일자 칸 세로 크기 200% 조정 (기존 68px -> 136px) */
 #myCalendarGrid .calendar-cell {
-  min-height: 90px;
+  min-height: 75px;
   height: 136px;
   max-height: 136px;
   padding: 0.5rem 0.4rem;

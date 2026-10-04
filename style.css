@@ -576,7 +576,6 @@ body {
   min-height: 68px;
   height: 68px;
   max-height: 136px;
-  padding: 0.1rem;
   display: flex;
   flex-direction: column;
   justify-content: space-between;

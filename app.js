@@ -1229,8 +1229,9 @@ function createTeamCalendarCell(dateObj, isOtherMonth) {
     const isAdmin = u.team === 0 || u.role === '관리자' || u.id === 99 || u.id === 100 || (u.name && u.name.includes('관리자'));
 
     if (isAdmin) {
-      const isVacation = sched.note && (sched.note.includes('휴가') || st === 'VACATION') && !sched.note.includes('대직');
-      if (st && st !== 'X' && !isVacation) {
+      // 관리자 "H"코드 및 휴가/휴무는 캘린더에 미표기
+      const isVacation = (st === 'H' || st === 'VACATION') || (sched.note && sched.note.includes('휴가'));
+      if (st && st !== 'X' && st !== 'H' && !isVacation) {
         // 관리자 실제 성명 추출: '관리자(김선영)' -> '김선영', '관리자2(이상은)' -> '이상은'
         const match = u.name.match(/\((.*?)\)/);
         const realName = match ? match[1] : (u.name.replace(/관리자[0-9]*/g, '').trim() || u.name);

@@ -176,8 +176,8 @@ const DEFAULT_USERS = [
   { id: 6, name: '전다솜(대리)', employee_id: '20224138', car_number: '22바 4433', team: 3, role: '대리', avatar_color_index: 5 },
   { id: 7, name: '박재환(대리)', employee_id: '20152433', car_number: '90사 5678', team: 4, role: '대리', avatar_color_index: 6 },
   { id: 8, name: '윤지원(대리)', employee_id: '20200638', car_number: '33아 1122', team: 4, role: '대리', avatar_color_index: 7 },
-  { id: 99, name: '관리자(김선영)', employee_id: 'ADMIN01', car_number: '-', team: 0, role: '관리자', avatar_color_index: 8 },
-  { id: 100, name: '관리자2(이상은)', employee_id: 'ADMIN02', car_number: '-', team: 0, role: '관리자', avatar_color_index: 9 }
+  { id: 99, name: '김선영', employee_id: 'ADMIN', car_number: '-', team: 0, role: '관리자', avatar_color_index: 8 },
+  { id: 100, name: '이상은', employee_id: '20194876', car_number: '-', team: 0, role: '관리자', avatar_color_index: 9 }
 ];
 
 // 4. 4조 3교대 순환 규칙 및 근무 상세

@@ -4,7 +4,7 @@
  * ==============================================================================
  * - 체계: 4조 3교대 순환 (휴무 X -> 주간 D -> 휴무 X -> 야간 S)
  * - 순수 브라우저 Native REST API 엔진 내장 (외부 CDN 의존도 제로, 네트워크 지연 방지)
- * - Supabase 실시간 연동 (스케줄, 대교직 승인/반려, 주간 업무메모, 게시판, 댓글)
+ * - Supabase 실시간 연동 (스케줄, 주간 업무메모, 게시판, 댓글)
  * - 오프라인/로컬 자동 폴백 및 원클릭 연결 진단/재시도 모달 탑재
  */
 
@@ -269,7 +269,6 @@ try {
     schedulesCache = JSON.parse(savedSchedules) || {};
   }
 } catch (e) {}
-let requestsList = [];
 let adminNotesCache = {};     // key: dateString -> content
 let postsList = [];
 let currentPostDetail = null;
@@ -319,37 +318,12 @@ function getSchedule(userId, dateStr) {
   const dateObj = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
   const baseShift = user ? calculateShiftForDate(user.team, dateObj) : 'X';
 
-  // 3. 승인된 대교직 신청 검사
-  let shiftType = baseShift;
-  let note = '';
-
-  const approvedReqs = requestsList.filter(r => r.status === 'APPROVED');
-  for (const req of approvedReqs) {
-    if (req.type === 'SUBSTITUTE') {
-      if (req.requester_id === userId && req.request_date === dateStr) {
-        shiftType = 'X';
-        note = '대직 요청 (휴무)';
-      } else if (req.target_user_id === userId && req.request_date === dateStr) {
-        shiftType = 'DS';
-        note = '대직 근무';
-      }
-    } else if (req.type === 'EXCHANGE') {
-      if (req.requester_id === userId && req.request_date === dateStr) {
-        shiftType = 'X';
-        note = '교직 교환';
-      } else if (req.target_user_id === userId && req.request_date === dateStr) {
-        shiftType = 'D';
-        note = '교직 근무';
-      }
-    }
-  }
-
   const generated = {
     user_id: userId,
     date_string: dateStr,
-    shift_type: shiftType,
+    shift_type: baseShift,
     original_shift_type: baseShift,
-    note: note
+    note: ''
   };
 
   schedulesCache[cacheKey] = generated;
@@ -454,13 +428,7 @@ async function loadRemoteData() {
       });
     }
 
-    // 3. 대교직 신청
-    const requests = await SupabaseRest.select('shift_requests', 'order=created_at.desc');
-    if (requests) {
-      requestsList = requests;
-    }
-
-    // 4. 주간 업무 메모
+    // 3. 주간 업무 메모
     const notes = await SupabaseRest.select('admin_weekly_notes');
     if (notes) {
       notes.forEach(n => {
@@ -477,7 +445,6 @@ async function loadRemoteData() {
     // 화면 갱신
     renderMyCalendar();
     renderTeamSchedule();
-    renderRequestsList();
     renderWeeklyDashboard();
     renderPostsList();
   } catch (e) {
@@ -600,7 +567,6 @@ function initUserSelector() {
       showToast(`작업자가 '${currentUser.name}'(으)로 전환되었습니다.`);
       renderMyCalendar();
       renderTeamSchedule();
-      renderRequestsList();
     });
   }
   updateUserProfileUI();
@@ -1339,189 +1305,6 @@ function createTeamCalendarCell(dateObj, isOtherMonth) {
 function renderWorkerRoster(dateObj) {
   // 우측 근무편성표 삭제됨: 캘린더 내 주/야 근무자 표시로 대체됨
 }
-
-// ==============================================================================
-// 13. [메뉴 3] 대교직 신청 및 승인 관리 (Shift Requests)
-// ==============================================================================
-function initRequestsScreen() {
-  document.getElementById('openNewRequestBtn').addEventListener('click', () => {
-    openModal('newRequestModal');
-    document.getElementById('reqDate').value = formatDate(new Date());
-    document.getElementById('targetDate').value = formatDate(new Date());
-
-    const targetSelect = document.getElementById('targetUser');
-    targetSelect.innerHTML = usersList
-      .filter(u => u.id !== currentUser.id && u.team > 0)
-      .map(u => `<option value="${u.id}">${u.team}조 ${u.name}</option>`)
-      .join('');
-  });
-
-  document.querySelectorAll('input[name="reqType"]').forEach(radio => {
-    radio.addEventListener('change', (e) => {
-      const targetDateGroup = document.getElementById('targetDateGroup');
-      const targetUserGroup = document.getElementById('targetUserGroup');
-      if (e.target.value === 'VACATION') {
-        targetDateGroup.style.display = 'none';
-        targetUserGroup.style.display = 'none';
-      } else if (e.target.value === 'SUBSTITUTE') {
-        targetDateGroup.style.display = 'none';
-        targetUserGroup.style.display = 'block';
-      } else {
-        targetDateGroup.style.display = 'block';
-        targetUserGroup.style.display = 'block';
-      }
-    });
-  });
-
-  document.getElementById('newRequestForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const type = document.querySelector('input[name="reqType"]:checked').value;
-    const reqDate = document.getElementById('reqDate').value;
-    const targetDate = document.getElementById('targetDate').value;
-    const targetUserId = parseInt(document.getElementById('targetUser').value, 10);
-    const reason = document.getElementById('reqReason').value;
-
-    const newReq = {
-      type,
-      requester_id: currentUser.id,
-      target_user_id: targetUserId || currentUser.id,
-      request_date: reqDate,
-      target_date: type === 'EXCHANGE' ? targetDate : '',
-      status: 'PENDING',
-      reason,
-      created_at: Date.now()
-    };
-
-    if (isConnectedToSupabase) {
-      const res = await SupabaseRest.insert('shift_requests', newReq);
-      if (res && res.length > 0) {
-        requestsList.unshift(res[0]);
-      } else {
-        requestsList.unshift({ id: Date.now(), ...newReq });
-      }
-    } else {
-      requestsList.unshift({ id: Date.now(), ...newReq });
-    }
-
-    closeModal('newRequestModal');
-    showToast('대교직 신청서가 제출되었습니다.');
-    renderRequestsList();
-  });
-
-  document.querySelectorAll('.req-filter-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.req-filter-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      currentReqFilter = btn.dataset.reqFilter;
-      renderRequestsList();
-    });
-  });
-}
-
-function renderRequestsList() {
-  const container = document.getElementById('requestsList');
-  container.innerHTML = '';
-
-  const pending = requestsList.filter(r => r.status === 'PENDING').length;
-  const approved = requestsList.filter(r => r.status === 'APPROVED').length;
-  const rejected = requestsList.filter(r => r.status === 'REJECTED').length;
-
-  document.getElementById('countReqAll').textContent = requestsList.length;
-  document.getElementById('countReqPending').textContent = pending;
-  document.getElementById('countReqApproved').textContent = approved;
-  document.getElementById('countReqRejected').textContent = rejected;
-
-  const navBadge = document.getElementById('pendingRequestBadge');
-  if (pending > 0) {
-    navBadge.style.display = 'inline-block';
-    navBadge.textContent = pending;
-  } else {
-    navBadge.style.display = 'none';
-  }
-
-  const filtered = requestsList.filter(r => {
-    if (currentReqFilter === 'ALL') return true;
-    return r.status === currentReqFilter;
-  });
-
-  if (filtered.length === 0) {
-    container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: var(--text-muted);">해당 조건의 신청 내역이 없습니다.</div>`;
-    return;
-  }
-
-  filtered.forEach(req => {
-    const requester = usersList.find(u => u.id === req.requester_id) || { name: '알 수 없음', team: 1 };
-    const targetUser = usersList.find(u => u.id === req.target_user_id) || { name: '알 수 없음', team: 1 };
-
-    const typeLabel = req.type === 'SUBSTITUTE' ? '대직 신청' : (req.type === 'EXCHANGE' ? '교직 맞교환' : '연차 신청');
-    const statusLabel = req.status === 'PENDING' ? '대기중' : (req.status === 'APPROVED' ? '승인완료' : '반려됨');
-
-    const card = document.createElement('div');
-    card.className = 'request-card';
-    card.innerHTML = `
-      <div>
-        <div class="req-card-header">
-          <span class="category-chip ${req.type === 'SUBSTITUTE' ? 'sub' : ''}">${typeLabel}</span>
-          <span class="req-status-pill ${req.status}">${statusLabel}</span>
-        </div>
-        <div class="req-users-flow" style="margin-top: 0.65rem;">
-          <div>${requester.name} (${requester.team}조)</div>
-          <i class="fa-solid fa-arrow-right" style="color:var(--primary); font-size:0.8rem;"></i>
-          <div>${targetUser.name} (${targetUser.team}조)</div>
-        </div>
-        <div style="font-size:0.85rem; color:var(--text-secondary); margin-top:0.6rem;">
-          <div><strong>근무 일자:</strong> ${req.request_date} ${req.target_date ? ` &harr; ${req.target_date}` : ''}</div>
-          ${req.reason ? `<div><strong>사유:</strong> ${req.reason}</div>` : ''}
-        </div>
-      </div>
-      ${req.status === 'PENDING' ? `
-        <div class="req-actions">
-          <button class="btn-pill btn-success flex-1" onclick="handleApproveRequest(${req.id})">
-            <i class="fa-solid fa-check"></i> 승인
-          </button>
-          <button class="btn-pill btn-danger flex-1" onclick="handleRejectRequest(${req.id})">
-            <i class="fa-solid fa-xmark"></i> 반려
-          </button>
-        </div>` : ''}
-    `;
-
-    container.appendChild(card);
-  });
-}
-
-window.handleApproveRequest = async function(reqId) {
-  const req = requestsList.find(r => r.id === reqId);
-  if (!req) return;
-
-  req.status = 'APPROVED';
-
-  const reqKey = `${req.requester_id}_${req.request_date}`;
-  const targetKey = `${req.target_user_id}_${req.request_date}`;
-  delete schedulesCache[reqKey];
-  delete schedulesCache[targetKey];
-
-  if (isConnectedToSupabase) {
-    await SupabaseRest.update('shift_requests', 'id', reqId, { status: 'APPROVED' });
-  }
-
-  showToast('신청이 승인되어 4조3교대 근무일정표에 반영되었습니다.');
-  renderRequestsList();
-  renderMyCalendar();
-  renderTeamSchedule();
-};
-
-window.handleRejectRequest = async function(reqId) {
-  const req = requestsList.find(r => r.id === reqId);
-  if (!req) return;
-
-  req.status = 'REJECTED';
-  if (isConnectedToSupabase) {
-    await SupabaseRest.update('shift_requests', 'id', reqId, { status: 'REJECTED' });
-  }
-
-  showToast('신청이 반려 처리되었습니다.');
-  renderRequestsList();
-};
 
 // ==============================================================================
 // 14. [메뉴 3] 일간 교대일정 (Daily Schedule: 좌 주간 / 우 야간 이분할)

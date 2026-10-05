@@ -597,6 +597,7 @@ function initAuthSystem() {
   const logoutBtn = document.getElementById('headerLogoutBtn');
 
   // 1. 등록 계정 10명 빠른 선택 렌더링
+  /*
   if (quickGrid) {
     quickGrid.innerHTML = DEFAULT_USERS.map(u => {
       const parenMatch = u.name.match(/\((.*?)\)/);
@@ -621,7 +622,7 @@ function initAuthSystem() {
       });
     });
   }
-
+*/
   // 2. 로그인 폼 제출 처리 (id : name, pw : employee_id)
   if (form) {
     form.addEventListener('submit', (e) => {

@@ -1043,7 +1043,7 @@ async function updateAdminShift(userId, dateStr, shiftCode) {
         shift_type: finalShift,
         original_shift_type: schedulesCache[cacheKey].original_shift_type,
         note: existingNote
-      });
+      }, 'user_id,date_string');
     } catch (e) {
       console.warn('Supabase schedule upsert failed:', e);
     }

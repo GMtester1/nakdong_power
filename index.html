@@ -42,6 +42,12 @@
           </select>
         </div>
 
+        <!-- 1-2. 로그아웃 버튼 -->
+        <button id="headerLogoutBtn" class="header-pill-btn" title="로그아웃 및 계정 변경" style="background:rgba(254,226,226,0.9); color:#b91c1c; border:1px solid #fca5a5; font-weight:700; font-size:0.75rem; padding:0.35rem 0.65rem; border-radius:18px; display:inline-flex; align-items:center; gap:0.3rem;">
+          <i class="fa-solid fa-right-from-bracket"></i>
+          <span>로그아웃</span>
+        </button>
+
         <!-- 2. 대구역 실시간 열차 버튼 -->
         <button id="headerDaeguBtn" class="header-pill-btn" title="대구역 실시간 열차 및 광역전철 시간표">
           <i class="fa-solid fa-train"></i>
@@ -49,15 +55,10 @@
         </button>
 
         <!-- 3. 안드로이드 APK 다운로드 버튼 -->
-        <a href="./NakdongShift_v1.0.apk" 
-   download="NakdongShift_v1.0.apk" 
-   id="headerApkDownloadBtn" 
-   class="header-pill-btn apk-download-btn" 
-   title="스마트폰용 안드로이드 APK 다운로드 (클릭 시 23MB 즉시 다운로드)" 
-   style="text-decoration:none; background:linear-gradient(135deg, #10b981 0%, #059669 100%); color:#ffffff; font-weight:700; border:none; box-shadow:0 2px 4px rgba(16,185,129,0.3); display:inline-flex; align-items:center; gap:0.35rem; padding:0.4rem 0.75rem; border-radius:20px; font-size:0.8rem; cursor:pointer;">
-  <i class="fa-brands fa-android" style="font-size:0.95rem;"></i>
-  <span>APK 다운로드</span>
-</a>
+        <a href="/apk/NakdongShift_v1.0.apk" download="NakdongShift_v1.0.apk" id="headerApkDownloadBtn" class="header-pill-btn apk-download-btn" title="스마트폰용 안드로이드 APK 다운로드 (클릭 시 23MB 즉시 다운로드)" style="text-decoration:none; background:linear-gradient(135deg, #10b981 0%, #059669 100%); color:#ffffff; font-weight:700; border:none; box-shadow:0 2px 4px rgba(16,185,129,0.3); display:inline-flex; align-items:center; gap:0.35rem; padding:0.4rem 0.75rem; border-radius:20px; font-size:0.8rem;">
+          <i class="fa-brands fa-android" style="font-size:0.95rem;"></i>
+          <span>APK 다운로드</span>
+        </a>
 
         <!-- 4. 알림 버튼 및 카운트 배지 -->
         <button id="headerNotifBtn" class="header-circle-btn" title="알림 확인">
@@ -809,6 +810,59 @@
       </div>
       <div class="modal-footer" style="padding: 0.75rem 1.25rem;">
         <button type="button" class="btn-pill btn-secondary" data-close="apkDownloadModal">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 8. 최초 접속 로그인 오버레이 (Total 10 Accounts) ================= -->
+  <div id="loginOverlay" class="login-overlay hidden">
+    <div class="login-card">
+      <div class="login-header" style="background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%); color: #ffffff; padding: 1.5rem; text-align: center; position: relative;">
+        <div style="width: 48px; height: 48px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.75rem auto; font-size: 1.4rem;">
+          <i class="fa-solid fa-water"></i>
+        </div>
+        <h2 style="margin: 0; font-size: 1.25rem; font-weight: 800; letter-spacing: -0.5px;">낙동강 발전관리과 포털</h2>
+        <p style="margin: 0.35rem 0 0 0; font-size: 0.8rem; color: #bfdbfe;">4조 3교대 통합 근무일정 시스템 로그인</p>
+      </div>
+
+      <div class="login-body" style="padding: 1.5rem;">
+        <form id="portalLoginForm">
+          <div style="margin-bottom: 1rem;">
+            <label for="loginNameInput" style="display: block; font-size: 0.82rem; font-weight: 700; color: #334155; margin-bottom: 0.35rem;">
+              <i class="fa-solid fa-user" style="color: #2563eb; margin-right: 4px;"></i> 이름 (ID)
+            </label>
+            <input type="text" id="loginNameInput" class="form-input" placeholder="이름 입력 (예: 김선영, 장성훈...)" required style="width: 100%; box-sizing: border-box; padding: 0.65rem 0.85rem; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; font-weight: 500;">
+          </div>
+
+          <div style="margin-bottom: 1.2rem;">
+            <label for="loginPwInput" style="display: block; font-size: 0.82rem; font-weight: 700; color: #334155; margin-bottom: 0.35rem;">
+              <i class="fa-solid fa-key" style="color: #2563eb; margin-right: 4px;"></i> 사번 (비밀번호)
+            </label>
+            <input type="password" id="loginPwInput" class="form-input" placeholder="사번 입력 (예: ADMIN01, 20221555)" required style="width: 100%; box-sizing: border-box; padding: 0.65rem 0.85rem; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; font-weight: 500;">
+          </div>
+
+          <div id="loginErrorMsg" style="display: none; padding: 0.5rem 0.75rem; background: #fee2e2; border: 1px solid #fca5a5; color: #b91c1c; border-radius: 6px; font-size: 0.8rem; margin-bottom: 1rem; align-items: center; gap: 0.4rem;">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span id="loginErrorText">이름(ID) 또는 사번(비밀번호)이 일치하지 않습니다.</span>
+          </div>
+
+          <button type="submit" id="loginSubmitBtn" class="btn-pill" style="width: 100%; padding: 0.75rem; background: #2563eb; color: #fff; font-weight: 700; font-size: 0.95rem; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(37,99,235,0.4); display: flex; align-items: center; justify-content: center; gap: 0.4rem;">
+            <i class="fa-solid fa-right-to-bracket"></i>
+            <span>로그인 (프로필 접속)</span>
+          </button>
+        </form>
+
+        <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+            <span style="font-size: 0.75rem; font-weight: 700; color: #64748b;">
+              <i class="fa-solid fa-address-book" style="margin-right: 3px;"></i> 등록 계정 10명 빠른 선택
+            </span>
+            <span style="font-size: 0.7rem; color: #94a3b8;">클릭 시 자동완성</span>
+          </div>
+          <div id="loginQuickSelectGrid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.4rem; max-height: 150px; overflow-y: auto; padding-right: 2px;">
+            <!-- Dynamically populated 10 accounts -->
+          </div>
+        </div>
       </div>
     </div>
   </div>

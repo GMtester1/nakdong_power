@@ -334,6 +334,7 @@ function getSchedule(userId, dateStr) {
 // 7. 앱 시작 및 초기화 (DOM Ready 무관 완벽 방어)
 // ==============================================================================
 function startApp() {
+  initAuthSystem();
   initUserSelector();
   initNavigation();
   initCalendarControls();
@@ -417,6 +418,13 @@ async function loadRemoteData() {
     const users = await SupabaseRest.select('users', 'order=id.asc');
     if (users && users.length > 0) {
       usersList = users;
+      try {
+        const savedAuthId = localStorage.getItem('NAKDONG_AUTH_USER_ID');
+        if (savedAuthId) {
+          const found = usersList.find(u => String(u.id) === String(savedAuthId));
+          if (found) currentUser = found;
+        }
+      } catch (e) {}
       initUserSelector();
     }
 
@@ -563,6 +571,9 @@ function initUserSelector() {
     select.addEventListener('change', (e) => {
       const uid = parseInt(e.target.value, 10);
       currentUser = usersList.find(u => u.id === uid) || usersList[0];
+      try {
+        localStorage.setItem('NAKDONG_AUTH_USER_ID', String(currentUser.id));
+      } catch (err) {}
       updateUserProfileUI();
       showToast(`작업자가 '${currentUser.name}'(으)로 전환되었습니다.`);
       renderMyCalendar();
@@ -570,6 +581,136 @@ function initUserSelector() {
     });
   }
   updateUserProfileUI();
+}
+
+// ==============================================================================
+// 10-2. 최초 접속 로그인 및 계정 인증 모듈 (Total 10 Accounts)
+// ==============================================================================
+function initAuthSystem() {
+  const overlay = document.getElementById('loginOverlay');
+  const form = document.getElementById('portalLoginForm');
+  const nameInput = document.getElementById('loginNameInput');
+  const pwInput = document.getElementById('loginPwInput');
+  const errorMsg = document.getElementById('loginErrorMsg');
+  const errorText = document.getElementById('loginErrorText');
+  const quickGrid = document.getElementById('loginQuickSelectGrid');
+  const logoutBtn = document.getElementById('headerLogoutBtn');
+
+  // 1. 등록 계정 10명 빠른 선택 렌더링
+  if (quickGrid) {
+    quickGrid.innerHTML = DEFAULT_USERS.map(u => {
+      const parenMatch = u.name.match(/\((.*?)\)/);
+      const cleanName = parenMatch ? parenMatch[1] : (u.name.replace(/관리자[0-9]*/g, '').trim() || u.name);
+      const teamBg = u.team > 0 ? (['#2563eb', '#059669', '#d97706', '#7c3aed'][u.team - 1] || '#475569') : '#dc2626';
+      const teamText = u.team > 0 ? `${u.team}조` : '관리';
+      return `
+        <div class="login-quick-pill" data-name="${cleanName}" data-pw="${u.employee_id}" title="클릭 시 이름과 사번이 자동 입력됩니다">
+          <span class="team-badge" style="background:${teamBg};">${teamText}</span>
+          <span style="font-weight:700;">${cleanName}</span>
+          <span style="font-size:0.68rem; color:#64748b; margin-left:auto;">${u.employee_id}</span>
+        </div>
+      `;
+    }).join('');
+
+    quickGrid.querySelectorAll('.login-quick-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        if (nameInput) nameInput.value = pill.dataset.name;
+        if (pwInput) pwInput.value = pill.dataset.pw;
+        if (errorMsg) errorMsg.style.display = 'none';
+        if (pwInput) pwInput.focus();
+      });
+    });
+  }
+
+  // 2. 로그인 폼 제출 처리 (id : name, pw : employee_id)
+  if (form) {
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const enteredName = nameInput ? nameInput.value.trim().toLowerCase() : '';
+      const enteredPw = pwInput ? pwInput.value.trim().toLowerCase() : '';
+
+      // 10개 계정 매칭 검사
+      const matchedUser = usersList.find(u => {
+        // PW: employee_id 일치 (대소문자 무관)
+        const empId = (u.employee_id || '').toLowerCase();
+        if (empId !== enteredPw) return false;
+
+        // ID: name 일치 (풀네임 or 괄호 안 이름 or 직급 뗀 이름)
+        const fullName = (u.name || '').toLowerCase();
+        const parenMatch = u.name.match(/\((.*?)\)/);
+        const innerName = parenMatch ? parenMatch[1].toLowerCase() : '';
+        const withoutParen = u.name.replace(/\(.*?\)/, '').trim().toLowerCase();
+
+        return enteredName === fullName || enteredName === innerName || enteredName === withoutParen;
+      });
+
+      if (!matchedUser) {
+        if (errorMsg) {
+          errorMsg.style.display = 'flex';
+          if (errorText) errorText.textContent = '이름(ID) 또는 사번(비밀번호)이 일치하지 않습니다.';
+        }
+        return;
+      }
+
+      // 로그인 성공 -> 접속계정 프로필로 자동접속 저장
+      if (errorMsg) errorMsg.style.display = 'none';
+      currentUser = matchedUser;
+      try {
+        localStorage.setItem('NAKDONG_AUTH_USER_ID', String(currentUser.id));
+      } catch (err) {}
+
+      if (overlay) overlay.classList.add('hidden');
+      updateUserProfileUI();
+      const select = document.getElementById('currentUserSelect');
+      if (select) select.value = currentUser.id;
+
+      showToast(`'${currentUser.name}' 계정으로 로그인되었습니다.`);
+      renderMyCalendar();
+      renderTeamSchedule();
+      renderDailySchedule();
+      updateSelectedDateDetail(selectedDate);
+    });
+  }
+
+  // 3. 로그아웃 버튼 처리
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+      try {
+        localStorage.removeItem('NAKDONG_AUTH_USER_ID');
+      } catch (err) {}
+      if (overlay) {
+        overlay.classList.remove('hidden');
+        if (nameInput) nameInput.value = '';
+        if (pwInput) pwInput.value = '';
+        if (errorMsg) errorMsg.style.display = 'none';
+        if (nameInput) nameInput.focus();
+      }
+      showToast('로그아웃 되었습니다. 다시 로그인해 주세요.');
+    });
+  }
+
+  // 4. 최초 접속 여부 및 자동 접속 체크
+  let savedAuthId = null;
+  try {
+    savedAuthId = localStorage.getItem('NAKDONG_AUTH_USER_ID');
+  } catch (err) {}
+
+  if (savedAuthId) {
+    const existingUser = usersList.find(u => String(u.id) === String(savedAuthId));
+    if (existingUser) {
+      // 이미 인증된 접속계정 프로필로 자동 접속
+      currentUser = existingUser;
+      if (overlay) overlay.classList.add('hidden');
+      updateUserProfileUI();
+      const select = document.getElementById('currentUserSelect');
+      if (select) select.value = currentUser.id;
+    } else {
+      if (overlay) overlay.classList.remove('hidden');
+    }
+  } else {
+    // 최초 접속: 로그인 오버레이 노출
+    if (overlay) overlay.classList.remove('hidden');
+  }
 }
 
 // ------------------------------------------------------------------------------

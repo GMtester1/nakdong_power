@@ -575,8 +575,8 @@ body {
   background: #ffffff;
   min-height: 68px;
   height: 68px;
-  max-height: 136px;
-  padding: 0.15rem;
+  max-height: 68px;
+  padding: 0.3rem;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -589,11 +589,10 @@ body {
 
 /* 개인캘린더 일자 칸 세로 크기 200% 조정 (기존 68px -> 136px) */
 #myCalendarGrid .calendar-cell {
-  min-height: 68px;
-  height: 100px;
+  min-height: 136px;
+  height: 136px;
   max-height: 136px;
   padding: 0.5rem 0.4rem;
-
 }
 
 #myCalendarGrid .cell-memo-input {
@@ -605,6 +604,7 @@ body {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  padding: 0.2rem 0.35rem;
 }
 
 .calendar-cell:hover {
@@ -742,14 +742,14 @@ body {
 }
 
 .calendar-cell.team-cell {
-  min-height: 90px;
-  height: 110px;
-  padding: 0.2rem;
+  min-height: 86px;
+  height: 86px;
+  padding: 0.3rem;
   box-sizing: border-box;
 }
 
 .team-calendar-worker-box {
-  margin-top: 0.05rem;
+  margin-top: 0.2rem;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -1077,7 +1077,7 @@ body {
   font-size: 0.85rem;
   resize: vertical;
   background: #ffffff;
-  min-height: 90px;
+  min-height: 80px;
 }
 .memo-textarea:focus {
   outline: none;
@@ -1731,3 +1731,73 @@ body.antigravity-active .request-card:nth-child(even) {
   animation-duration: 7.5s;
   animation-delay: -2s;
 }
+
+/* ==============================================================================
+   9. 최초 접속 로그인 오버레이 (Login Overlay)
+   ============================================================================== */
+.login-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  box-sizing: border-box;
+}
+
+.login-overlay.hidden {
+  display: none !important;
+}
+
+.login-card {
+  background: #ffffff;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  animation: loginPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes loginPop {
+  0% { transform: scale(0.92); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.login-quick-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.55rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.76rem;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.login-quick-pill:hover {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+.login-quick-pill .team-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+  color: #ffffff;
+}
+

@@ -190,7 +190,7 @@ const SHIFT_TYPES = {
   X: { name: '휴무 (X)', short: 'X', hours: 0.0, timeRange: '전일 휴무', restTime: '-' },
   DS: { name: '주야연속 (DS)', short: 'DS', hours: 21.5, timeRange: '09:00 ~ 익일 09:00', restTime: '휴게 3.5h' },
   H: { name: '휴가 (H)', short: 'H', hours: 8.0, timeRange: '전일 연차 및 유급 휴가', restTime: '-' },
-  V: { name: '출장 (V)', short: 'V', hours: 8.0, timeRange: '출장 업무', restTime: '-' }
+  V: { name: '출장 (V)', short: 'V', hours: 8.0, timeRange: '09:00 ~ 18:00', restTime: '-' }
 };
 
 // 대한민국 법정 공휴일 (2026년 기준)
@@ -1271,6 +1271,7 @@ function createTeamCalendarCell(dateObj, isOtherMonth) {
   const adminWorkers = [];
   const dayWorkers = [];
   const nightWorkers = [];
+  const tripWorkers = [];
 
   usersList.forEach(u => {
     const sched = getSchedule(u.id, dateStr);
@@ -1278,6 +1279,12 @@ function createTeamCalendarCell(dateObj, isOtherMonth) {
     const isAdmin = u.team === 0 || u.role === '관리자' || u.id === 99 || u.id === 100 || (u.name && u.name.includes('관리자'));
 
     if (isAdmin) {
+      if (st === 'V') {
+        const match = u.name.match(/\((.*?)\)/);
+        const realName = match ? match[1] : (u.name.replace(/관리자[0-9]*/g, '').trim() || u.name);
+        tripWorkers.push(realName);
+        return;
+      }
       // 관리자 "H"코드 및 휴가/휴무는 캘린더에 미표기
       const isVacation = (st === 'H' || st === 'VACATION') || (sched.note && sched.note.includes('휴가'));
       if (st && st !== 'X' && st !== 'H' && !isVacation) {
@@ -1291,8 +1298,9 @@ function createTeamCalendarCell(dateObj, isOtherMonth) {
 
     const cleanName = u.name.replace(/\(.*?\)/, '').trim();
 
-    // Include shift workers (u.team > 0) or any user who has an active shift on this date
-    if (u.team > 0 || (st && st !== 'X')) {
+    if (st === 'V') {
+      tripWorkers.push(cleanName);
+    } else if (u.team > 0 || (st && st !== 'X')) {
       if (st === 'DS' || st.includes('DS')) {
         dayWorkers.push(cleanName);
         nightWorkers.push(cleanName);
@@ -1307,6 +1315,7 @@ function createTeamCalendarCell(dateObj, isOtherMonth) {
   const showAdmin = (currentTeamFilter === 'ALL' || currentTeamFilter === 'DAY') && adminWorkers.length > 0;
   const showDay = (currentTeamFilter === 'ALL' || currentTeamFilter === 'DAY') && dayWorkers.length > 0;
   const showNight = (currentTeamFilter === 'ALL' || currentTeamFilter === 'NIGHT') && nightWorkers.length > 0;
+  const showTrip = (currentTeamFilter === 'ALL' || currentTeamFilter === 'DAY') && tripWorkers.length > 0;
 
   const adminText = adminWorkers.length > 0 ? `(관) ${adminWorkers.join(',')}` : '';
   const adminHtml = showAdmin ? `
@@ -1330,6 +1339,13 @@ function createTeamCalendarCell(dateObj, isOtherMonth) {
     </div>
   ` : '';
 
+  const tripHtml = showTrip ? `
+    <div class="team-worker-row trip-worker-row" title="출장 근무자: ${tripWorkers.join(', ')}">
+      <span class="worker-shift-lbl trip">출</span>
+      <span class="worker-names-text">${tripWorkers.join(', ')}</span>
+    </div>
+  ` : '';
+
   cell.innerHTML = `
     <div class="day-header">
       <span class="day-number">${dateObj.getDate()}</span>
@@ -1339,7 +1355,8 @@ function createTeamCalendarCell(dateObj, isOtherMonth) {
       ${adminHtml}
       ${dayHtml}
       ${nightHtml}
-      ${!adminHtml && !dayHtml && !nightHtml ? '<span style="font-size:0.65rem; color:#94a3b8; text-align:center; padding:2px 0;">-</span>' : ''}
+      ${tripHtml}
+      ${!adminHtml && !dayHtml && !nightHtml && !tripHtml ? '<span style="font-size:0.65rem; color:#94a3b8; text-align:center; padding:2px 0;">-</span>' : ''}
     </div>
   `;
 
@@ -2308,10 +2325,8 @@ function renderGeneratorsStatus() {
       ? `<span class="badge" style="background:#ede9fe; color:#6d28d9; font-size:0.75rem; margin-left:4px;">조정지</span>` 
       : `<span class="badge" style="background:#dbeafe; color:#1e40af; font-size:0.75rem; margin-left:4px;">본댐</span>`;
 
-    const timeLabel = dam.lastUpdatedTime ? `${dam.lastUpdatedTime} 기준` : `${getCurrentObservationTime()} 기준`;
-
     return `
-      <div class="card" style="border: 1.5px solid ${borderColor}; background: ${cardBg}; border-radius: 12px; padding: 1rem; box-shadow: var(--shadow-sm);">
+      <div class="card" style="border: 1.5px solid ${borderColor}; background: ${cardBg}; border-radius: 12px; padding: 1rem 1.25rem; box-shadow: var(--shadow-sm); width: 100%; box-sizing: border-box;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
           <div style="display:flex; align-items:center;">
             <i class="fa-solid ${dam.isRegulating ? 'fa-water' : 'fa-dam'}" style="color:${dam.isRegulating ? '#7c3aed' : '#2563eb'}; margin-right:0.4rem; font-size:1.1rem;"></i>
@@ -2324,14 +2339,9 @@ function renderGeneratorsStatus() {
           </span>
         </div>
 
-        <div style="background:rgba(255,255,255,0.85); border-radius:8px; padding:0.6rem 0.75rem; font-size:0.85rem; display:flex; justify-content:space-between; align-items:center; border:1px solid #e2e8f0; margin-bottom:0.5rem;">
+        <div style="background:rgba(255,255,255,0.85); border-radius:8px; padding:0.6rem 0.75rem; font-size:0.85rem; display:flex; justify-content:space-between; align-items:center; border:1px solid #e2e8f0;">
           <span>실시간 수위: <strong>EL. ${dam.waterLevel.toFixed(2)} m</strong></span>
           <span>총방류량: <strong style="color:${isOnline ? '#059669' : '#64748b'}; font-size:0.95rem;">${dam.discharge.toFixed(1)} CMS</strong></span>
-        </div>
-
-        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.75rem; color:#64748b;">
-          <span>판정 기준: ${isOnline ? '<strong style="color:#059669;">방류량 > 0.4 CMS (발전 ON)</strong>' : '<span style="color:#64748b;">방류량 ≤ 0.4 CMS (정지 OFF)</span>'}</span>
-          <span style="color:#2563eb; font-weight:600;">${timeLabel}</span>
         </div>
       </div>
     `;

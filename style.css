@@ -589,9 +589,9 @@ body {
 
 /* 개인캘린더 일자 칸 세로 크기 200% 조정 (기존 68px -> 136px) */
 #myCalendarGrid .calendar-cell {
-  min-height: 68px;
-  height: 68px;
-  max-height: 68px;
+  min-height: 136px;
+  height: 136px;
+  max-height: 136px;
   padding: 0.5rem 0.4rem;
 }
 
@@ -743,7 +743,7 @@ body {
 
 .calendar-cell.team-cell {
   min-height: 86px;
-  height: 128px;
+  height: 86px;
   padding: 0.3rem;
   box-sizing: border-box;
 }
@@ -785,6 +785,12 @@ body {
   border: 1px solid #fecaca;
 }
 
+.team-worker-row.trip-worker-row {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #6ee7b7;
+}
+
 .worker-shift-lbl {
   font-size: 0.65rem;
   font-weight: 800;
@@ -806,6 +812,11 @@ body {
 
 .worker-shift-lbl.night {
   background: #dc2626;
+  color: #ffffff;
+}
+
+.worker-shift-lbl.trip {
+  background: #059669;
   color: #ffffff;
 }
 

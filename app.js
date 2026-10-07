@@ -1363,8 +1363,7 @@ function createTeamCalendarCell(dateObj, isOtherMonth) {
       const isVacation = (st === 'H' || st === 'VACATION') || (sched.note && sched.note.includes('휴가'));
       if (st && st !== 'X' && st !== 'H' && !isVacation) {
         // 관리자 실제 성명 추출: '관리자(김선영)' -> '김선영', '관리자2(이상은)' -> '이상은'
-        const match = u.name.match(/\((.*?)\)/);
-        const realName = match ? match[1] : (u.name.replace(/관리자[0-9]*/g, '').trim() || u.name);
+        const realName = u.name.replace(/\(.*?\)/g, '').trim() || u.name;
         adminWorkers.push(realName);
       }
       return;

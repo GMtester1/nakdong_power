@@ -260,6 +260,7 @@ let currentDate = new Date(2026, 9, 1);       // 2026년 10월 기본
 let selectedDate = new Date(2026, 9, 1);
 let teamSelectedDate = new Date(2026, 9, 1);
 let weeklySelectedDate = new Date(2026, 9, 1);
+let dailySelectedDate = new Date(2026, 9, 1);
 
 let usersList = [...DEFAULT_USERS];
 let schedulesCache = {};      // key: `${userId}_${dateString}` -> schedule object
@@ -453,7 +454,7 @@ async function loadRemoteData() {
     // 화면 갱신
     renderMyCalendar();
     renderTeamSchedule();
-    renderWeeklyDashboard();
+    renderDailySchedule();
     renderPostsList();
   } catch (e) {
     console.warn('원격 데이터 동기화 예외:', e);
@@ -1229,10 +1230,9 @@ function renderTeamSchedule() {
   const lastDay = new Date(year, month + 1, 0);
   const startDayOfWeek = firstDay.getDay();
 
-  // 1. 이전 달 1주분
+  // 1. 이전 달 채우기
   const prevMonthLastDate = new Date(year, month, 0).getDate();
-  const prevDaysCount = startDayOfWeek === 0 ? 7 : startDayOfWeek;
-  for (let i = prevDaysCount - 1; i >= 0; i--) {
+  for (let i = startDayOfWeek - 1; i >= 0; i--) {
     const pDate = new Date(year, month - 1, prevMonthLastDate - i);
     grid.appendChild(createTeamCalendarCell(pDate, true));
   }
@@ -1250,10 +1250,9 @@ function renderTeamSchedule() {
     grid.appendChild(cell);
   }
 
-  // 3. 다음 달 1주분
-  const currentTotal = prevDaysCount + lastDay.getDate();
-  const nextDaysCount = Math.max(7, (7 - (currentTotal % 7)) % 7 + 7);
-  for (let d = 1; d <= nextDaysCount; d++) {
+  // 3. 다음 달 채우기
+  const remainingCells = (7 - ((startDayOfWeek + lastDay.getDate()) % 7)) % 7;
+  for (let d = 1; d <= remainingCells; d++) {
     const nDate = new Date(year, month + 1, d);
     grid.appendChild(createTeamCalendarCell(nDate, true));
   }
@@ -1317,7 +1316,7 @@ function createTeamCalendarCell(dateObj, isOtherMonth) {
   const showNight = (currentTeamFilter === 'ALL' || currentTeamFilter === 'NIGHT') && nightWorkers.length > 0;
   const showTrip = (currentTeamFilter === 'ALL' || currentTeamFilter === 'DAY') && tripWorkers.length > 0;
 
-  const adminText = adminWorkers.length > 0 ? `(관) ${adminWorkers.join(',')}` : '';
+  const adminText = adminWorkers.join(', ');
   const adminHtml = showAdmin ? `
     <div class="team-worker-row admin-worker-row" title="관리자 근무현황: ${adminText}">
       <span class="worker-shift-lbl admin">관</span>
@@ -1376,7 +1375,6 @@ function renderWorkerRoster(dateObj) {
 // ==============================================================================
 // 14. [메뉴 3] 일간 교대일정 (Daily Schedule: 좌 주간 / 우 야간 이분할)
 // ==============================================================================
-let dailySelectedDate = new Date();
 
 function initDailyScheduleControls() {
   const prevWeekBtn = document.getElementById('dailyPrevWeekBtn');

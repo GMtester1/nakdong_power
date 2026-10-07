@@ -570,13 +570,12 @@ body {
   gap: 1px;
 }
 
-/* 캘린더 셀: 모바일 및 데스크톱에서 크기 고정 및 내용 넘침 방지 */
+/* 캘린더 셀: 개인캘린더 및 팀일정표 일자 박스 크기 내용에 맞게 fit 조정 */
 .calendar-cell {
   background: #ffffff;
   min-height: 68px;
-  height: 68px;
-  max-height: 68px;
-  padding: 0.3rem;
+  height: auto;
+  padding: 0.35rem 0.3rem;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -584,15 +583,12 @@ body {
   transition: var(--transition);
   position: relative;
   box-sizing: border-box;
-  overflow: hidden;
 }
 
-/* 개인캘린더 일자 칸 세로 크기 200% 조정 (기존 68px -> 136px) */
 #myCalendarGrid .calendar-cell {
-  min-height: 136px;
-  height: 136px;
-  max-height: 136px;
-  padding: 0.5rem 0.4rem;
+  min-height: 68px;
+  height: auto;
+  padding: 0.45rem 0.4rem;
 }
 
 #myCalendarGrid .cell-memo-input {
@@ -743,8 +739,8 @@ body {
 
 .calendar-cell.team-cell {
   min-height: 86px;
-  height: 86px;
-  padding: 0.3rem;
+  height: auto;
+  padding: 0.35rem 0.3rem;
   box-sizing: border-box;
 }
 

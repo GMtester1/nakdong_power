@@ -1317,6 +1317,7 @@ function createTeamCalendarCell(dateObj, isOtherMonth) {
   const showNight = (currentTeamFilter === 'ALL' || currentTeamFilter === 'NIGHT') && nightWorkers.length > 0;
   const showTrip = (currentTeamFilter === 'ALL' || currentTeamFilter === 'DAY') && tripWorkers.length > 0;
 
+  const adminText = adminWorkers.length > 0 ? `(관) ${adminWorkers.join(',')}` : '';
   const adminHtml = showAdmin ? `
     <div class="team-worker-row admin-worker-row" title="관리자 근무현황: ${adminText}">
       <span class="worker-shift-lbl admin">관</span>

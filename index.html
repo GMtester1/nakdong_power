@@ -246,6 +246,75 @@
             <!-- Dynamically populated with date & monthly memo box -->
           </div>
         </div>
+
+        <!-- ================= 하단 고정 메뉴: 발전기 정지일정 (좌: 대수력 정지일정 / 우: 소수력 정지일정) ================= -->
+        <div class="generator-shutdown-section" style="margin-top: 1.5rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <div style="width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, #0284c7, #0369a1); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.9rem;">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+              </div>
+              <h3 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: var(--text-primary);">발전기 정지일정</h3>
+              <span class="badge" style="background: #e0f2fe; color: #0369a1; font-size: 0.75rem; font-weight: 700;">상시 고정 메모</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span style="font-size: 0.78rem; color: #64748b;"><i class="fa-solid fa-cloud-arrow-up" style="color: #059669;"></i> Supabase 실시간 동기화</span>
+              <button type="button" id="btnSaveAllShutdownMemos" class="btn-pill btn-primary" style="font-size: 0.8rem; font-weight: 700; padding: 0.4rem 0.9rem;">
+                <i class="fa-solid fa-floppy-disk"></i> 정지일정 일괄 저장
+              </button>
+            </div>
+          </div>
+
+          <div class="generator-shutdown-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <!-- [좌] 대수력 정지일정 -->
+            <div class="card shutdown-card large-hydro-card" style="border: 1.5px solid #0284c7; background: #f0f9ff; border-radius: 14px; box-shadow: var(--shadow-sm);">
+              <div class="card-header" style="background: transparent; border-bottom: 1px solid #bae6fd; display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem;">
+                <div style="display: flex; align-items: center; gap: 0.4rem;">
+                  <i class="fa-solid fa-water" style="color: #0284c7; font-size: 1.1rem;"></i>
+                  <h4 style="margin: 0; font-size: 1rem; font-weight: 800; color: #0369a1;">대수력 정지일정</h4>
+                </div>
+                <span class="badge" style="background: #e0f2fe; color: #0284c7; font-size: 0.72rem; font-weight: 700;">안동 · 임하 · 영주</span>
+              </div>
+              <div class="card-body" style="padding: 1rem;">
+                <div style="font-size: 0.8rem; color: #0369a1; margin-bottom: 0.5rem; font-weight: 600;">
+                  댐 대수력 발전기 계획예방정비, 수차 발전기 점검 및 긴급정지 일정
+                </div>
+                <textarea id="largeHydroShutdownTextarea" class="memo-textarea" style="min-height: 140px; width: 100%; border: 1.5px solid #bae6fd; border-radius: 8px; padding: 0.75rem; font-size: 0.875rem; background: #ffffff; resize: vertical; font-family: inherit; line-height: 1.45;" placeholder="• 안동 #1 정기보수: 2026.10.12 ~ 10.25 (수차 분해점검)&#10;• 임하 #2 계획정지: 2026.11.02 ~ 11.15&#10;• 영주 #1 점검일정 입력..."></textarea>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.6rem;">
+                  <span id="largeHydroUpdatedTime" style="font-size: 0.72rem; color: #64748b;"></span>
+                  <div style="display: flex; gap: 0.4rem;">
+                    <button type="button" id="btnDeleteLargeHydroShutdown" class="btn-pill btn-secondary" style="font-size: 0.78rem; padding: 0.35rem 0.7rem;"><i class="fa-solid fa-trash-can"></i> 삭제</button>
+                    <button type="button" id="btnSaveLargeHydroShutdown" class="btn-pill" style="background: #0284c7; color: #ffffff; font-size: 0.78rem; font-weight: 700; padding: 0.35rem 0.85rem;"><i class="fa-solid fa-check"></i> 대수력 저장</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- [우] 소수력 정지일정 -->
+            <div class="card shutdown-card small-hydro-card" style="border: 1.5px solid #059669; background: #ecfdf5; border-radius: 14px; box-shadow: var(--shadow-sm);">
+              <div class="card-header" style="background: transparent; border-bottom: 1px solid #a7f3d0; display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem;">
+                <div style="display: flex; align-items: center; gap: 0.4rem;">
+                  <i class="fa-solid fa-bolt" style="color: #059669; font-size: 1.1rem;"></i>
+                  <h4 style="margin: 0; font-size: 1rem; font-weight: 800; color: #047857;">소수력 정지일정</h4>
+                </div>
+                <span class="badge" style="background: #d1fae5; color: #047857; font-size: 0.72rem; font-weight: 700;">8개 보 소수력</span>
+              </div>
+              <div class="card-body" style="padding: 1rem;">
+                <div style="font-size: 0.8rem; color: #047857; margin-bottom: 0.5rem; font-weight: 600;">
+                  낙동강 보 소수력 발전기 경보, 출수 불량, 계통 연계 및 정기점검 일정
+                </div>
+                <textarea id="smallHydroShutdownTextarea" class="memo-textarea" style="min-height: 140px; width: 100%; border: 1.5px solid #a7f3d0; border-radius: 8px; padding: 0.75rem; font-size: 0.875rem; background: #ffffff; resize: vertical; font-family: inherit; line-height: 1.45;" placeholder="• 강정고령 #1 점검: 2026.10.15 ~ 10.18&#10;• 달성 #2 배전선로 작업 정지: 2026.10.20 09:00 ~ 17:00&#10;• 창녕함안 #1 경보 점검 및 수리 입력..."></textarea>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.6rem;">
+                  <span id="smallHydroUpdatedTime" style="font-size: 0.72rem; color: #64748b;"></span>
+                  <div style="display: flex; gap: 0.4rem;">
+                    <button type="button" id="btnDeleteSmallHydroShutdown" class="btn-pill btn-secondary" style="font-size: 0.78rem; padding: 0.35rem 0.7rem;"><i class="fa-solid fa-trash-can"></i> 삭제</button>
+                    <button type="button" id="btnSaveSmallHydroShutdown" class="btn-pill" style="background: #059669; color: #ffffff; font-size: 0.78rem; font-weight: 700; padding: 0.35rem 0.85rem;"><i class="fa-solid fa-check"></i> 소수력 저장</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       <!-- ================= 4. 일간 교대일정 (Daily Schedule: 좌 주간 / 우 야간 이분할) ================= -->

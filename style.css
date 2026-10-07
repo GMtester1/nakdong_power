@@ -809,6 +809,30 @@ body {
   text-align: center;
 }
 
+/* 발전기 정지일정 섹션 (월간 일정표 하단 고정 메모: 대수력 / 소수력 2분할) */
+.generator-shutdown-section {
+  width: 100%;
+}
+
+.generator-shutdown-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.shutdown-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.shutdown-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.shutdown-card .memo-textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+}
+
 .team-calendar-worker-box {
   margin-top: 0.2rem;
   display: flex;
@@ -1803,6 +1827,11 @@ body {
   }
   .monthly-memo-box .memo-placeholder {
     font-size: 0.62rem;
+  }
+
+  .generator-shutdown-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
   }
 
   .team-calendar-worker-box {

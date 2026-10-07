@@ -279,6 +279,24 @@ try {
     monthlySchedulesCache = JSON.parse(savedMonthly) || {};
   }
 } catch (e) {}
+let generatorShutdownCache = {
+  LARGE_HYDRO: '',
+  SMALL_HYDRO: ''
+};
+let generatorShutdownUpdated = {
+  LARGE_HYDRO: null,
+  SMALL_HYDRO: null
+};
+try {
+  const savedShutdown = localStorage.getItem('NAKDONG_GENERATOR_SHUTDOWN_CACHE');
+  if (savedShutdown) {
+    const parsed = JSON.parse(savedShutdown);
+    if (parsed) {
+      generatorShutdownCache.LARGE_HYDRO = parsed.LARGE_HYDRO || '';
+      generatorShutdownCache.SMALL_HYDRO = parsed.SMALL_HYDRO || '';
+    }
+  }
+} catch (e) {}
 let postsList = [];
 let currentPostDetail = null;
 let currentAdminTargetDate = null; // 모달 대상 일자
@@ -350,6 +368,7 @@ function startApp() {
   initCalendarControls();
   initTeamScheduleControls();
   initMonthlyScheduleControls();
+  initGeneratorShutdownControls();
   initDailyScheduleControls();
   initBoardScreen();
   initAntigravity();
@@ -363,6 +382,7 @@ function startApp() {
   renderMyCalendar();
   renderTeamSchedule();
   renderMonthlySchedule();
+  renderGeneratorShutdownSection();
   renderDailySchedule();
 
   // 2. Supabase 연결 점검 및 데이터 로드 (비동기)
@@ -473,7 +493,27 @@ async function loadRemoteData() {
       console.warn('월간일정 Supabase 로드 실패 (로컬 캐시 사용):', err);
     }
 
-    // 5. 게시글
+    // 5. 발전기 정지일정 (generator_shutdown_schedules: 대수력 및 소수력)
+    try {
+      const shutdownData = await SupabaseRest.select('generator_shutdown_schedules');
+      if (shutdownData && Array.isArray(shutdownData)) {
+        shutdownData.forEach(item => {
+          if (item && item.category) {
+            generatorShutdownCache[item.category] = item.content || '';
+            if (item.updated_at) {
+              generatorShutdownUpdated[item.category] = item.updated_at;
+            }
+          }
+        });
+        try {
+          localStorage.setItem('NAKDONG_GENERATOR_SHUTDOWN_CACHE', JSON.stringify(generatorShutdownCache));
+        } catch (e) {}
+      }
+    } catch (err) {
+      console.warn('발전기 정지일정 Supabase 로드 실패 (로컬 캐시 사용):', err);
+    }
+
+    // 6. 게시글
     const posts = await SupabaseRest.select('posts', 'order=created_at.desc');
     if (posts) {
       postsList = posts;
@@ -483,6 +523,7 @@ async function loadRemoteData() {
     renderMyCalendar();
     renderTeamSchedule();
     renderMonthlySchedule();
+    renderGeneratorShutdownSection();
     renderDailySchedule();
     renderPostsList();
   } catch (e) {
@@ -955,6 +996,7 @@ function initNavigation() {
       if (tab.dataset.tab === 'monthlySchedule') {
         monthlySelectedDate = new Date(selectedDate);
         renderMonthlySchedule();
+        renderGeneratorShutdownSection();
       }
       if (tab.dataset.tab === 'dailySchedule') {
         dailySelectedDate = new Date(selectedDate);
@@ -1605,6 +1647,113 @@ function openMonthlyMemoModal(dateStr, dateObj) {
   setTimeout(() => {
     if (textarea) textarea.focus();
   }, 100);
+}
+
+// ==============================================================================
+// 13-1. [월간 일정표 하단 고정 메뉴] 발전기 정지일정 (대수력 / 소수력 2분할)
+// ==============================================================================
+function initGeneratorShutdownControls() {
+  const largeSaveBtn = document.getElementById('btnSaveLargeHydroShutdown');
+  const smallSaveBtn = document.getElementById('btnSaveSmallHydroShutdown');
+  const allSaveBtn = document.getElementById('btnSaveAllShutdownMemos');
+  const largeDeleteBtn = document.getElementById('btnDeleteLargeHydroShutdown');
+  const smallDeleteBtn = document.getElementById('btnDeleteSmallHydroShutdown');
+
+  if (largeSaveBtn) {
+    largeSaveBtn.addEventListener('click', async () => {
+      const textarea = document.getElementById('largeHydroShutdownTextarea');
+      const val = textarea ? textarea.value.trim() : '';
+      await saveGeneratorShutdownCategory('LARGE_HYDRO', val, '대수력');
+    });
+  }
+
+  if (smallSaveBtn) {
+    smallSaveBtn.addEventListener('click', async () => {
+      const textarea = document.getElementById('smallHydroShutdownTextarea');
+      const val = textarea ? textarea.value.trim() : '';
+      await saveGeneratorShutdownCategory('SMALL_HYDRO', val, '소수력');
+    });
+  }
+
+  if (allSaveBtn) {
+    allSaveBtn.addEventListener('click', async () => {
+      const largeVal = document.getElementById('largeHydroShutdownTextarea')?.value.trim() || '';
+      const smallVal = document.getElementById('smallHydroShutdownTextarea')?.value.trim() || '';
+      await Promise.all([
+        saveGeneratorShutdownCategory('LARGE_HYDRO', largeVal, '대수력', false),
+        saveGeneratorShutdownCategory('SMALL_HYDRO', smallVal, '소수력', false)
+      ]);
+      showToast('✅ 발전기 정지일정(대수력·소수력)이 모두 저장되었습니다.');
+    });
+  }
+
+  if (largeDeleteBtn) {
+    largeDeleteBtn.addEventListener('click', async () => {
+      if (!confirm('대수력 발전기 정지일정 내용을 초기화/삭제하시겠습니까?')) return;
+      const textarea = document.getElementById('largeHydroShutdownTextarea');
+      if (textarea) textarea.value = '';
+      await saveGeneratorShutdownCategory('LARGE_HYDRO', '', '대수력');
+    });
+  }
+
+  if (smallDeleteBtn) {
+    smallDeleteBtn.addEventListener('click', async () => {
+      if (!confirm('소수력 발전기 정지일정 내용을 초기화/삭제하시겠습니까?')) return;
+      const textarea = document.getElementById('smallHydroShutdownTextarea');
+      if (textarea) textarea.value = '';
+      await saveGeneratorShutdownCategory('SMALL_HYDRO', '', '소수력');
+    });
+  }
+}
+
+async function saveGeneratorShutdownCategory(category, content, label, showNotification = true) {
+  const now = Date.now();
+  generatorShutdownCache[category] = content;
+  generatorShutdownUpdated[category] = now;
+
+  try {
+    localStorage.setItem('NAKDONG_GENERATOR_SHUTDOWN_CACHE', JSON.stringify(generatorShutdownCache));
+  } catch (e) {}
+
+  if (isConnectedToSupabase) {
+    try {
+      await SupabaseRest.upsert('generator_shutdown_schedules', {
+        category: category,
+        content: content,
+        updated_at: now
+      }, 'category');
+    } catch (err) {
+      console.warn(`[Supabase] 발전기 정지일정 (${category}) 저장 오류:`, err);
+    }
+  }
+
+  renderGeneratorShutdownSection();
+  if (showNotification) {
+    showToast(content ? `✅ ${label} 정지일정이 저장되었습니다.` : `🗑️ ${label} 정지일정이 삭제되었습니다.`);
+  }
+}
+
+function renderGeneratorShutdownSection() {
+  const largeTextarea = document.getElementById('largeHydroShutdownTextarea');
+  const smallTextarea = document.getElementById('smallHydroShutdownTextarea');
+  const largeTimeEl = document.getElementById('largeHydroUpdatedTime');
+  const smallTimeEl = document.getElementById('smallHydroUpdatedTime');
+
+  if (largeTextarea && document.activeElement !== largeTextarea) {
+    largeTextarea.value = generatorShutdownCache['LARGE_HYDRO'] || '';
+  }
+  if (smallTextarea && document.activeElement !== smallTextarea) {
+    smallTextarea.value = generatorShutdownCache['SMALL_HYDRO'] || '';
+  }
+
+  if (largeTimeEl) {
+    const t = generatorShutdownUpdated['LARGE_HYDRO'];
+    largeTimeEl.textContent = t ? `저장일시: ${new Date(t).toLocaleDateString('ko-KR')} ${new Date(t).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}` : '';
+  }
+  if (smallTimeEl) {
+    const t = generatorShutdownUpdated['SMALL_HYDRO'];
+    smallTimeEl.textContent = t ? `저장일시: ${new Date(t).toLocaleDateString('ko-KR')} ${new Date(t).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}` : '';
+  }
 }
 
 // ==============================================================================

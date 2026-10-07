@@ -259,6 +259,7 @@ let isConnectedToSupabase = false;
 let currentDate = new Date(2026, 9, 1);       // 2026년 10월 기본
 let selectedDate = new Date(2026, 9, 1);
 let teamSelectedDate = new Date(2026, 9, 1);
+let monthlySelectedDate = new Date(2026, 9, 1);
 let weeklySelectedDate = new Date(2026, 9, 1);
 let dailySelectedDate = new Date(2026, 9, 1);
 
@@ -271,9 +272,17 @@ try {
   }
 } catch (e) {}
 let adminNotesCache = {};     // key: dateString -> content
+let monthlySchedulesCache = {}; // key: dateString -> content
+try {
+  const savedMonthly = localStorage.getItem('NAKDONG_MONTHLY_SCHEDULES_CACHE');
+  if (savedMonthly) {
+    monthlySchedulesCache = JSON.parse(savedMonthly) || {};
+  }
+} catch (e) {}
 let postsList = [];
 let currentPostDetail = null;
 let currentAdminTargetDate = null; // 모달 대상 일자
+let currentMonthlyTargetDate = null; // 월간일정 모달 대상 일자
 
 let currentTeamFilter = 'ALL';
 let currentReqFilter = 'ALL';
@@ -340,6 +349,7 @@ function startApp() {
   initNavigation();
   initCalendarControls();
   initTeamScheduleControls();
+  initMonthlyScheduleControls();
   initDailyScheduleControls();
   initBoardScreen();
   initAntigravity();
@@ -352,6 +362,7 @@ function startApp() {
   // 1. 화면 즉시 렌더링 (지연 없이 즉시 4조3교대 근무표 표시)
   renderMyCalendar();
   renderTeamSchedule();
+  renderMonthlySchedule();
   renderDailySchedule();
 
   // 2. Supabase 연결 점검 및 데이터 로드 (비동기)
@@ -445,6 +456,23 @@ async function loadRemoteData() {
       });
     }
 
+    // 4. 월간 일정 메모 (monthly_schedules)
+    try {
+      const monthlyData = await SupabaseRest.select('monthly_schedules');
+      if (monthlyData && Array.isArray(monthlyData)) {
+        monthlyData.forEach(m => {
+          if (m && m.date_string) {
+            monthlySchedulesCache[m.date_string] = m.content || '';
+          }
+        });
+        try {
+          localStorage.setItem('NAKDONG_MONTHLY_SCHEDULES_CACHE', JSON.stringify(monthlySchedulesCache));
+        } catch (e) {}
+      }
+    } catch (err) {
+      console.warn('월간일정 Supabase 로드 실패 (로컬 캐시 사용):', err);
+    }
+
     // 5. 게시글
     const posts = await SupabaseRest.select('posts', 'order=created_at.desc');
     if (posts) {
@@ -454,6 +482,7 @@ async function loadRemoteData() {
     // 화면 갱신
     renderMyCalendar();
     renderTeamSchedule();
+    renderMonthlySchedule();
     renderDailySchedule();
     renderPostsList();
   } catch (e) {
@@ -923,6 +952,10 @@ function initNavigation() {
         teamSelectedDate = new Date(selectedDate);
         renderTeamSchedule();
       }
+      if (tab.dataset.tab === 'monthlySchedule') {
+        monthlySelectedDate = new Date(selectedDate);
+        renderMonthlySchedule();
+      }
       if (tab.dataset.tab === 'dailySchedule') {
         dailySelectedDate = new Date(selectedDate);
         renderDailySchedule();
@@ -1370,6 +1403,208 @@ function createTeamCalendarCell(dateObj, isOtherMonth) {
 
 function renderWorkerRoster(dateObj) {
   // 우측 근무편성표 삭제됨: 캘린더 내 주/야 근무자 표시로 대체됨
+}
+
+// ==============================================================================
+// 13. [메뉴 3] 월간 일정표 (Monthly Schedule: 일자별 메모 박스 캘린더)
+// ==============================================================================
+function initMonthlyScheduleControls() {
+  const prevBtn = document.getElementById('monthlyPrevMonthBtn');
+  const nextBtn = document.getElementById('monthlyNextMonthBtn');
+  const todayBtn = document.getElementById('monthlyTodayBtn');
+
+  if (prevBtn) {
+    prevBtn.addEventListener('click', () => {
+      monthlySelectedDate.setMonth(monthlySelectedDate.getMonth() - 1);
+      renderMonthlySchedule();
+    });
+  }
+
+  if (nextBtn) {
+    nextBtn.addEventListener('click', () => {
+      monthlySelectedDate.setMonth(monthlySelectedDate.getMonth() + 1);
+      renderMonthlySchedule();
+    });
+  }
+
+  if (todayBtn) {
+    todayBtn.addEventListener('click', () => {
+      monthlySelectedDate = new Date();
+      renderMonthlySchedule();
+    });
+  }
+
+  // 모달 내 저장 및 삭제 버튼 리스너
+  const saveBtn = document.getElementById('btnMonthlyMemoSave');
+  if (saveBtn) {
+    saveBtn.addEventListener('click', async () => {
+      if (!currentMonthlyTargetDate) return;
+      const textarea = document.getElementById('monthlyMemoModalTextarea');
+      const val = textarea ? textarea.value.trim() : '';
+      const dateStr = currentMonthlyTargetDate;
+
+      // 1. 로컬 캐시 및 localStorage 저장
+      if (val) {
+        monthlySchedulesCache[dateStr] = val;
+      } else {
+        delete monthlySchedulesCache[dateStr];
+      }
+      try {
+        localStorage.setItem('NAKDONG_MONTHLY_SCHEDULES_CACHE', JSON.stringify(monthlySchedulesCache));
+      } catch (e) {}
+
+      // 2. Supabase 비동기 저장/삭제 (monthly_schedules 테이블)
+      if (isConnectedToSupabase) {
+        try {
+          if (val) {
+            await SupabaseRest.upsert('monthly_schedules', {
+              date_string: dateStr,
+              content: val,
+              updated_at: Date.now()
+            }, 'date_string');
+          } else {
+            await SupabaseRest.delete('monthly_schedules', 'date_string', dateStr);
+          }
+        } catch (err) {
+          console.warn('[Supabase] monthly_schedules 동기화 오류:', err);
+        }
+      }
+
+      closeModal('monthlyMemoModal');
+      renderMonthlySchedule();
+      showToast(val ? `✅ ${dateStr} 월간 메모가 저장되었습니다.` : `🗑️ ${dateStr} 메모가 삭제되었습니다.`);
+    });
+  }
+
+  const deleteBtn = document.getElementById('btnMonthlyMemoDelete');
+  if (deleteBtn) {
+    deleteBtn.addEventListener('click', async () => {
+      if (!currentMonthlyTargetDate) return;
+      const dateStr = currentMonthlyTargetDate;
+      if (!confirm(`${dateStr} 월간 일정 메모를 삭제하시겠습니까?`)) return;
+
+      delete monthlySchedulesCache[dateStr];
+      try {
+        localStorage.setItem('NAKDONG_MONTHLY_SCHEDULES_CACHE', JSON.stringify(monthlySchedulesCache));
+      } catch (e) {}
+
+      if (isConnectedToSupabase) {
+        try {
+          await SupabaseRest.delete('monthly_schedules', 'date_string', dateStr);
+        } catch (err) {
+          console.warn('[Supabase] monthly_schedules 삭제 오류:', err);
+        }
+      }
+
+      closeModal('monthlyMemoModal');
+      renderMonthlySchedule();
+      showToast(`🗑️ ${dateStr} 메모가 삭제되었습니다.`);
+    });
+  }
+}
+
+function renderMonthlySchedule() {
+  const year = monthlySelectedDate.getFullYear();
+  const month = monthlySelectedDate.getMonth();
+
+  const titleEl = document.getElementById('monthlyMonthTitle');
+  if (titleEl) {
+    titleEl.textContent = `${year}년 ${month + 1}월`;
+  }
+
+  const grid = document.getElementById('monthlyCalendarGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const startDayOfWeek = firstDay.getDay(); // 0(일) ~ 6(토)
+  const totalDays = lastDay.getDate();
+
+  // 1. 이전 달 채우기
+  const prevMonthLastDay = new Date(year, month, 0).getDate();
+  for (let i = startDayOfWeek - 1; i >= 0; i--) {
+    const pDate = new Date(year, month - 1, prevMonthLastDay - i);
+    grid.appendChild(createMonthlyCalendarCell(pDate, true));
+  }
+
+  // 2. 이번 달 채우기
+  for (let d = 1; d <= totalDays; d++) {
+    const dateObj = new Date(year, month, d);
+    grid.appendChild(createMonthlyCalendarCell(dateObj, false));
+  }
+
+  // 3. 다음 달 채우기 (7열 그리드 완성)
+  const remainingCells = (7 - ((startDayOfWeek + totalDays) % 7)) % 7;
+  for (let i = 1; i <= remainingCells; i++) {
+    const nDate = new Date(year, month + 1, i);
+    grid.appendChild(createMonthlyCalendarCell(nDate, true));
+  }
+}
+
+function createMonthlyCalendarCell(dateObj, isOtherMonth) {
+  const cell = document.createElement('div');
+  cell.className = `calendar-cell monthly-cell ${isOtherMonth ? 'other-month' : ''}`;
+  const dayOfWeek = dateObj.getDay();
+  if (dayOfWeek === 0) cell.classList.add('sunday');
+  if (dayOfWeek === 6) cell.classList.add('saturday');
+
+  const dateStr = formatDate(dateObj);
+  const holidayName = getKoreanHolidayName(dateObj);
+  if (holidayName) cell.classList.add('sunday');
+
+  const todayStr = formatDate(new Date());
+  if (dateStr === todayStr) cell.classList.add('today');
+
+  const memoText = monthlySchedulesCache[dateStr] || '';
+
+  cell.innerHTML = `
+    <div class="day-header">
+      <span class="day-number">${dateObj.getDate()}</span>
+      ${isOtherMonth ? `<span style="font-size:0.65rem; color:#94a3b8;">${dateObj.getMonth() + 1}월</span>` : ''}
+      ${holidayName ? `<span class="holiday-lbl" style="font-size:0.65rem; color:#dc2626; font-weight:700;">${holidayName}</span>` : ''}
+    </div>
+    <div class="monthly-memo-box ${memoText ? 'has-memo' : ''}" data-date="${dateStr}" title="클릭하여 월간 일정 메모 입력 및 수정">
+      ${memoText 
+        ? `<div class="memo-text">${escapeHtml(memoText)}</div>` 
+        : `<span class="memo-placeholder"><i class="fa-solid fa-plus"></i> 메모</span>`
+      }
+    </div>
+  `;
+
+  cell.addEventListener('click', () => {
+    openMonthlyMemoModal(dateStr, dateObj);
+  });
+
+  return cell;
+}
+
+function openMonthlyMemoModal(dateStr, dateObj) {
+  currentMonthlyTargetDate = dateStr;
+  const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+  const dayName = dayNames[dateObj.getDay()];
+  const holidayName = getKoreanHolidayName(dateObj);
+
+  const badgeEl = document.getElementById('monthlyMemoDateBadge');
+  if (badgeEl) {
+    badgeEl.textContent = `${dateStr} (${dayName})${holidayName ? ' [' + holidayName + ']' : ''}`;
+  }
+
+  const existingMemo = monthlySchedulesCache[dateStr] || '';
+  const textarea = document.getElementById('monthlyMemoModalTextarea');
+  if (textarea) {
+    textarea.value = existingMemo;
+  }
+
+  const deleteBtn = document.getElementById('btnMonthlyMemoDelete');
+  if (deleteBtn) {
+    deleteBtn.style.display = existingMemo ? 'inline-flex' : 'none';
+  }
+
+  openModal('monthlyMemoModal');
+  setTimeout(() => {
+    if (textarea) textarea.focus();
+  }, 100);
 }
 
 // ==============================================================================

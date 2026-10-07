@@ -744,6 +744,71 @@ body {
   box-sizing: border-box;
 }
 
+/* 월간 일정표 캘린더 및 일자별 메모박스 */
+.calendar-cell.monthly-cell {
+  min-height: 94px;
+  height: auto;
+  padding: 0.4rem 0.35rem;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 0.25rem;
+}
+
+.monthly-memo-box {
+  margin-top: 0.25rem;
+  padding: 0.35rem 0.4rem;
+  border-radius: 6px;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  font-size: 0.72rem;
+  color: #64748b;
+  min-height: 48px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  word-break: break-all;
+  white-space: pre-wrap;
+  line-height: 1.35;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.monthly-memo-box:hover {
+  background: #f1f5f9;
+  border-color: var(--primary);
+  border-style: solid;
+}
+
+.monthly-memo-box.has-memo {
+  background: #eff6ff;
+  border: 1px solid #93c5fd;
+  color: #1e40af;
+  font-weight: 500;
+  box-shadow: 0 1px 2px rgba(59, 130, 246, 0.08);
+}
+
+.monthly-memo-box .memo-text {
+  flex: 1;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+}
+
+.monthly-memo-box .memo-placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  color: #94a3b8;
+  font-size: 0.68rem;
+  margin: auto 0;
+  text-align: center;
+}
+
 .team-calendar-worker-box {
   margin-top: 0.2rem;
   display: flex;
@@ -1721,6 +1786,23 @@ body {
     min-height: 84px;
     height: auto;
     padding: 0.2rem 0.15rem;
+  }
+
+  /* 월간 일정표 모바일 화면 */
+  .calendar-cell.monthly-cell {
+    min-height: 68px;
+    height: auto;
+    padding: 0.2rem 0.15rem;
+  }
+  .monthly-memo-box {
+    margin-top: 0.15rem;
+    padding: 0.2rem 0.25rem;
+    font-size: 0.65rem;
+    min-height: 34px;
+    line-height: 1.25;
+  }
+  .monthly-memo-box .memo-placeholder {
+    font-size: 0.62rem;
   }
 
   .team-calendar-worker-box {

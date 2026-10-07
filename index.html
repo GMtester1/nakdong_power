@@ -89,6 +89,9 @@
       <button class="nav-tab" data-tab="teamSchedule">
         <i class="fa-solid fa-users"></i> 팀 일정표
       </button>
+      <button class="nav-tab" data-tab="monthlySchedule">
+        <i class="fa-solid fa-calendar"></i> 월간 일정표
+      </button>
       <button class="nav-tab" data-tab="dailySchedule">
         <i class="fa-solid fa-calendar-day"></i> 일간 교대일정
       </button>
@@ -213,7 +216,39 @@
         </div>
       </section>
 
-      <!-- ================= 3. 일간 교대일정 (Daily Schedule: 좌 주간 / 우 야간 이분할) ================= -->
+      <!-- ================= 3. 월간 일정표 (Monthly Schedule: 일자별 메모 박스 캘린더) ================= -->
+      <section id="tab-monthlySchedule" class="tab-pane">
+        <div class="pane-header">
+          <div class="month-controls">
+            <button id="monthlyPrevMonthBtn" class="btn-icon" title="이전 달"><i class="fa-solid fa-chevron-left"></i></button>
+            <h2 id="monthlyMonthTitle" class="calendar-title">2026년 10월</h2>
+            <button id="monthlyNextMonthBtn" class="btn-icon" title="다음 달"><i class="fa-solid fa-chevron-right"></i></button>
+            <button id="monthlyTodayBtn" class="btn-pill btn-secondary"><i class="fa-solid fa-calendar-day"></i> 오늘</button>
+          </div>
+
+          <div style="font-size:0.85rem; color:var(--text-secondary); display:flex; align-items:center; gap:0.5rem; background:var(--bg-card); padding:0.4rem 0.8rem; border-radius:var(--radius-full); border:1px solid var(--border-color);">
+            <i class="fa-solid fa-pen-to-square" style="color:var(--primary);"></i>
+            <span>일자 박스를 클릭하여 <strong>월간 일정 메모</strong>를 작성하세요 (Supabase 자동 저장)</span>
+          </div>
+        </div>
+
+        <div class="calendar-wrapper" style="width:100%;">
+          <div class="calendar-weekdays">
+            <div class="weekday sun">일</div>
+            <div class="weekday">월</div>
+            <div class="weekday">화</div>
+            <div class="weekday">수</div>
+            <div class="weekday">목</div>
+            <div class="weekday">금</div>
+            <div class="weekday sat">토</div>
+          </div>
+          <div id="monthlyCalendarGrid" class="calendar-grid">
+            <!-- Dynamically populated with date & monthly memo box -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 4. 일간 교대일정 (Daily Schedule: 좌 주간 / 우 야간 이분할) ================= -->
       <section id="tab-dailySchedule" class="tab-pane">
         <div class="pane-header">
           <div class="month-controls" style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
@@ -734,6 +769,30 @@
       </div>
       <div class="modal-footer" style="padding: 0.75rem 1.25rem;">
         <button type="button" class="btn-pill btn-secondary" data-close="adminShiftModal">취소</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= Modal: 월간 일정 메모 입력 및 수정 ================= -->
+  <div id="monthlyMemoModal" class="modal-backdrop">
+    <div class="modal-dialog" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3 id="monthlyMemoModalTitle"><i class="fa-solid fa-pen-to-square" style="color:var(--primary);"></i> 월간 일정 메모</h3>
+        <button class="modal-close" data-close="monthlyMemoModal">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 1.25rem;">
+        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem; display: flex; align-items: center; justify-content: space-between;">
+          <span id="monthlyMemoDateBadge" style="font-weight: 700; color: var(--primary); font-size: 0.95rem;">2026-10-01 (목)</span>
+          <span style="font-size: 0.75rem; color: #64748b;"><i class="fa-solid fa-cloud-arrow-up" style="color:#059669;"></i> Supabase 실시간 연동</span>
+        </div>
+        <textarea id="monthlyMemoModalTextarea" class="form-control" rows="5" placeholder="해당 일자의 월간 일정, 업무 지시, 행사, 점검 메모를 입력하세요..." style="width: 100%; resize: vertical; min-height: 120px; font-size: 0.9rem; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); font-family: inherit; line-height: 1.5;"></textarea>
+      </div>
+      <div class="modal-footer" style="padding: 0.75rem 1.25rem; display: flex; justify-content: space-between; align-items: center;">
+        <button type="button" class="btn-pill" id="btnMonthlyMemoDelete" style="background:#fee2e2; color:#dc2626; border:1px solid #fecaca; display:none;"><i class="fa-solid fa-trash"></i> 삭제</button>
+        <div style="display: flex; gap: 0.5rem; margin-left: auto;">
+          <button type="button" class="btn-pill btn-secondary" data-close="monthlyMemoModal">취소</button>
+          <button type="button" class="btn-pill btn-primary" id="btnMonthlyMemoSave"><i class="fa-solid fa-check"></i> 저장</button>
+        </div>
       </div>
     </div>
   </div>

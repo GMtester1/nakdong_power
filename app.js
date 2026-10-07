@@ -1354,8 +1354,7 @@ function createTeamCalendarCell(dateObj, isOtherMonth) {
 
     if (isAdmin) {
       if (st === 'V') {
-        const match = u.name.match(/\((.*?)\)/);
-        const realName = match ? match[1] : (u.name.replace(/관리자[0-9]*/g, '').trim() || u.name);
+        const realName = u.name.replace(/\(.*?\)/g, '').trim() || u.name;
         tripWorkers.push(realName);
         return;
       }

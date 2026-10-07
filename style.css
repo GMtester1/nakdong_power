@@ -744,36 +744,72 @@ body {
   box-sizing: border-box;
 }
 
+/* 월간 일정표 탭: 스크롤 없이 한 화면에 전체(캘린더 + 정지일정 섹션)가 나오도록 높이 자동조절 */
+#tab-monthlySchedule.active {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 135px);
+  max-height: calc(100vh - 135px);
+  min-height: 500px;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+#tab-monthlySchedule .pane-header {
+  margin-bottom: 0.25rem !important;
+  flex-shrink: 0;
+}
+
+#tab-monthlySchedule .calendar-wrapper {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#tab-monthlySchedule .calendar-weekdays {
+  flex-shrink: 0;
+}
+
+#tab-monthlySchedule .calendar-grid {
+  flex: 1 1 auto;
+  min-height: 0;
+  grid-auto-rows: 1fr;
+}
+
 /* 월간 일정표 캘린더 및 일자별 메모박스 */
 .calendar-cell.monthly-cell {
-  min-height: 94px;
-  height: auto;
-  padding: 0.4rem 0.35rem;
+  min-height: 0;
+  height: 100%;
+  padding: 0.2rem 0.3rem;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  gap: 0.25rem;
+  gap: 2px;
+  overflow: hidden;
 }
 
 .monthly-memo-box {
-  margin-top: 0.25rem;
-  padding: 0.35rem 0.4rem;
-  border-radius: 6px;
+  margin-top: 2px;
+  padding: 0.15rem 0.25rem;
+  border-radius: 5px;
   background: #f8fafc;
   border: 1px dashed #cbd5e1;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   color: #64748b;
-  min-height: 48px;
-  flex: 1;
+  min-height: 0;
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   word-break: break-all;
   white-space: pre-wrap;
-  line-height: 1.35;
+  line-height: 1.25;
   cursor: pointer;
   transition: all 0.2s ease;
+  overflow: hidden;
 }
 
 .monthly-memo-box:hover {
@@ -794,7 +830,7 @@ body {
   flex: 1;
   overflow: hidden;
   display: -webkit-box;
-  -webkit-line-clamp: 4;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
 }
 
@@ -804,33 +840,84 @@ body {
   justify-content: center;
   gap: 0.25rem;
   color: #94a3b8;
-  font-size: 0.68rem;
+  font-size: 0.65rem;
   margin: auto 0;
   text-align: center;
 }
 
-/* 발전기 정지일정 섹션 (월간 일정표 하단 고정 메모: 대수력 / 소수력 2분할) */
+/* 발전기 정지일정 섹션 (월간 일정표 하단 고정 메모: 대수력 / 소수력 2분할, 스크롤 없이 한 화면 자동 맞춤) */
 .generator-shutdown-section {
   width: 100%;
+  margin-top: 0.4rem !important;
+  flex-shrink: 0;
+}
+
+.generator-shutdown-section > div:first-child {
+  margin-bottom: 0.25rem !important;
 }
 
 .generator-shutdown-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  gap: 0.65rem;
 }
 
 .shutdown-card {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
 }
 
 .shutdown-card:hover {
   box-shadow: var(--shadow-md);
 }
 
+.shutdown-card .card-header {
+  padding: 0.3rem 0.75rem !important;
+}
+
+.shutdown-card .card-header h4 {
+  font-size: 0.92rem !important;
+}
+
+.shutdown-card .card-body {
+  padding: 0.4rem 0.75rem !important;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.shutdown-card .card-body > div:first-child {
+  font-size: 0.73rem !important;
+  margin-bottom: 0.15rem !important;
+  line-height: 1.25;
+}
+
+/* 정지일정 메모 텍스트영역 높이 자동조절 (인라인 min-height 140px 오버라이드) */
+.shutdown-card .memo-textarea,
+#largeHydroShutdownTextarea,
+#smallHydroShutdownTextarea {
+  min-height: 48px !important;
+  height: clamp(52px, 8.5vh, 80px) !important;
+  max-height: 95px !important;
+  padding: 0.35rem 0.55rem !important;
+  font-size: 0.8rem !important;
+  line-height: 1.35 !important;
+  resize: vertical;
+}
+
 .shutdown-card .memo-textarea:focus {
   outline: none;
   box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+}
+
+.shutdown-card .card-body > div:last-child {
+  margin-top: 0.2rem !important;
+}
+
+.shutdown-card .card-body button {
+  font-size: 0.75rem !important;
+  padding: 0.2rem 0.6rem !important;
 }
 
 .team-calendar-worker-box {
@@ -1813,8 +1900,13 @@ body {
   }
 
   /* 월간 일정표 모바일 화면 */
+  #tab-monthlySchedule.active {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
   .calendar-cell.monthly-cell {
-    min-height: 68px;
+    min-height: 60px;
     height: auto;
     padding: 0.2rem 0.15rem;
   }
@@ -1822,7 +1914,7 @@ body {
     margin-top: 0.15rem;
     padding: 0.2rem 0.25rem;
     font-size: 0.65rem;
-    min-height: 34px;
+    min-height: 28px;
     line-height: 1.25;
   }
   .monthly-memo-box .memo-placeholder {
@@ -1831,7 +1923,14 @@ body {
 
   .generator-shutdown-grid {
     grid-template-columns: 1fr !important;
-    gap: 0.75rem !important;
+    gap: 0.5rem !important;
+  }
+
+  .shutdown-card .memo-textarea,
+  #largeHydroShutdownTextarea,
+  #smallHydroShutdownTextarea {
+    min-height: 52px !important;
+    height: 65px !important;
   }
 
   .team-calendar-worker-box {

@@ -1708,6 +1708,79 @@ body {
   .detail-row {
     margin-bottom: 0 !important;
   }
+
+  /* 팀 캘린더 모바일 화면: team-calendar-worker-box 근무자 이름 잘림 방지 */
+  .calendar-cell.team-cell {
+    min-height: 84px;
+    height: auto;
+    padding: 0.2rem 0.15rem;
+  }
+
+  .team-calendar-worker-box {
+    margin-top: 0.15rem;
+    gap: 2px;
+    width: 100%;
+    overflow: visible;
+  }
+
+  .team-worker-row {
+    padding: 1px 2px;
+    gap: 2px;
+    font-size: 0.65rem;
+    border-radius: 3px;
+    white-space: normal;
+    align-items: flex-start;
+    overflow: visible;
+  }
+
+  .worker-shift-lbl {
+    font-size: 0.58rem;
+    padding: 0.5px 2px;
+    margin-top: 1px;
+    flex-shrink: 0;
+    line-height: 1.1;
+  }
+
+  .worker-names-text {
+    font-size: 0.62rem;
+    line-height: 1.15;
+    letter-spacing: -0.4px;
+    font-weight: 700;
+    white-space: normal;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+    overflow: visible;
+    text-overflow: unset;
+  }
+}
+
+@media (max-width: 480px) {
+  .calendar-cell.team-cell {
+    min-height: 80px;
+    height: auto;
+    padding: 0.15rem 0.1rem;
+  }
+
+  .team-calendar-worker-box {
+    gap: 1.5px;
+  }
+
+  .team-worker-row {
+    padding: 1px;
+    gap: 1.5px;
+    font-size: 0.6rem;
+  }
+
+  .worker-shift-lbl {
+    font-size: 0.54rem;
+    padding: 0 1.5px;
+  }
+
+  .worker-names-text {
+    font-size: 0.58rem;
+    line-height: 1.12;
+    letter-spacing: -0.5px;
+  }
 }
 
 /* Antigravity Active Physics Animation */

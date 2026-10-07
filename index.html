@@ -172,19 +172,6 @@
                 <button type="button" class="btn-pill btn-shift-x" id="btnAdminSetX" data-code="X"><i class="fa-solid fa-bed"></i> 휴무 (X)</button>
                 <button type="button" class="btn-pill btn-secondary" id="btnAdminRestoreDefault"><i class="fa-solid fa-rotate-left"></i> 기본 복원</button>
               </div>
-
-              <!-- 일자별 메모 입력 영역 -->
-              <div style="margin-top: 1rem; padding-top: 0.8rem; border-top: 1px dashed var(--border-color);">
-                <div style="font-size:0.825rem; font-weight:700; color:var(--text-secondary); margin-bottom:0.4rem;">
-                  <i class="fa-regular fa-note-sticky"></i> 일자별 개인 메모 / 특이사항 입력
-                </div>
-                <div style="display:flex; gap:0.5rem;">
-                  <input type="text" id="selectedDateMemoInput" class="form-input" style="flex:1; height:38px; min-height:38px; max-height:38px; padding:0.45rem 0.75rem; font-size:0.85rem; box-sizing:border-box;" placeholder="해당 일자 특이사항 (예: 발전기 점검, 오전 연차 등) 입력...">
-                  <button type="button" id="btnSaveSelectedDateMemo" class="btn-pill btn-primary" style="white-space:nowrap; padding:0.45rem 0.9rem; font-size:0.85rem; height:38px;">
-                    <i class="fa-solid fa-check"></i> 저장
-                  </button>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -747,26 +734,6 @@
       </div>
       <div class="modal-footer" style="padding: 0.75rem 1.25rem;">
         <button type="button" class="btn-pill btn-secondary" data-close="adminShiftModal">취소</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ================= Modal: 일자별 메모 입력 ================= -->
-  <div id="dateMemoModal" class="modal-backdrop">
-    <div class="modal-dialog" style="max-width: 400px;">
-      <div class="modal-header">
-        <h3 id="dateMemoModalTitle"><i class="fa-regular fa-note-sticky" style="color:var(--primary);"></i> 일자 메모 입력</h3>
-        <button class="modal-close" data-close="dateMemoModal">&times;</button>
-      </div>
-      <div class="modal-body" style="padding: 1rem 1.25rem;">
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">
-          해당 일자의 개인 메모 또는 업무 특이사항을 입력하세요:
-        </p>
-        <textarea id="modalDateMemoTextarea" class="memo-textarea" rows="4" placeholder="예: 오전 발전기 점검, 출장 보고, 업무 인수인계 등..."></textarea>
-      </div>
-      <div class="modal-footer" style="padding: 0.75rem 1.25rem; display:flex; justify-content:flex-end; gap:0.5rem;">
-        <button type="button" class="btn-pill btn-secondary" data-close="dateMemoModal">취소</button>
-        <button type="button" id="btnSaveDateModalMemo" class="btn-pill btn-primary"><i class="fa-solid fa-check"></i> 저장</button>
       </div>
     </div>
   </div>

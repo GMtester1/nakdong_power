@@ -1038,9 +1038,6 @@ function createCalendarCell(dateObj, isOtherMonth) {
     <div class="shift-tag-box" title="클릭하여 근무 코드(휴가, 출장, 교대 등) 변경" style="cursor: pointer;">
       <span class="shift-tag ${shiftType}">${shiftType}</span>
     </div>
-    <div class="cell-memo-input ${memoText ? 'has-memo' : ''}" title="일자별 메모 입력 및 확인">
-      ${memoText ? escapeHtml(memoText) : '+입력'}
-    </div>
   `;
 
   const tagBox = cell.querySelector('.shift-tag-box');
@@ -1052,18 +1049,6 @@ function createCalendarCell(dateObj, isOtherMonth) {
       cell.classList.add('selected');
       updateSelectedDateDetail(dateObj);
       openAdminShiftModal(dateObj);
-    });
-  }
-
-  const memoBox = cell.querySelector('.cell-memo-input');
-  if (memoBox) {
-    memoBox.addEventListener('click', (e) => {
-      e.stopPropagation();
-      selectedDate = dateObj;
-      document.querySelectorAll('#myCalendarGrid .calendar-cell').forEach(c => c.classList.remove('selected'));
-      cell.classList.add('selected');
-      updateSelectedDateDetail(dateObj);
-      openDateMemoModal(dateObj);
     });
   }
 
@@ -1109,28 +1094,6 @@ function updateSelectedDateDetail(dateObj) {
       }
     });
   }
-
-  // 일자 메모 입력 필드
-  const memoInput = document.getElementById('selectedDateMemoInput');
-  if (memoInput) {
-    memoInput.value = memoText;
-  }
-}
-
-let currentDateMemoTarget = null;
-
-function openDateMemoModal(dateObj) {
-  currentDateMemoTarget = dateObj;
-  const dateStr = formatDate(dateObj);
-  const title = document.getElementById('dateMemoModalTitle');
-  if (title) {
-    title.innerHTML = `<i class="fa-regular fa-note-sticky" style="color:var(--primary);"></i> ${dateObj.getMonth() + 1}월 ${dateObj.getDate()}일 메모 입력`;
-  }
-  const textarea = document.getElementById('modalDateMemoTextarea');
-  if (textarea) {
-    textarea.value = adminNotesCache[dateStr] || '';
-  }
-  openModal('dateMemoModal');
 }
 
 function openAdminShiftModal(dateObj) {
@@ -1222,61 +1185,6 @@ function initAdminShiftControls() {
   if (restoreBtn) {
     restoreBtn.addEventListener('click', () => {
       updateAdminShift(currentUser.id, formatDate(selectedDate), 'RESTORE');
-    });
-  }
-
-  // Selected date memo save button
-  const saveMemoBtn = document.getElementById('btnSaveSelectedDateMemo');
-  const memoInput = document.getElementById('selectedDateMemoInput');
-  if (memoInput && saveMemoBtn) {
-    memoInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        saveMemoBtn.click();
-      }
-    });
-  }
-  if (saveMemoBtn) {
-    saveMemoBtn.addEventListener('click', async () => {
-      const input = document.getElementById('selectedDateMemoInput');
-      const val = input ? input.value.trim() : '';
-      const dateStr = formatDate(selectedDate);
-      adminNotesCache[dateStr] = val;
-
-      if (isConnectedToSupabase) {
-        await SupabaseRest.upsert('admin_weekly_notes', {
-          date_string: dateStr,
-          content: val,
-          updated_at: Date.now()
-        }, 'date_string');
-      }
-      showToast(`${dateStr} 메모가 저장되었습니다.`);
-      renderMyCalendar();
-      updateSelectedDateDetail(selectedDate);
-    });
-  }
-
-  // Date memo modal save button
-  const saveModalMemoBtn = document.getElementById('btnSaveDateModalMemo');
-  if (saveModalMemoBtn) {
-    saveModalMemoBtn.addEventListener('click', async () => {
-      if (!currentDateMemoTarget) return;
-      const textarea = document.getElementById('modalDateMemoTextarea');
-      const val = textarea ? textarea.value.trim() : '';
-      const dateStr = formatDate(currentDateMemoTarget);
-      adminNotesCache[dateStr] = val;
-
-      if (isConnectedToSupabase) {
-        await SupabaseRest.upsert('admin_weekly_notes', {
-          date_string: dateStr,
-          content: val,
-          updated_at: Date.now()
-        }, 'date_string');
-      }
-      showToast(`${dateStr} 메모가 저장되었습니다.`);
-      closeModal('dateMemoModal');
-      renderMyCalendar();
-      updateSelectedDateDetail(selectedDate);
     });
   }
 }

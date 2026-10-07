@@ -2359,20 +2359,22 @@ function initAntigravity() {
   }
   requestAnimationFrame(renderParticles);
 
-  btn.addEventListener('click', () => {
-    isAntigravityActive = !isAntigravityActive;
-    if (isAntigravityActive) {
-      document.body.classList.add('antigravity-active');
-      btn.classList.add('active');
-      btn.innerHTML = `<i class="fa-solid fa-check"></i> <span class="btn-text">무중력 가동 중</span>`;
-      showToast('🚀 Antigravity 무중력 모드가 활성화되었습니다!');
-    } else {
-      document.body.classList.remove('antigravity-active');
-      btn.classList.remove('active');
-      btn.innerHTML = `<i class="fa-solid fa-rocket"></i> <span class="btn-text">Antigravity 모드</span>`;
-      showToast('지구 중력으로 복귀하였습니다.');
-    }
-  });
+  if (btn) {
+    btn.addEventListener('click', () => {
+      isAntigravityActive = !isAntigravityActive;
+      if (isAntigravityActive) {
+        document.body.classList.add('antigravity-active');
+        btn.classList.add('active');
+        btn.innerHTML = `<i class="fa-solid fa-check"></i> <span class="btn-text">무중력 가동 중</span>`;
+        showToast('🚀 Antigravity 무중력 모드가 활성화되었습니다!');
+      } else {
+        document.body.classList.remove('antigravity-active');
+        btn.classList.remove('active');
+        btn.innerHTML = `<i class="fa-solid fa-rocket"></i> <span class="btn-text">Antigravity 모드</span>`;
+        showToast('지구 중력으로 복귀하였습니다.');
+      }
+    });
+  }
 }
 
 // ==============================================================================
@@ -2695,8 +2697,9 @@ function renderGeneratorsStatus() {
   let totalDischargeSum = 0;
 
   grid.innerHTML = POWER_GEN_DAMS.map(dam => {
-    // 규칙 수정: 총방류량 > 0.4 CMS 이면 ON, 아니면 OFF
-    const isOnline = dam.discharge > 0.4;
+    // 규칙 수정: 총방류량 > 0.4 CMS 이면 ON, 아니면 OFF (단, 임하 및 남강은 5.0 CMS 초과 시 ON)
+    const threshold = (dam.id === 'imha' || dam.id === 'namgang') ? 5.0 : 0.4;
+    const isOnline = dam.discharge > threshold;
 
     if (isOnline) totalOnline++;
     totalDischargeSum += dam.discharge;

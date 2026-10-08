@@ -1079,7 +1079,6 @@ async function showLatestMealSchedule() {
 function initImageUploadModule() {
   const uploadBtn = document.getElementById('headerUploadBtn');
   const fileInput = document.getElementById('imageUploadInput');
-  const copyBtn = document.getElementById('imageModalCopyUrlBtn');
 
   if (uploadBtn && fileInput) {
     uploadBtn.addEventListener('click', () => {
@@ -1186,41 +1185,12 @@ function initImageUploadModule() {
       }
     });
   }
-
-  // URL 복사 버튼 이벤트
-  if (copyBtn) {
-    copyBtn.addEventListener('click', () => {
-      const url = copyBtn.dataset.url;
-      if (!url) return;
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(url).then(() => {
-          showToast('📋 이미지 링크가 클립보드에 복사되었습니다.');
-        }).catch(() => {
-          fallbackCopyText(url);
-        });
-      } else {
-        fallbackCopyText(url);
-      }
-    });
-  }
-}
-
-function fallbackCopyText(text) {
-  const ta = document.createElement('textarea');
-  ta.value = text;
-  document.body.appendChild(ta);
-  ta.select();
-  document.execCommand('copy');
-  document.body.removeChild(ta);
-  showToast('📋 이미지 링크가 복사되었습니다.');
 }
 
 function openImageModal({ name, size, url, isRemote, customTitle }) {
   const modalImg = document.getElementById('imageModalImg');
   const fileNameEl = document.getElementById('imageModalFileName');
   const fileSizeEl = document.getElementById('imageModalFileSize');
-  const downloadLink = document.getElementById('imageModalDownloadLink');
-  const copyBtn = document.getElementById('imageModalCopyUrlBtn');
   const titleEl = document.getElementById('imageModalTitle');
 
   if (modalImg) modalImg.src = url;
@@ -1229,13 +1199,6 @@ function openImageModal({ name, size, url, isRemote, customTitle }) {
     const sizeMb = (size / (1024 * 1024)).toFixed(2);
     const sizeKb = Math.round(size / 1024);
     fileSizeEl.textContent = size >= 1024 * 1024 ? `${sizeMb} MB` : `${sizeKb} KB`;
-  }
-  if (downloadLink) {
-    downloadLink.href = url;
-    downloadLink.download = name || 'downloaded_image';
-  }
-  if (copyBtn) {
-    copyBtn.dataset.url = url;
   }
   if (titleEl) {
     const heading = customTitle || '<i class="fa-solid fa-image" style="color: #38bdf8;"></i> 업로드 이미지 미리보기';

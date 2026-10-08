@@ -272,32 +272,36 @@ body {
   border: 2px solid #1e40af;
 }
 
-/* 4. Header Supabase Status */
+/* 4. Header Supabase Status: 상단 오른쪽 원형 상태 버튼 (글자 없이 색상으로만 표시) */
 .header-status-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.3rem 0.65rem;
-  border-radius: var(--radius-full);
-  font-size: 0.75rem;
-  font-weight: 600;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 50%;
   background: rgba(255, 255, 255, 0.18);
   border: 1px solid rgba(255, 255, 255, 0.28);
   color: #ffffff;
+  cursor: pointer;
   transition: var(--transition);
 }
 .header-status-badge:hover {
   background: rgba(255, 255, 255, 0.28);
+  transform: translateY(-1px);
 }
 .header-status-badge.connected .status-dot {
   background-color: #34d399;
-  box-shadow: 0 0 6px #34d399;
+  box-shadow: 0 0 8px #34d399;
 }
 .header-status-badge.connecting .status-dot {
   background-color: #fbbf24;
+  box-shadow: 0 0 6px #fbbf24;
 }
 .header-status-badge.error .status-dot {
   background-color: #f87171;
+  box-shadow: 0 0 6px #f87171;
 }
 
 /* Status Badge */

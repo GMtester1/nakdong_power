@@ -73,12 +73,11 @@
         </button>
         <input type="file" id="imageUploadInput" accept="image/jpeg,image/png,image/jpg" style="display: none;" />
 
-        <!-- Supabase Status Badge -->
-        <div id="supabaseStatus" class="header-status-badge" style="cursor: pointer;" title="클릭하여 Supabase 연결 상태 점검 및 설정">
-          <span class="status-dot"></span>
-          <span id="supabaseStatusText">Supabase 확인 중...</span>
-          <i class="fa-solid fa-gear" style="font-size: 0.7rem; margin-left: 2px; opacity: 0.85;"></i>
-        </div>
+        <!-- Supabase Status Badge: 상단 오른쪽 동그라미 버튼으로 숨김 (글자 없이 상태 색상만 표시) -->
+        <button id="supabaseStatus" class="header-circle-btn header-status-badge" title="Supabase 연결 상태 점검 및 설정" style="width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; position: relative;">
+          <span class="status-dot" style="width: 10px; height: 10px;"></span>
+          <span id="supabaseStatusText" style="display: none;"></span>
+        </button>
 
       </div>
     </header>
@@ -886,15 +885,7 @@
           <span id="imageModalFileSize" style="color: #38bdf8;">용량</span>
         </div>
       </div>
-      <div class="modal-footer" style="padding: 0.75rem 1.25rem; background: #1e293b; border-top: 1px solid #334155; display: flex; justify-content: space-between; align-items: center;">
-        <div style="display: flex; gap: 0.5rem;">
-          <a id="imageModalDownloadLink" href="#" download="" target="_blank" class="btn-pill btn-secondary" style="font-size: 0.8rem; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;">
-            <i class="fa-solid fa-download"></i> 원본 다운로드
-          </a>
-          <button type="button" id="imageModalCopyUrlBtn" class="btn-pill btn-secondary" style="font-size: 0.8rem;">
-            <i class="fa-solid fa-link"></i> URL 복사
-          </button>
-        </div>
+      <div class="modal-footer" style="padding: 0.75rem 1.25rem; background: #1e293b; border-top: 1px solid #334155; display: flex; justify-content: flex-end; align-items: center;">
         <button type="button" class="btn-pill btn-primary" data-close="imageModal">닫기</button>
       </div>
     </div>

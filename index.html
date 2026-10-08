@@ -60,11 +60,17 @@
           <span>APK 다운로드</span>
         </a>
 
-        <!-- 4. 알림 버튼 및 카운트 배지 -->
+        <!-- 4. 알림 버튼 -->
         <button id="headerNotifBtn" class="header-circle-btn" title="알림 확인">
           <i class="fa-solid fa-bell"></i>
-          <span id="headerNotifBadge" class="header-badge-count">2</span>
         </button>
+
+        <!-- 5. 이미지 파일 업로드 버튼 (Supabase Storage) -->
+        <button id="headerUploadBtn" class="header-pill-btn" title="이미지 업로드 (20MB 이하 JPG, JPEG, PNG)" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #ffffff; font-weight: 700; border: none; box-shadow: 0 2px 4px rgba(37,99,235,0.3); display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.4rem 0.75rem; border-radius: 20px; font-size: 0.8rem; cursor: pointer;">
+          <i class="fa-solid fa-cloud-arrow-up" style="font-size: 0.95rem;"></i>
+          <span>이미지 업로드</span>
+        </button>
+        <input type="file" id="imageUploadInput" accept="image/jpeg,image/png,image/jpg" style="display: none;" />
 
         <!-- Supabase Status Badge -->
         <div id="supabaseStatus" class="header-status-badge" style="cursor: pointer;" title="클릭하여 Supabase 연결 상태 점검 및 설정">
@@ -857,6 +863,38 @@
           <button type="button" class="btn-pill btn-secondary" data-close="monthlyMemoModal">취소</button>
           <button type="button" class="btn-pill btn-primary" id="btnMonthlyMemoSave"><i class="fa-solid fa-check"></i> 저장</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= Modal: 업로드된 이미지 뷰어 (오버레이 창) ================= -->
+  <div id="imageModal" class="modal-backdrop">
+    <div class="modal-dialog modal-lg" style="max-width: 720px;">
+      <div class="modal-header" style="background: #1e293b; color: #fff;">
+        <h3 id="imageModalTitle" style="color: #fff; display: flex; align-items: center; gap: 0.5rem; font-size: 1.05rem;">
+          <i class="fa-solid fa-image" style="color: #38bdf8;"></i> 업로드 이미지 미리보기
+        </h3>
+        <button class="modal-close" data-close="imageModal" style="color: #fff;">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 1rem; text-align: center; background: #0f172a;">
+        <div style="display: flex; justify-content: center; align-items: center; min-height: 240px; max-height: 65vh; overflow: auto; background: #020617; border-radius: 8px; padding: 0.5rem;">
+          <img id="imageModalImg" src="" alt="업로드 이미지" style="max-width: 100%; max-height: 60vh; object-fit: contain; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);" />
+        </div>
+        <div id="imageModalMeta" style="margin-top: 0.75rem; font-size: 0.8rem; color: #94a3b8; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; text-align: left; padding: 0.4rem 0.6rem; background: #1e293b; border-radius: 6px;">
+          <span id="imageModalFileName" style="color: #f8fafc; font-weight: 600; word-break: break-all;">파일명</span>
+          <span id="imageModalFileSize" style="color: #38bdf8;">용량</span>
+        </div>
+      </div>
+      <div class="modal-footer" style="padding: 0.75rem 1.25rem; background: #1e293b; border-top: 1px solid #334155; display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; gap: 0.5rem;">
+          <a id="imageModalDownloadLink" href="#" download="" target="_blank" class="btn-pill btn-secondary" style="font-size: 0.8rem; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;">
+            <i class="fa-solid fa-download"></i> 원본 다운로드
+          </a>
+          <button type="button" id="imageModalCopyUrlBtn" class="btn-pill btn-secondary" style="font-size: 0.8rem;">
+            <i class="fa-solid fa-link"></i> URL 복사
+          </button>
+        </div>
+        <button type="button" class="btn-pill btn-primary" data-close="imageModal">닫기</button>
       </div>
     </div>
   </div>

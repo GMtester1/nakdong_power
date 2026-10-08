@@ -163,6 +163,34 @@ const SupabaseRest = {
       console.warn(`[SupabaseRest] delete(${table}) 오류:`, err);
       return false;
     }
+  },
+
+  async uploadStorage(bucket, path, file) {
+    try {
+      const headers = {
+        'apikey': SUPABASE_CONFIG.anonKey,
+        'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
+        'Content-Type': file.type || 'application/octet-stream',
+        'x-upsert': 'true'
+      };
+      const res = await fetch(`${SUPABASE_CONFIG.url}/storage/v1/object/${bucket}/${path}`, {
+        method: 'POST',
+        headers,
+        body: file
+      });
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Storage upload failed (${res.status}): ${errorText}`);
+      }
+      return await res.json();
+    } catch (err) {
+      console.warn(`[SupabaseRest] uploadStorage(${bucket}, ${path}) 오류:`, err);
+      throw err;
+    }
+  },
+
+  getStoragePublicUrl(bucket, path) {
+    return `${SUPABASE_CONFIG.url}/storage/v1/object/public/${bucket}/${path}`;
   }
 };
 
@@ -375,6 +403,7 @@ function startApp() {
   initSupabaseSettingsModal();
   initDaeguTrainModule();
   initNotificationsModule();
+  initImageUploadModule();
   initAdminShiftControls();
   initPowerGenerationControls();
 
@@ -975,6 +1004,164 @@ function initNotificationsModule() {
       if (badge) badge.style.display = 'none';
     });
   }
+}
+
+// ==============================================================================
+// 10-2. Supabase Storage 이미지 파일 업로드 모듈 (20MB 제한, JPG/JPEG/PNG)
+// ==============================================================================
+function initImageUploadModule() {
+  const uploadBtn = document.getElementById('headerUploadBtn');
+  const fileInput = document.getElementById('imageUploadInput');
+  const copyBtn = document.getElementById('imageModalCopyUrlBtn');
+
+  if (uploadBtn && fileInput) {
+    uploadBtn.addEventListener('click', () => {
+      fileInput.click();
+    });
+
+    fileInput.addEventListener('change', async (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      // 1. 파일 확장자 및 MIME 타입 검사 (image/jpeg, image/png, image/jpg)
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+      const fileExt = file.name.split('.').pop().toLowerCase();
+      const allowedExts = ['jpg', 'jpeg', 'png'];
+
+      if (!allowedTypes.includes(file.type) && !allowedExts.includes(fileExt)) {
+        showToast('❌ JPG, JPEG, PNG 형식의 이미지 파일만 업로드할 수 있습니다.');
+        fileInput.value = '';
+        return;
+      }
+
+      // 2. 파일 용량 제한: 20MB (20 * 1024 * 1024 bytes)
+      const maxSizeBytes = 20 * 1024 * 1024;
+      if (file.size > maxSizeBytes) {
+        showToast('❌ 파일 용량 제한(20MB)을 초과했습니다. (선택된 파일: ' + (file.size / (1024 * 1024)).toFixed(1) + 'MB)');
+        fileInput.value = '';
+        return;
+      }
+
+      // 3. 업로드 진행 상태 표시
+      const origText = uploadBtn.innerHTML;
+      uploadBtn.disabled = true;
+      uploadBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>업로드 중...</span>';
+
+      try {
+        const timestamp = Date.now();
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const storagePath = `upload_${timestamp}_${safeName}`;
+
+        let publicUrl = '';
+        let uploadSuccess = false;
+
+        if (isConnectedToSupabase) {
+          try {
+            await SupabaseRest.uploadStorage('images', storagePath, file);
+            publicUrl = SupabaseRest.getStoragePublicUrl('images', storagePath);
+            uploadSuccess = true;
+
+            // 메타데이터 테이블 (uploaded_images) 기록
+            await SupabaseRest.insert('uploaded_images', {
+              file_name: file.name,
+              file_path: storagePath,
+              file_url: publicUrl,
+              file_size: file.size,
+              mime_type: file.type || 'image/jpeg',
+              uploaded_by: currentUser ? currentUser.id : null,
+              uploaded_by_name: currentUser ? currentUser.name : '사용자',
+              created_at: timestamp
+            });
+          } catch (storageErr) {
+            console.warn('[ImageUpload] Supabase Storage 전송 오류, 브라우저 로컬 미리보기 모드로 전환:', storageErr);
+          }
+        }
+
+        // Supabase 미연결 또는 Storage 오류 시에도 사용자가 즉시 모달 오버레이에서 이미지를 볼 수 있도록 Data URL 폴백 지원
+        if (!uploadSuccess || !publicUrl) {
+          publicUrl = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (re) => resolve(re.target.result);
+            reader.readAsDataURL(file);
+          });
+        }
+
+        showToast(uploadSuccess ? '✅ Supabase Storage에 이미지가 성공적으로 업로드되었습니다.' : '📷 이미지가 성공적으로 로드되었습니다.');
+
+        // 업로드된 이미지를 모달 오버레이 창으로 즉시 띄우기
+        openImageModal({
+          name: file.name,
+          size: file.size,
+          url: publicUrl,
+          isRemote: uploadSuccess
+        });
+
+      } catch (err) {
+        console.error('[ImageUpload] 이미지 업로드 중 오류 발생:', err);
+        showToast('❌ 이미지 업로드 중 오류가 발생했습니다: ' + err.message);
+      } finally {
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = origText;
+        fileInput.value = '';
+      }
+    });
+  }
+
+  // URL 복사 버튼 이벤트
+  if (copyBtn) {
+    copyBtn.addEventListener('click', () => {
+      const url = copyBtn.dataset.url;
+      if (!url) return;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(() => {
+          showToast('📋 이미지 링크가 클립보드에 복사되었습니다.');
+        }).catch(() => {
+          fallbackCopyText(url);
+        });
+      } else {
+        fallbackCopyText(url);
+      }
+    });
+  }
+}
+
+function fallbackCopyText(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand('copy');
+  document.body.removeChild(ta);
+  showToast('📋 이미지 링크가 복사되었습니다.');
+}
+
+function openImageModal({ name, size, url, isRemote }) {
+  const modalImg = document.getElementById('imageModalImg');
+  const fileNameEl = document.getElementById('imageModalFileName');
+  const fileSizeEl = document.getElementById('imageModalFileSize');
+  const downloadLink = document.getElementById('imageModalDownloadLink');
+  const copyBtn = document.getElementById('imageModalCopyUrlBtn');
+  const titleEl = document.getElementById('imageModalTitle');
+
+  if (modalImg) modalImg.src = url;
+  if (fileNameEl) fileNameEl.textContent = name || 'image';
+  if (fileSizeEl) {
+    const sizeMb = (size / (1024 * 1024)).toFixed(2);
+    const sizeKb = Math.round(size / 1024);
+    fileSizeEl.textContent = size >= 1024 * 1024 ? `${sizeMb} MB` : `${sizeKb} KB`;
+  }
+  if (downloadLink) {
+    downloadLink.href = url;
+    downloadLink.download = name || 'downloaded_image';
+  }
+  if (copyBtn) {
+    copyBtn.dataset.url = url;
+  }
+  if (titleEl) {
+    titleEl.innerHTML = `<i class="fa-solid fa-image" style="color: #38bdf8;"></i> 업로드 이미지 미리보기 ${isRemote ? '<span style="font-size:0.75rem; background:#0284c7; padding:2px 8px; border-radius:10px; margin-left:8px;">Supabase Storage</span>' : ''}`;
+  }
+
+  openModal('imageModal');
 }
 
 function initNavigation() {

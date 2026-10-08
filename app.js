@@ -402,7 +402,7 @@ function startApp() {
   initAntigravity();
   initSupabaseSettingsModal();
   initDaeguTrainModule();
-  initNotificationsModule();
+  initMealScheduleModule();
   initImageUploadModule();
   initAdminShiftControls();
   initPowerGenerationControls();
@@ -995,14 +995,81 @@ function initDaeguTrainModule() {
   });
 }
 
-function initNotificationsModule() {
-  const notifBtn = document.getElementById('headerNotifBtn');
-  if (notifBtn) {
-    notifBtn.addEventListener('click', () => {
-      openModal('notificationsModal');
-      const badge = document.getElementById('headerNotifBadge');
-      if (badge) badge.style.display = 'none';
+// ==============================================================================
+// 10-1. 주간 식단표 모듈 (가장 최근 업로드 1건 조회하여 모달에 표시)
+// ==============================================================================
+function initMealScheduleModule() {
+  const mealBtn = document.getElementById('headerMealBtn');
+  if (mealBtn) {
+    mealBtn.addEventListener('click', async () => {
+      await showLatestMealSchedule();
     });
+  }
+}
+
+async function showLatestMealSchedule() {
+  const mealBtn = document.getElementById('headerMealBtn');
+  const origHtml = mealBtn ? mealBtn.innerHTML : '';
+  if (mealBtn) {
+    mealBtn.disabled = true;
+    mealBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>조회 중...</span>';
+  }
+
+  try {
+    let latestImage = null;
+
+    // 1. Supabase가 연결되어 있는 경우 uploaded_images 테이블에서 가장 최근 1건 조회
+    if (isConnectedToSupabase) {
+      try {
+        const rows = await SupabaseRest.select('uploaded_images', 'order=created_at.desc&limit=1');
+        if (rows && rows.length > 0) {
+          latestImage = {
+            name: rows[0].file_name,
+            size: rows[0].file_size,
+            url: rows[0].file_url,
+            isRemote: true,
+            createdAt: rows[0].created_at
+          };
+        }
+      } catch (err) {
+        console.warn('[MealSchedule] Supabase uploaded_images 조회 오류:', err);
+      }
+    }
+
+    // 2. 만약 Supabase에 데이터가 없거나 미연결인 경우, 로컬에 저장된 최근 업로드 이미지 확인
+    if (!latestImage) {
+      try {
+        const localData = localStorage.getItem('NAKDONG_LATEST_UPLOADED_IMAGE');
+        if (localData) {
+          latestImage = JSON.parse(localData);
+        }
+      } catch (e) {
+        console.warn('[MealSchedule] localStorage 읽기 오류:', e);
+      }
+    }
+
+    // 3. 업로드된 식단표 이미지가 존재하는 경우 모달로 띄우기
+    if (latestImage && latestImage.url) {
+      openImageModal({
+        name: latestImage.name || '식단표',
+        size: latestImage.size || 0,
+        url: latestImage.url,
+        isRemote: latestImage.isRemote !== false,
+        customTitle: '🍱 주간 식단표'
+      });
+      showToast('🍱 최신 식단표 이미지를 불러왔습니다.');
+    } else {
+      // 4. 업로드된 식단표가 아직 없는 경우 안내 메시지 표시
+      showToast('ℹ️ 등록된 식단표 이미지가 없습니다. 상단 [이미지 업로드] 버튼으로 이번 주 식단표를 먼저 등록해주세요.');
+    }
+  } catch (err) {
+    console.error('[MealSchedule] 식단표 조회 오류:', err);
+    showToast('❌ 식단표 이미지를 불러오는 중 오류가 발생했습니다: ' + err.message);
+  } finally {
+    if (mealBtn) {
+      mealBtn.disabled = false;
+      mealBtn.innerHTML = origHtml;
+    }
   }
 }
 
@@ -1086,6 +1153,19 @@ function initImageUploadModule() {
           });
         }
 
+        // 로컬 백업 저장 (Supabase 미연결 또는 빠른 접근용)
+        try {
+          localStorage.setItem('NAKDONG_LATEST_UPLOADED_IMAGE', JSON.stringify({
+            name: file.name,
+            size: file.size,
+            url: publicUrl,
+            isRemote: uploadSuccess,
+            createdAt: timestamp
+          }));
+        } catch (storageErr) {
+          console.warn('[ImageUpload] localStorage 저장 제한:', storageErr);
+        }
+
         showToast(uploadSuccess ? '✅ Supabase Storage에 이미지가 성공적으로 업로드되었습니다.' : '📷 이미지가 성공적으로 로드되었습니다.');
 
         // 업로드된 이미지를 모달 오버레이 창으로 즉시 띄우기
@@ -1135,7 +1215,7 @@ function fallbackCopyText(text) {
   showToast('📋 이미지 링크가 복사되었습니다.');
 }
 
-function openImageModal({ name, size, url, isRemote }) {
+function openImageModal({ name, size, url, isRemote, customTitle }) {
   const modalImg = document.getElementById('imageModalImg');
   const fileNameEl = document.getElementById('imageModalFileName');
   const fileSizeEl = document.getElementById('imageModalFileSize');
@@ -1158,7 +1238,8 @@ function openImageModal({ name, size, url, isRemote }) {
     copyBtn.dataset.url = url;
   }
   if (titleEl) {
-    titleEl.innerHTML = `<i class="fa-solid fa-image" style="color: #38bdf8;"></i> 업로드 이미지 미리보기 ${isRemote ? '<span style="font-size:0.75rem; background:#0284c7; padding:2px 8px; border-radius:10px; margin-left:8px;">Supabase Storage</span>' : ''}`;
+    const heading = customTitle || '<i class="fa-solid fa-image" style="color: #38bdf8;"></i> 업로드 이미지 미리보기';
+    titleEl.innerHTML = `${heading} ${isRemote ? '<span style="font-size:0.75rem; background:#0284c7; padding:2px 8px; border-radius:10px; margin-left:8px;">Supabase Storage</span>' : ''}`;
   }
 
   openModal('imageModal');

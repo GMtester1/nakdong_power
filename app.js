@@ -1346,8 +1346,8 @@ function renderMonthlyPerformance() {
 
   perfCard.style.display = 'block';
 
-  const year = currentYear;
-  const month = currentMonth; // 0-indexed
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth(); // 0-indexed
   const totalDays = new Date(year, month + 1, 0).getDate();
 
   let totalWorkHours = 0;

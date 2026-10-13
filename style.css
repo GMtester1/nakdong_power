@@ -25,15 +25,15 @@
   --text-secondary: #475569;
   --text-muted: #94a3b8;
   
-  /* Shift Colors */
-  --shift-day: #2563eb;
-  --shift-day-bg: #eff6ff;
-  --shift-night: #dc2626;
-  --shift-night-bg: #fef2f2;
-  --shift-off: #059669;
-  --shift-off-bg: #ecfdf5;
-  --shift-ds: #7c3aed;
-  --shift-ds-bg: #f5f3ff;
+  /* Shift Colors: D, S 파란색 / X, H 빨간색 / DS 노란색 / V 초록색 */
+  --shift-day: #1d4ed8;
+  --shift-day-bg: #dbeafe;
+  --shift-night: #1d4ed8;
+  --shift-night-bg: #dbeafe;
+  --shift-off: #dc2626;
+  --shift-off-bg: #fee2e2;
+  --shift-ds: #854d0e;
+  --shift-ds-bg: #fef08a;
   
   /* Badges & Indicators */
   --badge-substitute-bg: #fef3c7;
@@ -590,7 +590,7 @@ body {
 }
 
 #myCalendarGrid .calendar-cell {
-  min-height: 68px;
+  min-height: 76px;
   height: auto;
   padding: 0.45rem 0.4rem;
 }
@@ -695,35 +695,37 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.15rem 0.35rem;
-  border-radius: var(--radius-sm);
-  font-size: 0.725rem;
-  font-weight: 700;
+  padding: 0.35rem 0.5rem;
+  min-height: 36px;
+  border-radius: 8px;
+  font-size: 1.25rem;
+  font-weight: 800;
   width: 100%;
   text-align: center;
   line-height: 1.2;
+  box-sizing: border-box;
 }
 
-.shift-tag.D { background: var(--shift-day-bg); color: var(--shift-day); border: 1px solid #bfdbfe; }
-.shift-tag.S { background: var(--shift-night-bg); color: var(--shift-night); border: 1px solid #fecaca; }
-.shift-tag.X { background: var(--shift-off-bg); color: var(--shift-off); border: 1px solid #a7f3d0; }
-.shift-tag.DS { background: var(--shift-ds-bg); color: var(--shift-ds); border: 1px solid #ddd6fe; }
-.shift-tag.H { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
-.shift-tag.V { background: #eff6ff; color: #1d4ed8; border: 1px solid #93c5fd; }
+.shift-tag.D { background: #dbeafe; color: #1d4ed8; border: 2px solid #3b82f6; }
+.shift-tag.S { background: #dbeafe; color: #1d4ed8; border: 2px solid #3b82f6; }
+.shift-tag.X { background: #fee2e2; color: #dc2626; border: 2px solid #ef4444; }
+.shift-tag.DS { background: #fef08a; color: #854d0e; border: 2px solid #eab308; }
+.shift-tag.H { background: #fee2e2; color: #dc2626; border: 2px solid #ef4444; }
+.shift-tag.V { background: #dcfce7; color: #15803d; border: 2px solid #22c55e; }
 
 /* Admin Shift Quick Control Buttons */
-.btn-shift-h { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
-.btn-shift-h:hover, .btn-shift-h.active { background: #d97706; color: #ffffff; border-color: #b45309; }
-.btn-shift-v { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
-.btn-shift-v:hover, .btn-shift-v.active { background: #2563eb; color: #ffffff; border-color: #1d4ed8; }
-.btn-shift-d { background: #eaddff; color: #381e72; border: 1px solid #d8b4fe; }
-.btn-shift-d:hover, .btn-shift-d.active { background: #6750a4; color: #ffffff; border-color: #4f46e5; }
-.btn-shift-s { background: #ede9fe; color: #5b21b6; border: 1px solid #c4b5fd; }
-.btn-shift-s:hover, .btn-shift-s.active { background: #7c3aed; color: #ffffff; border-color: #6d28d9; }
-.btn-shift-ds { background: #feebc8; color: #7b341e; border: 1px solid #fbd38d; }
-.btn-shift-ds:hover, .btn-shift-ds.active { background: #c05621; color: #ffffff; border-color: #9c4221; }
-.btn-shift-x { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
-.btn-shift-x:hover, .btn-shift-x.active { background: #059669; color: #ffffff; border-color: #047857; }
+.btn-shift-h { background: #fee2e2; color: #b91c1c; border: 2px solid #ef4444; }
+.btn-shift-h:hover, .btn-shift-h.active { background: #dc2626; color: #ffffff; border-color: #b91c1c; }
+.btn-shift-v { background: #dcfce7; color: #166534; border: 2px solid #22c55e; }
+.btn-shift-v:hover, .btn-shift-v.active { background: #16a34a; color: #ffffff; border-color: #15803d; }
+.btn-shift-d { background: #dbeafe; color: #1e40af; border: 2px solid #3b82f6; }
+.btn-shift-d:hover, .btn-shift-d.active { background: #2563eb; color: #ffffff; border-color: #1d4ed8; }
+.btn-shift-s { background: #dbeafe; color: #1e40af; border: 2px solid #3b82f6; }
+.btn-shift-s:hover, .btn-shift-s.active { background: #2563eb; color: #ffffff; border-color: #1d4ed8; }
+.btn-shift-ds { background: #fef08a; color: #854d0e; border: 2px solid #eab308; }
+.btn-shift-ds:hover, .btn-shift-ds.active { background: #eab308; color: #ffffff; border-color: #ca8a04; }
+.btn-shift-x { background: #fee2e2; color: #b91c1c; border: 2px solid #ef4444; }
+.btn-shift-x:hover, .btn-shift-x.active { background: #dc2626; color: #ffffff; border-color: #b91c1c; }
 
 .cell-note {
   font-size: 0.7rem;
@@ -801,34 +803,18 @@ body {
   font-size: 0.9rem;
 }
 
-.perf-box.perf-total-label {
-  background: #eff6ff;
-  color: #1e40af;
-}
-
-.perf-box.perf-total-value {
-  background: #ffffff;
-  color: #1d4ed8;
-}
-
-.perf-box.perf-standard-label {
-  background: #f0fdf4;
-  color: #166534;
-}
-
-.perf-box.perf-standard-value {
-  background: #ffffff;
-  color: #15803d;
-}
-
+.perf-box.perf-total-label,
+.perf-box.perf-standard-label,
 .perf-box.perf-overtime-label {
-  background: #fef2f2;
-  color: #991b1b;
+  background: #e0f2fe;
+  color: #0284c7;
 }
 
+.perf-box.perf-total-value,
+.perf-box.perf-standard-value,
 .perf-box.perf-overtime-value {
   background: #ffffff;
-  color: #b91c1c;
+  color: #000000;
 }
 
 @media (max-width: 640px) {

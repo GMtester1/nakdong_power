@@ -1322,7 +1322,78 @@ function renderMyCalendar() {
   document.getElementById('statOffCount').textContent = offCount;
   document.getElementById('statTotalHours').textContent = totalHours.toFixed(1);
 
+  renderMonthlyPerformance();
   updateSelectedDateDetail(selectedDate);
+}
+
+// ==============================================================================
+// 월간근무실적 연산 및 렌더링
+// 규칙:
+// - 모두 원근무 시간으로 계산 (D: 8시간, S: 13.5시간, X: 0시간)
+// - 소정근로시간: 평일 8시간, 휴일 및 법정 공휴일 0시간
+// - 시간외: 총근무시간 - 소정근로시간
+// - 통상근무자는 미표기
+// ==============================================================================
+function renderMonthlyPerformance() {
+  const perfCard = document.getElementById('monthlyPerformanceCard');
+  if (!perfCard) return;
+
+  // 통상근무자는 미표기
+  if (isRegularWorker(currentUser) || !currentUser.team || currentUser.team <= 0) {
+    perfCard.style.display = 'none';
+    return;
+  }
+
+  perfCard.style.display = 'block';
+
+  const year = currentYear;
+  const month = currentMonth; // 0-indexed
+  const totalDays = new Date(year, month + 1, 0).getDate();
+
+  let totalWorkHours = 0;
+  let standardWorkHours = 0;
+
+  for (let d = 1; d <= totalDays; d++) {
+    const dateObj = new Date(year, month, d);
+
+    // 1. 원근무 시간 계산: D(8시간), S(13.5시간), X(0시간)
+    const originalShift = calculateShiftForDate(currentUser.team, dateObj);
+    if (originalShift === 'D') {
+      totalWorkHours += 8.0;
+    } else if (originalShift === 'S') {
+      totalWorkHours += 13.5;
+    }
+
+    // 2. 소정근로시간: 평일 8시간, 주말(휴일) 및 법정 공휴일 0시간
+    const dayOfWeek = dateObj.getDay();
+    const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+    const isHoliday = isKoreanHoliday(dateObj);
+    if (!isWeekend && !isHoliday) {
+      standardWorkHours += 8.0;
+    }
+  }
+
+  // 3. 시간외 = 총근무시간 - 소정근로시간
+  const overtimeHours = totalWorkHours - standardWorkHours;
+
+  const formatH = (h) => {
+    const rounded = Math.round(h * 10) / 10;
+    return Number.isInteger(rounded) ? `${rounded}시간` : `${rounded.toFixed(1)}시간`;
+  };
+
+  const totalElem = document.getElementById('perfTotalWork');
+  if (totalElem) totalElem.textContent = formatH(totalWorkHours);
+
+  const standardElem = document.getElementById('perfStandardWork');
+  if (standardElem) standardElem.textContent = formatH(standardWorkHours);
+
+  const overtimeElem = document.getElementById('perfOvertime');
+  if (overtimeElem) overtimeElem.textContent = formatH(overtimeHours);
+
+  const labelElem = document.getElementById('perfMonthLabel');
+  if (labelElem) {
+    labelElem.textContent = `${year}년 ${month + 1}월 (원근무 기준)`;
+  }
 }
 
 function createCalendarCell(dateObj, isOtherMonth) {
@@ -1378,16 +1449,24 @@ function updateSelectedDateDetail(dateObj) {
 
   const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
   const teamText = currentUser.team > 0 ? `${currentUser.team}조` : '통상근무';
-  document.getElementById('selectedDateText').innerHTML = 
-    `<i class="fa-regular fa-clock"></i> ${dateStr} (${dayNames[dateObj.getDay()]}) ${teamText} ${currentUser.name} 근무 상세`;
+  const titleElem = document.getElementById('selectedDateText');
+  if (titleElem) {
+    titleElem.innerHTML = 
+      `<i class="fa-regular fa-clock"></i> ${dateStr} (${dayNames[dateObj.getDay()]}) ${teamText} ${currentUser.name} 근무 상세`;
+  }
 
   const badge = document.getElementById('selectedShiftBadge');
-  badge.textContent = info.name;
-  badge.className = `shift-tag ${shift}`;
+  if (badge) {
+    badge.textContent = info.name;
+    badge.className = `shift-tag ${shift}`;
+  }
 
-  document.getElementById('selectedTimeRange').textContent = info.timeRange;
-  document.getElementById('selectedRestTime').textContent = info.restTime;
-  document.getElementById('selectedNote').textContent = memoText || (isRegularWorker(currentUser) ? '통상근무 (평일 D, 휴일 X, 휴가 H, 출장 V)' : '특이사항 없음');
+  const timeRangeElem = document.getElementById('selectedTimeRange');
+  if (timeRangeElem) timeRangeElem.textContent = info.timeRange;
+  const restTimeElem = document.getElementById('selectedRestTime');
+  if (restTimeElem) restTimeElem.textContent = info.restTime;
+  const noteElem = document.getElementById('selectedNote');
+  if (noteElem) noteElem.textContent = memoText || (isRegularWorker(currentUser) ? '통상근무 (평일 D, 휴일 X, 휴가 H, 출장 V)' : '특이사항 없음');
 
   // 빠른 근무 코드 변경 바 (교대근무자 & 통상근무자 공통 항상 표시)
   const adminRow = document.getElementById('adminShiftControlRow');

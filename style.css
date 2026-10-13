@@ -735,6 +735,117 @@ body {
   text-overflow: ellipsis;
 }
 
+/* ==============================================================================
+   월간근무실적 가로 6칸 그리드 (총근무, 소정근로, 시간외)
+   ============================================================================== */
+.monthly-performance-wrapper {
+  width: 100%;
+  margin-bottom: 0.85rem;
+}
+
+.perf-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.perf-title-text {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.perf-title-sub {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.perf-grid-6 {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--bg-card);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.perf-box {
+  padding: 0.65rem 0.25rem;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid var(--border-color);
+  box-sizing: border-box;
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+.perf-box:last-child {
+  border-right: none;
+}
+
+.perf-box.perf-label {
+  font-weight: 700;
+  font-size: 0.825rem;
+}
+
+.perf-box.perf-value {
+  font-weight: 800;
+  font-size: 0.9rem;
+}
+
+.perf-box.perf-total-label {
+  background: #eff6ff;
+  color: #1e40af;
+}
+
+.perf-box.perf-total-value {
+  background: #ffffff;
+  color: #1d4ed8;
+}
+
+.perf-box.perf-standard-label {
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.perf-box.perf-standard-value {
+  background: #ffffff;
+  color: #15803d;
+}
+
+.perf-box.perf-overtime-label {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.perf-box.perf-overtime-value {
+  background: #ffffff;
+  color: #b91c1c;
+}
+
+@media (max-width: 640px) {
+  .perf-grid-6 {
+    grid-template-columns: repeat(6, 1fr);
+  }
+  .perf-box {
+    padding: 0.45rem 0.15rem;
+  }
+  .perf-box.perf-label {
+    font-size: 0.72rem;
+  }
+  .perf-box.perf-value {
+    font-size: 0.76rem;
+  }
+}
+
 /* Team Schedule Layout (Full Width, No Right Roster Panel) */
 .team-layout {
   display: block;
@@ -1809,9 +1920,9 @@ body {
   }
   .date-detail-card .card-body {
     display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 0.5rem 1rem;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
   }
   .detail-row {
     margin-bottom: 0 !important;

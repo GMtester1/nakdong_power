@@ -148,17 +148,22 @@
             <span id="selectedShiftBadge" class="shift-tag">근무 정보 없음</span>
           </div>
           <div class="card-body">
-            <div class="detail-row">
-              <span class="detail-label">근무시간:</span>
-              <span id="selectedTimeRange" class="detail-val">-</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">휴게시간:</span>
-              <span id="selectedRestTime" class="detail-val">-</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">특이사항/메모:</span>
-              <span id="selectedNote" class="detail-val">-</span>
+            <!-- 월간근무실적 (가로 박스 6칸: 3개 메뉴, 각각 시간표시 / 통상근무자 미표기) -->
+            <div id="monthlyPerformanceCard" class="monthly-performance-wrapper">
+              <div class="perf-title-row">
+                <span class="perf-title-text">
+                  <i class="fa-solid fa-chart-column" style="color: var(--primary);"></i> 월간근무실적
+                </span>
+                <span id="perfMonthLabel" class="perf-title-sub">(원근무 기준)</span>
+              </div>
+              <div class="perf-grid-6">
+                <div class="perf-box perf-label perf-total-label">총근무</div>
+                <div class="perf-box perf-value perf-total-value" id="perfTotalWork">00시간</div>
+                <div class="perf-box perf-label perf-standard-label">소정근로</div>
+                <div class="perf-box perf-value perf-standard-value" id="perfStandardWork">00시간</div>
+                <div class="perf-box perf-label perf-overtime-label">시간외</div>
+                <div class="perf-box perf-value perf-overtime-value" id="perfOvertime">00시간</div>
+              </div>
             </div>
 
             <!-- 빠른 근무 코드 변경 버튼 (교대근무자 & 통상근무자 공통) -->

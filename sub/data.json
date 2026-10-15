@@ -1,0 +1,23 @@
+{
+  "destinations": [
+    { "id": "FUK", "nameKo": "후쿠오카 (일본)", "country": "일본", "currency": "JPY", "flightHours": "약 55분", "flag": "🇯🇵" },
+    { "id": "OSA", "nameKo": "오사카 (일본)", "country": "일본", "currency": "JPY", "flightHours": "약 1시간 25분", "flag": "🇯🇵" },
+    { "id": "TYO", "nameKo": "도쿄 (일본)", "country": "일본", "currency": "JPY", "flightHours": "약 2시간 10분", "flag": "🇯🇵" },
+    { "id": "SPK", "nameKo": "삿포로 (일본)", "country": "일본", "currency": "JPY", "flightHours": "약 2시간 40분", "flag": "🇯🇵" },
+    { "id": "TPE", "nameKo": "타이베이 (대만)", "country": "대만", "currency": "TWD", "flightHours": "약 2시간 30분", "flag": "🇹🇼" },
+    { "id": "DAD", "nameKo": "다낭 (베트남)", "country": "베트남", "currency": "VND", "flightHours": "약 4시간 20분", "flag": "🇻🇳" },
+    { "id": "CXR", "nameKo": "나트랑 (베트남)", "country": "베트남", "currency": "VND", "flightHours": "약 4시간 45분", "flag": "🇻🇳" },
+    { "id": "SHA", "nameKo": "상하이 (중국)", "country": "중국", "currency": "CNY", "flightHours": "약 1시간 50분", "flag": "🇨🇳" }
+  ],
+  "departures": [
+    { "code": "TAE", "nameKo": "대구 출발 (대구국제공항)" },
+    { "code": "PUS", "nameKo": "부산 출발 (김해국제공항)" }
+  ],
+  "currency": {
+    "JPY": { "name": "일본 엔화 (100엔)", "unit": 100, "rate": 894.25, "diff": -2.15, "monthAvg": 901.35, "monthHigh": 918.4, "monthLow": 887.1 },
+    "TWD": { "name": "대만 달러 (1달러)", "unit": 1, "rate": 41.65, "diff": 0.12, "monthAvg": 41.82, "monthHigh": 42.45, "monthLow": 41.2 },
+    "VND": { "name": "베트남 동 (100동)", "unit": 100, "rate": 5.42, "diff": -0.01, "monthAvg": 5.46, "monthHigh": 5.58, "monthLow": 5.36 },
+    "CNY": { "name": "중국 위안화 (1위안)", "unit": 1, "rate": 191.4, "diff": 0.45, "monthAvg": 191.85, "monthHigh": 194.8, "monthLow": 188.9 }
+  },
+  "crawledAt": "2026-10-14 06:00:00 (1일 1회 정기 수집)"
+}

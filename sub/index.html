@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>영남출발 아시아 트래블메이트 (TravelMate) - 대구·부산 출발 일본·대만·베트남 여행 비서</title>
+  <meta name="description" content="대구·부산 출발 일본, 대만, 베트남 여행 비서 - 항공권 가격 분석, 맛집 추천, 날씨/동선 최적화 맞춤 일정 생성, 실시간 환율 및 여행 기록 저장">
+  <meta property="og:title" content="영남출발 아시아 트래블메이트 (TravelMate)">
+  <meta property="og:description" content="대구·부산 출발 일본, 대만, 베트남 여행 비서 - 항공권 가격 분석, 맛집 추천, 날씨/동선 최적화 맞춤 일정 생성, 실시간 환율 및 여행 기록 저장">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <!-- CDN: Tailwind CSS (빌드 없이 브라우저 즉시 렌더링) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Pretendard', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af',
+              900: '#1e3a8a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google / Pretendard Web Fonts -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+
+  <style>
+    /* 인쇄 최적화 스타일 */
+    @media print {
+      body { background: white !important; color: black !important; padding: 0 !important; }
+      header, footer, .no-print { display: none !important; }
+      .print-full { max-width: 100% !important; box-shadow: none !important; border: none !important; }
+      .day-card { break-inside: avoid; border: 1px solid #ccc !important; }
+    }
+    .scrollbar-thin::-webkit-scrollbar { height: 6px; }
+    .scrollbar-thin::-webkit-scrollbar-track { background: #1e293b; border-radius: 4px; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+    .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: #64748b; }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-900 font-sans min-h-screen flex flex-col antialiased selection:bg-blue-500 selection:text-white">
+
+  <!-- App Header -->
+  <header class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-40 shadow-lg no-print">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 pt-3.5 pb-3">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <!-- Logo & Title -->
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-md shadow-blue-500/20 text-white text-xl">
+            ✈️
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                영남권 특화 (대구·부산)
+              </span>
+              <span class="text-[11px] text-slate-400">빌드 없는 단독 브라우저 실행</span>
+            </div>
+            <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight text-white flex items-center gap-2">
+              트래블메이트 <span class="text-blue-400 text-lg font-bold">TravelMate</span>
+            </h1>
+          </div>
+        </div>
+
+        <!-- Departure Airport Switcher & Standalone Download -->
+        <div class="flex flex-wrap items-center gap-2">
+          <div class="flex items-center gap-1.5 bg-slate-800/90 p-1.5 rounded-xl border border-slate-700/80">
+            <span class="text-xs font-medium text-slate-400 pl-2 pr-1">출발:</span>
+            <button id="btn-dep-tae" onclick="setDepartureAirport('TAE')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-blue-600 text-white shadow-md">
+              대구 (TAE)
+            </button>
+            <button id="btn-dep-pus" onclick="setDepartureAirport('PUS')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-300 hover:text-white hover:bg-slate-700/60">
+              부산 김해 (PUS)
+            </button>
+          </div>
+
+          <button onclick="downloadSelfHtml()" class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-md transition-colors" title="이 파일 자체를 브라우저에서 바로 열 수 있는 단독 HTML로 저장">
+            <span>📥</span>
+            <span>HTML 다운로드</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- City Selector Quick Bar -->
+      <div class="mt-3.5 pt-3 border-t border-slate-800/80">
+        <div class="flex items-center justify-between text-xs text-slate-400 mb-2 font-medium">
+          <span class="flex items-center gap-1.5">
+            📍 추천 여행지 (일본 5개 · 대만 2개 · 베트남 3개 도시):
+          </span>
+          <span id="selected-city-label" class="hidden sm:inline text-slate-300">
+            선택: <strong class="text-blue-300">🇯🇵 후쿠오카 (Fukuoka)</strong>
+          </span>
+        </div>
+        <div id="city-buttons-container" class="flex items-center gap-1.5 overflow-x-auto pb-1.5 scrollbar-thin">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="bg-slate-800/60 border-t border-slate-700/60">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6">
+        <nav class="flex space-x-1 sm:space-x-3 overflow-x-auto py-1.5" id="nav-tabs">
+          <button onclick="switchTab('flights')" id="tab-flights" class="nav-tab active flex items-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all bg-blue-600 text-white shadow-sm">
+            <span>✈️</span> 항공권 가격비교
+          </button>
+          <button onclick="switchTab('itinerary')" id="tab-itinerary" class="nav-tab flex items-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all text-slate-300 hover:text-white hover:bg-slate-700/50">
+            <span>🗺️</span> 맞춤 일정 & 동선 최적화
+          </button>
+          <button onclick="switchTab('restaurants')" id="tab-restaurants" class="nav-tab flex items-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all text-slate-300 hover:text-white hover:bg-slate-700/50">
+            <span>🍜</span> 현지 맛집 가이드
+          </button>
+          <button onclick="switchTab('exchange')" id="tab-exchange" class="nav-tab flex items-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all text-slate-300 hover:text-white hover:bg-slate-700/50">
+            <span>💱</span> 실시간 환율 조회
+          </button>
+          <button onclick="switchTab('records')" id="tab-records" class="nav-tab flex items-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all text-slate-300 hover:text-white hover:bg-slate-700/50">
+            <span>📓</span> 내 여행 기록함
+          </button>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8">
+    <!-- Notice Toast -->
+    <div id="toast-message" class="hidden mb-4 p-3 bg-emerald-50 border border-emerald-300 rounded-xl text-emerald-800 text-xs sm:text-sm font-bold flex items-center gap-2 shadow-sm animate-pulse">
+      <span id="toast-text"></span>
+    </div>
+
+    <!-- TAB 1: Flights -->
+    <section id="view-flights" class="tab-view space-y-6">
+      <!-- Injected via JS -->
+    </section>
+
+    <!-- TAB 2: Itinerary -->
+    <section id="view-itinerary" class="tab-view hidden space-y-6">
+      <!-- Injected via JS -->
+    </section>
+
+    <!-- TAB 3: Restaurants -->
+    <section id="view-restaurants" class="tab-view hidden space-y-6">
+      <!-- Injected via JS -->
+    </section>
+
+    <!-- TAB 4: Exchange Rate -->
+    <section id="view-exchange" class="tab-view hidden space-y-6">
+      <!-- Injected via JS -->
+    </section>
+
+    <!-- TAB 5: Records -->
+    <section id="view-records" class="tab-view hidden space-y-6">
+      <!-- Injected via JS -->
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-slate-900 text-slate-400 text-xs py-8 border-t border-slate-800 no-print mt-auto">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-blue-600/30 flex items-center justify-center text-blue-400 text-base">
+          🧭
+        </div>
+        <div>
+          <p class="font-bold text-white">영남출발 아시아 트래블메이트 (TravelMate)</p>
+          <p class="text-slate-500 mt-0.5">
+            빌드 과정 없이 브라우저에서 바로 열리는 순수 독립형(Standalone) 웹 애플리케이션
+          </p>
+        </div>
+      </div>
+      <div class="flex flex-wrap items-center justify-center gap-3 text-slate-400">
+        <span>✈️ 대구/부산 직항 분석</span>
+        <span>☀️ 실시간 날씨/동선 최적화</span>
+        <span>🍜 엄선 맛집</span>
+        <span>💱 실시간 환율</span>
+        <span>💾 오프라인 기록 저장</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Complete Embedded JSON Data & Vanilla Logic -->
+  <script>
+    /* ========================================================
+       1. DATA DEFINITIONS (Cities, Flights, Weather, Rates, Spots, Food)
+       ======================================================== */
+    const CITIES = [
+      { id: 'fukuoka', nameKo: '후쿠오카', nameEn: 'Fukuoka', nameLocal: '福岡', country: '일본', countryCode: 'JP', currencyCode: 'JPY', flightTimeFromPus: '50분', flightTimeFromTae: '55분', tagline: '영남권에서 가장 가까운 해외! 50분 만에 만나는 미식과 온천', description: '공항에서 시내(하카타)까지 지하철로 단 5분! 돈코츠 라멘 원조, 모츠나베, 야타이(포장마차) 거리와 텐진 지하상가 쇼핑이 매력적인 가성비 최고 도시입니다.', highlights: ['하카타 라멘 & 모츠나베', '텐진 지하상가 쇼핑', '오호리 공원', '유후인/다자이후 근교'], voltage: '110V (돼지코 필요)', visaInfo: '무비자 90일 (VJW 등록 권장)' },
+      { id: 'osaka', nameKo: '오사카', nameEn: 'Osaka', nameLocal: '大阪', country: '일본', countryCode: 'JP', currencyCode: 'JPY', flightTimeFromPus: '1시간 25분', flightTimeFromTae: '1시간 30분', tagline: '쿠이다오레(먹다 망한다)의 도시, 유니버설 스튜디오와 교토 연계', description: '도톤보리의 글리코상 앞 인증샷부터 타코야키, 오코노미야키의 본고장! USJ 테마파크와 천년고도 교토까지 당일치기로 알차게 즐길 수 있습니다.', highlights: ['도톤보리 글리코상', 'USJ 테마파크', '오사카성 천수각', '교토 아라시야마 연계'], voltage: '110V (돼지코 필요)', visaInfo: '무비자 90일' },
+      { id: 'tokyo', nameKo: '도쿄', nameEn: 'Tokyo', nameLocal: '東京', country: '일본', countryCode: 'JP', currencyCode: 'JPY', flightTimeFromPus: '2시간 10분', flightTimeFromTae: '2시간 20분', tagline: '트렌드의 중심! 시부야 스카이, 아사쿠사, 미슐랭 미식의 성지', description: '전통과 최첨단이 공존하는 메가시티. 시부야 스크램블 교차로와 스카이 전망대, 오모테산도 카페 거리, 긴자 명품 쇼핑이 매력적입니다.', highlights: ['시부야 스카이 & 스크램블', '아사쿠사 센소지', '신주쿠 & 오모테산도', '도쿄 디즈니랜드'], voltage: '110V (돼지코 필요)', visaInfo: '무비자 90일' },
+      { id: 'sapporo', nameKo: '삿포로', nameEn: 'Sapporo', nameLocal: '札幌', country: '일본', countryCode: 'JP', currencyCode: 'JPY', flightTimeFromPus: '2시간 35분', flightTimeFromTae: '2시간 40분', tagline: '순백의 설경과 삿포로 맥주, 털게와 징기스칸 양고기 천국', description: '여름에는 시원한 라벤더 언덕(비에이), 겨울에는 순백의 눈 축제! 스프카레와 신선한 스시, 삿포로 클래식 생맥주를 즐기세요.', highlights: ['오도리 공원 & 테레비탑', '삿포로 맥주 박물관', '오타루 운하 당일치기', '비에이 크리스마스 나무'], voltage: '110V (돼지코 필요)', visaInfo: '무비자 90일' },
+      { id: 'okinawa', nameKo: '오키나와', nameEn: 'Okinawa', nameLocal: '沖縄', country: '일본', countryCode: 'JP', currencyCode: 'JPY', flightTimeFromPus: '2시간 15분', flightTimeFromTae: '2시간 20분', tagline: '동양의 하와이! 에메랄드빛 바다, 츄라우미 수족관, 렌터카 드라이브', description: '이국적인 류큐 왕국 문화와 미군정의 흔적이 섞인 휴양지. 츄라우미 수족관, 아메리칸 빌리지의 이국적 야경을 즐겨보세요.', highlights: ['츄라우미 수족관', '만좌모 & 코우리 대교', '아메리칸 빌리지', '국제거리 & 오키나와 소바'], voltage: '110V (돼지코 필요)', visaInfo: '무비자 90일' },
+      { id: 'taipei', nameKo: '타이베이', nameEn: 'Taipei', nameLocal: '台北', country: '대만', countryCode: 'TW', currencyCode: 'TWD', flightTimeFromPus: '2시간 30분', flightTimeFromTae: '2시간 40분', tagline: '지우펀 홍등거리와 스린 야시장! 대구·부산 직항 최강 가성비', description: '미식과 낭만의 도시! 딘타이펑의 샤오롱바오, 망고빙수, 지우펀 센과 치히로 골목길, 스펀 천등 날리기, 101 타워 야경이 환상적입니다.', highlights: ['타이베이 101 전망대', '스린 야시장 & 융캉제', '예스진지 버스투어', '국립고궁박물원'], voltage: '110V (돼지코 권장)', visaInfo: '무비자 90일 (온라인 e-Gate 등록 가능)' },
+      { id: 'kaohsiung', nameKo: '가오슝', nameEn: 'Kaohsiung', nameLocal: '高雄', country: '대만', countryCode: 'TW', currencyCode: 'TWD', flightTimeFromPus: '2시간 45분', flightTimeFromTae: '2시간 50분', tagline: '따뜻한 햇살과 항구의 감성, 보얼예술특구와 치진섬 자전거 여행', description: '타이베이보다 물가가 저렴하고 여유로운 대만 남부의 항구도시. 예술창고 보얼예술특구, 페리 타고 건너는 치진섬 해산물 거리가 일품입니다.', highlights: ['보얼예술특구 & 트램', '치진섬 자전거 투어', '류허/루이펑 야시장', '용호탑 (연지담)'], voltage: '110V (돼지코 필요)', visaInfo: '무비자 90일' },
+      { id: 'danang', nameKo: '다낭', nameEn: 'Da Nang', nameLocal: 'Đà Nẵng', country: '베트남', countryCode: 'VN', currencyCode: 'VND', flightTimeFromPus: '4시간 25분', flightTimeFromTae: '4시간 35분', tagline: '영남권 가족/연인 최애 휴양지! 미케비치 리조트와 호이안 올드타운', description: '세계 6대 해변 미케비치의 최고급 리조트 호캉스, 골든브릿지 바나힐 테마파크, 밤마다 유등이 빛나는 유네스코 호이안 올드타운이 30분 거리입니다.', highlights: ['미케 비치 호캉스', '바나힐 골든 브릿지', '호이안 올드타운 소원배', '한시장 쇼핑 & 콩카페'], voltage: '220V (한국 플러그 호환)', visaInfo: '무비자 45일' },
+      { id: 'hochiminh', nameKo: '호치민', nameEn: 'Ho Chi Minh', nameLocal: 'Thành phố Hồ Chí Minh', country: '베트남', countryCode: 'VN', currencyCode: 'VND', flightTimeFromPus: '5시간 15분', flightTimeFromTae: '5시간 30분', tagline: '활기찬 에너지와 프렌치 콜로니얼 건축, 벤탄 시장과 루프탑 바', description: '동양의 파리로 불리는 베트남 최대 경제 수도. 중앙 우체국, 벤탄 시장, 9층 카페 아파트먼트, 세련된 루프탑 라운지가 매혹적입니다.', highlights: ['사이공 중앙 우체국 & 노트르담', '카페 아파트먼트 9층 투어', '벤탄 야시장', '부이비엔 여행자 거리'], voltage: '220V (한국 플러그 호환)', visaInfo: '무비자 45일' },
+      { id: 'hanoi', nameKo: '하노이', nameEn: 'Hanoi', nameLocal: 'Hà Nội', country: '베트남', countryCode: 'VN', currencyCode: 'VND', flightTimeFromPus: '4시간 35분', flightTimeFromTae: '4시간 45분', tagline: '천년 역사의 숨결, 호안끼엠 호수와 하롱베이 크루즈', description: '오토바이와 낭만이 교차하는 베트남 수도. 호안끼엠 호수를 둘러싼 36 구시가지, 에그커피와 오리지널 분짜, 하롱베이 크루즈가 기다립니다.', highlights: ['호안끼엠 호수 & 올드쿼터', '하롱베이 1일 크루즈 투어', '기찻길 마을 & 에그커피', '성요셉 성당 & 분짜 닥킴'], voltage: '220V (한국 플러그 호환)', visaInfo: '무비자 45일' },
+    ];
+
+    const FLIGHTS = {
+      'PUS_fukuoka': { price: 138000, avg: 175000, low: 99000, peak: 380000, status: 'great_deal', label: '초특가 찬스! 평소보다 21% 저렴', savings: 37000, pct: 21.1, bestDays: ['화요일', '수요일'], drop: '금/토 출발 대비 32% 저렴', tip: '부산-후쿠오카는 비행시간 50분으로 KTX보다 빠릅니다. 화·수 아침편(에어부산 BX142)과 목·금 귀국편 조합 시 13만원대에 꽉 찬 일정이 가능합니다.', airlines: [{ name: '에어부산 (BX142)', time: '08:00 PUS ➔ 08:50 FUK', bag: '무료 위탁수하물 15kg 포함', price: 138000 }, { name: '진에어 (LJ265)', time: '09:05 PUS ➔ 09:55 FUK', bag: '무료 위탁 15kg', price: 142000 }] },
+      'TAE_fukuoka': { price: 145000, avg: 185000, low: 109000, peak: 395000, status: 'great_deal', label: '초특가 찬스! 평소보다 21.6% 저렴', savings: 40000, pct: 21.6, bestDays: ['화요일', '수요일'], drop: '주말 대비 35% 저렴', tip: '대구공항의 최대 강점은 [초고속 출국]! 동대구역에서 택시 10분, 보안검색 통과까지 15분이면 충분합니다.', airlines: [{ name: '티웨이항공 (TW231)', time: '07:00 TAE ➔ 07:55 FUK', bag: '무료 위탁 15kg', price: 145000 }] },
+      'PUS_osaka': { price: 210000, avg: 245000, low: 149000, peak: 520000, status: 'great_deal', label: '알뜰 예매 구간 (평균 대비 14% 저렴)', savings: 35000, pct: 14.3, bestDays: ['화요일', '목요일'], drop: '주말 대비 26% 절감', tip: '간사이공항행은 목요일 오전 출발 또는 일요일 밤 대신 월요일 첫 비행기로 귀국하면 10만원 이상 절약됩니다.', airlines: [{ name: '에어부산 (BX124)', time: '08:30 PUS ➔ 10:00 KIX', bag: '위탁 15kg 무료', price: 210000 }, { name: '진에어 (LJ281)', time: '09:10 PUS ➔ 10:35 KIX', bag: '위탁 15kg', price: 218000 }] },
+      'TAE_osaka': { price: 218000, avg: 255000, low: 155000, peak: 530000, status: 'great_deal', label: '알뜰 예매 구간 (14.5% 절약)', savings: 37000, pct: 14.5, bestDays: ['화요일', '목요일'], drop: '주말 대비 28% 저렴', tip: '대구 출발 07:40 첫 비행기 탑승 시 간사이공항 09:10 도착 후 라피트 타면 난바에 10:30 도착!', airlines: [{ name: '티웨이항공 (TW281)', time: '07:40 TAE ➔ 09:10 KIX', bag: '위탁 15kg', price: 218000 }] },
+      'PUS_tokyo': { price: 285000, avg: 320000, low: 185000, peak: 680000, status: 'fair', label: '적정 가격대 (구매 안정권)', savings: 35000, pct: 10.9, bestDays: ['월요일', '화요일'], drop: '주말 대비 22% 저렴', tip: '나리타 공항 도착 후 도쿄역/긴자까지는 1,300엔 TYO-NRT 공항버스를 타면 편리합니다.', airlines: [{ name: '에어부산 (BX112)', time: '07:35 PUS ➔ 09:40 NRT', bag: '위탁 15kg', price: 285000 }] },
+      'TAE_tokyo': { price: 295000, avg: 335000, low: 195000, peak: 690000, status: 'fair', label: '적정 가격대 (구매 안정권)', savings: 40000, pct: 11.9, bestDays: ['월요일', '수요일'], drop: '주말 대비 23% 저렴', tip: '대구-나리타 티웨이 직항은 오전 10시 나리타 도착이라 인천까지 KTX 타고 갈 필요가 없습니다.', airlines: [{ name: '티웨이항공 (TW211)', time: '07:50 TAE ➔ 10:10 NRT', bag: '위탁 15kg', price: 295000 }] },
+      'PUS_sapporo': { price: 345000, avg: 390000, low: 230000, peak: 790000, status: 'fair', label: '적정가 (성수기 대비 선방)', savings: 45000, pct: 11.5, bestDays: ['수요일', '목요일'], drop: '주말 대비 24% 저렴', tip: '삿포로는 2월 눈축제와 7~8월 라벤더 시즌이 성수기입니다. 10~11월 단풍/온천 시즌엔 20만원대 특가가 자주 뜹니다.', airlines: [{ name: '에어부산 (BX182)', time: '09:00 PUS ➔ 11:30 CTS', bag: '위탁 15kg', price: 345000 }] },
+      'TAE_sapporo': { price: 360000, avg: 410000, low: 245000, peak: 820000, status: 'fair', label: '적정가 (이동비용 절감 효과)', savings: 50000, pct: 12.2, bestDays: ['화요일', '목요일'], drop: '주말 대비 22% 저렴', tip: '대구-신치토세 직항은 화/목/토 스케줄을 사전 확인하세요.', airlines: [{ name: '티웨이항공 (TW247)', time: '08:30 TAE ➔ 11:10 CTS', bag: '위탁 15kg', price: 360000 }] },
+      'PUS_okinawa': { price: 275000, avg: 310000, low: 179000, peak: 620000, status: 'great_deal', label: '특가 찬스! 평소보다 11% 저렴', savings: 35000, pct: 11.3, bestDays: ['화요일', '수요일'], drop: '주말 대비 25% 저렴', tip: '오키나와는 렌터카 예약이 필수입니다. 항공권 예약 즉시 렌터카를 선점하세요.', airlines: [{ name: '에어부산 (BX152)', time: '08:05 PUS ➔ 10:15 OKA', bag: '위탁 15kg', price: 275000 }] },
+      'TAE_okinawa': { price: 310000, avg: 345000, low: 210000, peak: 650000, status: 'fair', label: '적정가 (부산 김해공항 연계 추천)', savings: 35000, pct: 10.1, bestDays: ['수요일', '목요일'], drop: '주말 대비 20% 저렴', tip: '동대구역에서 구포역(KTX 35분, 8,400원) 이동 후 김해공항 직항을 타면 5만원 이상 세이브!', airlines: [{ name: '부산 김해 출발 추천 (에어부산 BX152)', time: '08:05 PUS ➔ 10:15 OKA', bag: '위탁 15kg', price: 275000 }] },
+      'PUS_taipei': { price: 245000, avg: 290000, low: 169000, peak: 580000, status: 'great_deal', label: '초특가 찬스! 15.5% 절약', savings: 45000, pct: 15.5, bestDays: ['화요일', '목요일'], drop: '금/토 대비 30% 저렴', tip: '타오위안 공항에서 타이베이 메인역까지 공항 MRT 급행으로 35분! 온라인 e-Gate를 사전 작성하세요.', airlines: [{ name: '에어부산 (BX793)', time: '11:05 PUS ➔ 12:45 TPE', bag: '위탁 15kg', price: 245000 }] },
+      'TAE_taipei': { price: 255000, avg: 298000, low: 175000, peak: 590000, status: 'great_deal', label: '특가 찬스! 평소보다 14.4% 저렴', savings: 43000, pct: 14.4, bestDays: ['화요일', '수요일'], drop: '주말 대비 29% 저렴', tip: '티웨이와 타이거에어의 경쟁으로 20만원 초반대 특가가 빈번합니다.', airlines: [{ name: '티웨이항공 (TW667)', time: '22:40 TAE ➔ 00:15 TPE', bag: '위탁 15kg', price: 245000 }] },
+      'PUS_kaohsiung': { price: 235000, avg: 275000, low: 159000, peak: 510000, status: 'great_deal', label: '특가 찬스! 14.5% 저렴', savings: 40000, pct: 14.5, bestDays: ['수요일', '목요일'], drop: '주말 대비 28% 저렴', tip: '가오슝 공항은 시내(메이리다오역)까지 지하철로 15분! 타이베이 IN - 가오슝 OUT 고속철도 코스 추천.', airlines: [{ name: '에어부산 (BX795)', time: '10:40 PUS ➔ 12:40 KHH', bag: '위탁 15kg', price: 235000 }] },
+      'TAE_kaohsiung': { price: 270000, avg: 310000, low: 185000, peak: 550000, status: 'fair', label: '적정가 (부산 직항 권장)', savings: 40000, pct: 12.9, bestDays: ['수요일', '목요일'], drop: '주말 대비 25% 저렴', tip: '대구-타이베이 직항 후 고속철도(1시간 30분)로 가오슝 이동하거나 김해공항 직항 이용 추천.', airlines: [{ name: '에어부산 (부산 출발 권장)', time: '10:40 PUS ➔ 12:40 KHH', bag: '위탁 15kg', price: 235000 }] },
+      'PUS_danang': { price: 290000, avg: 350000, low: 210000, peak: 720000, status: 'great_deal', label: '초특가 찬스! 6만원(17%) 절약', savings: 60000, pct: 17.1, bestDays: ['화요일', '수요일'], drop: '주말 대비 35% 저렴', tip: '다낭 공항 도착 후 호이안 리조트로 바로 이동 시 그랩을 이용하면 30분 만에 도착합니다.', airlines: [{ name: '에어부산 (BX731)', time: '20:30 PUS ➔ 23:30 DAD', bag: '위탁 15kg', price: 290000 }, { name: '진에어 (LJ077)', time: '08:00 PUS ➔ 10:45 DAD', bag: '위탁 15kg', price: 320000 }] },
+      'TAE_danang': { price: 298000, avg: 360000, low: 215000, peak: 740000, status: 'great_deal', label: '초특가 찬스! 6만 2천원 절약', savings: 62000, pct: 17.2, bestDays: ['화요일', '수요일'], drop: '주말 대비 33% 저렴', tip: '대구-다낭 밤 9시 출발편 탑승 시 첫날은 한시장 근처 0.5박 가성비 호텔(3만원대) 이용 추천.', airlines: [{ name: '티웨이항공 (TW127)', time: '21:00 TAE ➔ 23:45 DAD', bag: '위탁 15kg', price: 298000 }] },
+      'PUS_hochiminh': { price: 320000, avg: 360000, low: 240000, peak: 750000, status: 'fair', label: '적정가 (평균 대비 11% 저렴)', savings: 40000, pct: 11.1, bestDays: ['화요일', '수요일'], drop: '주말 대비 25% 저렴', tip: '부산발 매일 오전 직항(비엣젯/베트남항공)으로 편리하게 출국할 수 있습니다.', airlines: [{ name: '비엣젯항공 (VJ869)', time: '08:00 PUS ➔ 11:40 SGN', bag: '기내 7kg', price: 310000 }] },
+      'TAE_hochiminh': { price: 340000, avg: 380000, low: 255000, peak: 780000, status: 'fair', label: '적정가 (김해 직항 연계 권장)', savings: 40000, pct: 10.5, bestDays: ['화요일', '목요일'], drop: '주말 대비 23% 저렴', tip: '대구에서 다낭 직항 후 국내선(1시간, 4만원) 환승 또는 부산 김해공항 직항 추천.', airlines: [{ name: '김해공항 출발 권장 (비엣젯)', time: '08:00 PUS ➔ 11:40 SGN', bag: '기내 7kg', price: 310000 }] },
+      'PUS_hanoi': { price: 305000, avg: 345000, low: 220000, peak: 690000, status: 'great_deal', label: '특가 찬스! 4만원 절약', savings: 40000, pct: 11.6, bestDays: ['화요일', '목요일'], drop: '주말 대비 27% 저렴', tip: '하노이 노이바이 공항에서 호안끼엠 시내까지 86번 공항버스(2,500원)나 그랩(1.5만원) 이용.', airlines: [{ name: '비엣젯항공 (VJ983)', time: '08:00 PUS ➔ 10:35 HAN', bag: '기내 7kg', price: 295000 }] },
+      'TAE_hanoi': { price: 315000, avg: 355000, low: 230000, peak: 710000, status: 'great_deal', label: '특가 찬스! 11.3% 저렴', savings: 40000, pct: 11.3, bestDays: ['화요일', '수요일'], drop: '주말 대비 26% 저렴', tip: '대구-하노이 직항은 심야 도착이므로 공항 픽업 차량을 사전 예약하면 안심 이동 가능합니다.', airlines: [{ name: '티웨이항공 (TW163)', time: '20:45 TAE ➔ 23:25 HAN', bag: '위탁 15kg', price: 315000 }] },
+    };
+
+    const WEATHER = {
+      fukuoka: { temp: 21, feels: 20, min: 15, max: 24, cond: '맑고 쾌적함', icon: '☀️', rain: 10, clothing: '낮에는 가벼운 긴팔이나 셔츠, 아침저녁 겉옷 자켓 추천', pack: '많이 걷게 되므로 편한 운동화, 실내외 온도차 대비 가디건', indoor: '비 올 땐 [텐진 지하상가], [캐널시티 하카타], [후쿠오카 팀랩 포레스트] 실내 코스 추천!' },
+      osaka: { temp: 22, feels: 21, min: 16, max: 25, cond: '맑고 따스함', icon: '☀️', rain: 15, clothing: '활동하기 좋은 봄/가을 룩. 셔츠나 롱슬리브 티셔츠', pack: '하루 15,000보 걷기 대비 휴족시간과 보조배터리 필수', indoor: '비 올 땐 [우메다 한큐백화점/그랜드프론트], [카이유칸 수족관], [국립국제미술관] 추천' },
+      tokyo: { temp: 20, feels: 19, min: 14, max: 23, cond: '구름 조금', icon: '⛅', rain: 20, clothing: '일교차가 있으므로 레이어드 룩(이너+자켓) 추천', pack: '교통카드(스이카/파스모) 모바일 등록, 가벼운 우산', indoor: '비 올 땐 [미드타운 & 모리미술관], [긴자 식스], [오다이바 팀랩 플래닛츠] 추천' },
+      sapporo: { temp: 14, feels: 12, min: 8, max: 17, cond: '선선하고 맑음', icon: '☀️', rain: 10, clothing: '본토보다 6~8도 낮아 쌀쌀합니다. 도톰한 니트나 바람막이 필수', pack: '보온 머플러, 온천용 수건', indoor: '비/눈 올 땐 [삿포로 맥주박물관], [시로이 코이비토 파크], [치카호 지하상가]' },
+      okinawa: { temp: 27, feels: 29, min: 23, max: 29, cond: '화창한 남국 햇살', icon: '☀️', rain: 20, clothing: '시원한 린넨 셔츠, 반팔, 반바지, 원피스', pack: '강한 자외선 차단 선크림 SPF50+, 선글라스, 아쿠아슈즈', indoor: '비 올 땐 [츄라우미 수족관 대형 수조 실내], [이온몰 라이카무], [오키나와 평화기념관]' },
+      taipei: { temp: 26, feels: 27, min: 21, max: 28, cond: '온화하고 약간 흐림', icon: '☁️', rain: 30, clothing: '반팔 티셔츠 + 에어컨이 센 실내 대비 얇은 겉옷', pack: '대만은 잦은 비가 내릴 수 있으므로 3단 접이식 경량 우산 필수', indoor: '비 올 땐 [국립고궁박물원 옥배추 관람], [타이베이 101 타워 쇼핑몰], [베이터우 온천]' },
+      kaohsiung: { temp: 29, feels: 31, min: 23, max: 31, cond: '따스한 햇살', icon: '☀️', rain: 10, clothing: '시원한 여름 옷차림, 모자와 자외선 차단제', pack: '치진섬 자전거 대여용 편한 샌들, 휴대용 손선풍기', indoor: '더위/우천 시 [보얼예술특구 실내 갤러리 창고], [시립미술관], [드림몰 쇼핑]' },
+      danang: { temp: 29, feels: 32, min: 24, max: 32, cond: '화창한 리조트 날씨', icon: '☀️', rain: 15, clothing: '휴양지 룩! 통기성 좋은 린넨, 나시, 수영복, 챙 넓은 모자', pack: '방수팩, 모기 기피제, 동지갑(베트남 화폐 구분용)', indoor: '비 올 땐 [한시장 실내 아오자이 맞춤], [오행산 실내 동굴], [호이안 실내 스파 마사지]' },
+      hochiminh: { temp: 32, feels: 36, min: 25, max: 34, cond: '열대 기후 (스콜 주의)', icon: '⛅', rain: 35, clothing: '가볍고 시원한 반팔과 반바지, 땀 흡수 빠른 기능성 소재', pack: '손수건, 오후 짧은 스콜 대비 가벼운 접이식 우산', indoor: '스콜 발생 시 [사이공 스카이덱(비텍스코)], [카페 아파트먼트 9층], [타카시마야 백화점]' },
+      hanoi: { temp: 25, feels: 26, min: 20, max: 28, cond: '맑고 선선함', icon: '⛅', rain: 20, clothing: '한국의 5월 날씨. 낮에는 반팔, 아침저녁 얇은 겉옷', pack: '보도블록이 울퉁불퉁하므로 발 편한 신발, 마스크', indoor: '비 올 땐 [베트남 여성박물관], [호아로 수용소], [올드쿼터 감성 에그커피 카페]' },
+    };
+
+    const RATES = [
+      { code: 'JPY', name: '일본 엔 (100엔)', unit: 100, base: 915.5, pct: -0.18, card: '하나 트래블로그 / 신한 SOL트래블', atm: '세븐일레븐(Seven Bank) ATM 수수료 100% 무료!', tip: '현금 30% : 카드/스이카 70% (라멘 자판기 및 포장마차용 현금 지참)' },
+      { code: 'TWD', name: '대만 달러 (1 NT$)', unit: 1, base: 42.8, pct: +0.22, card: '신한 SOL트래블 / 토스 외화통장', atm: '타오위안 공항 메가뱅크 또는 시내 국태세화 ATM 수수료 무료', tip: '현금 60% : 카드 40% (야시장, 소도시 버스투어 현금 위주)' },
+      { code: 'VND', name: '베트남 동 (10만 동)', unit: 100000, base: 5420.0, pct: -0.05, card: '하나 트래블로그 / 우리 위비트래블', atm: 'VPBank, TPBank ATM 이용 시 현지 출금 수수료 0원!', tip: '현금 70% : 카드 30% (로컬 식당, 그랩 팁, 마사지 현금 선호)' },
+      { code: 'USD', name: '미국 달러 (1$)', unit: 1, base: 1386.0, pct: +0.35, card: '신한 SOL트래블 / KB 트래블러스', atm: '베트남 한시장 금은방 환전 시 100달러 신권(파란띠) 최고 우대', tip: '비상용 100달러 신권 2~3장 지참 추천' },
+    ];
+
+    const RESTAURANTS = [
+      { id: 'fuk_1', cityId: 'fukuoka', name: '신신 라멘 (텐진 본점)', local: '博多らーめん Shin-Shin', cat: '돈코츠 라멘', rating: 4.5, reviews: 3420, price: '¥800 ~ ¥1,200 (약 7,500원 ~ 1.1만원)', must: '하카타 신신 라멘 보통맛 + 반숙계란 토핑 + 볶음밥 세트', tip: '돼지 잡내 없이 깔끔하고 담백한 돈코츠 육수! 피크시간(12시~13시) 피하면 10분 내 입장 가능.', pay: '현금, 트래블로그, 스이카 카드 가능', time: '11:00 ~ 익일 03:00 (연중무휴)', addr: '텐진역 4번 출구 도보 5분' },
+      { id: 'fuk_2', cityId: 'fukuoka', name: '모츠나베 오오야마 (하카타역점)', local: '博多もつ鍋 おおやま', cat: '모츠나베 (곱창전골)', rating: 4.6, reviews: 2890, price: '¥1,600 ~ ¥2,500 (약 1.5만원 ~ 2.3만원)', must: '미소(된장) 베이스 모츠나베 + 마무리 짬뽕면 사리', tip: '1인 식사 가능한 카운터석 완비! 대창을 다 먹은 뒤 육수에 짬뽕면을 넣어 끓여먹는 것이 정석.', pay: '카드, 트래블로그, 현금 가능', time: '11:00 ~ 23:00', addr: 'JR 하카타역 데이토스 지하 1층' },
+      { id: 'osa_1', cityId: 'osaka', name: '도톤보리 앗치치혼포', local: 'あっちち本舗 道頓堀店', cat: '타코야키', rating: 4.4, reviews: 5200, price: '¥600 (약 5,500원 / 8알)', must: '타코야키 2번 소스 (타코야키 소스 + 마요네즈) + 파 토핑', tip: '생문어를 사용하여 겉바속촉 크리미합니다. 도톤보리강 산책로 벤치에서 맥주와 함께 즐겨보세요.', pay: '현금 전용', time: '09:00 ~ 익일 02:00', addr: '도톤보리강 다리 옆 지하' },
+      { id: 'osa_2', cityId: 'osaka', name: '오코노미야키 치보', local: 'お好み焼 千房 道頓堀ビル店', cat: '오코노미야키', rating: 4.5, reviews: 3800, price: '¥1,500 ~ ¥2,400 (약 1.4만원 ~ 2.2만원)', must: '도톤보리 오코노미야키 + 믹스 야키소바', tip: '철판에서 직원이 능숙한 마요네즈 아트를 선보입니다. 한국어 메뉴판 완비.', pay: '카드, 트래블로그 가능', time: '11:00 ~ 23:00', addr: '도톤보리 메인 거리' },
+      { id: 'tyo_1', cityId: 'tokyo', name: '아후리 라멘 (신주쿠 루미네)', local: 'AFURI 新宿ルミネ', cat: '유자 라멘 & 츠케멘', rating: 4.5, reviews: 4900, price: '¥1,100 ~ ¥1,600 (약 1만원 ~ 1.5만원)', must: '유자 시오(소금) 라멘 + 차슈 추가 + 닭기름 탄레이', tip: '상큼한 유자 향과 맑은 닭 육수. 완전 캐시리스 매장이므로 카드/트래블로그/스이카만 가능!', pay: '카드/트래블로그/스이카 전용 (현금 불가)', time: '11:00 ~ 22:00', addr: '신주쿠 루미네 1 지하 2층' },
+      { id: 'spk_1', cityId: 'sapporo', name: '징기스칸 다루마 4.4점', local: '成吉思汗 だるま', cat: '징기스칸 양고기', rating: 4.6, reviews: 5600, price: '¥2,500 ~ ¥4,000 (약 2.3만원 ~ 3.7만원)', must: '상육(上肉) or 히레(안심) + 삿포로 클래식 생맥주 + 대파 양파 구이', tip: '특유의 투구형 무쇠 불판에 구워먹는 생양고기. 잡내가 전혀 없고 비법 간장소스가 일품입니다.', pay: '현금 권장', time: '17:00 ~ 익일 03:00', addr: '스스키노역 4번 출구 도보 3분' },
+      { id: 'oka_1', cityId: 'okinawa', name: "잭스 스테이크 하우스", local: 'ジャッキーステーキハウス', cat: '레트로 스테이크', rating: 4.4, reviews: 3900, price: '¥2,200 ~ ¥3,500 (약 2만원 ~ 3.2만원)', must: '텐더로인 스테이크 L (미디엄 레어) + No.1 스테이크 소스 + 오리온 맥주', tip: '1953년 개업한 오키나와 스테이크 문화의 산증인. 식사 시간에 입구 신호등으로 혼잡도 확인 가능.', pay: '현금 및 신용카드 가능', time: '11:00 ~ 22:30', addr: '나하시 아사히바시역 도보 8분' },
+      { id: 'tpe_1', cityId: 'taipei', name: '딘타이펑 (101 타워점)', local: '鼎泰豐 台北101店', cat: '딤섬 & 만두', rating: 4.7, reviews: 12000, price: 'NT$ 300 ~ NT$ 600 (약 1.3만원 ~ 2.5만원)', must: '오리지널 샤오롱바오 + 통새우 샤오마이 + 갈비튀김 볶음밥', tip: '도착하자마자 번호표를 뽑고 101 타워 전망대나 쇼핑몰 둘러본 뒤 입장하세요.', pay: '신용카드, 트래블로그, 현금 가능', time: '11:00 ~ 21:00', addr: '타이베이 101 빌딩 지하 1층' },
+      { id: 'khh_1', cityId: 'kaohsiung', name: '항원우육면', local: '港園牛肉麵', cat: '비빔 우육면', rating: 4.5, reviews: 6800, price: 'NT$ 120 ~ NT$ 150 (약 5,000원 ~ 6,500원 극가성비!)', must: '우육 비빔면 (뉴로우빤미엔) + 마늘소스 & 고추기름', tip: '국물 우육면보다 비빔 우육면이 시그니처입니다! 라드유와 특제 간장에 비벼먹는 칼국수 면발.', pay: '현금 전용', time: '10:30 ~ 20:00', addr: '옌청푸역 4번 출구 도보 7분' },
+      { id: 'dad_1', cityId: 'danang', name: '포홍 쌀국수 (Phở Hồng)', local: 'Phở Hồng', cat: '소고기 쌀국수', rating: 4.6, reviews: 7900, price: '50,000₫ ~ 65,000₫ (약 2,700원 ~ 3,500원)', must: '소고기 쌀국수 (포보) + 꿔이(튀김빵) + 짜조', tip: '맑고 깊은 양지 육수. 라임과 매운 고추를 곁들이면 해장으로 최고입니다. 에어컨 구비!', pay: '현금(VND) 전용', time: '06:00 ~ 21:00', addr: '다낭 한시장 북쪽 도보 10분' },
+      { id: 'dad_2', cityId: 'danang', name: '목 해산물 식당 (Mộc Quán)', local: 'Mộc Quán', cat: '생해산물 바베큐', rating: 4.7, reviews: 9200, price: '200,000₫ ~ 450,000₫ (약 1.1만원 ~ 2.4만원)', must: '버터갈릭 칠리 타이거새우 + 치즈 가리비 + 모닝글로리', tip: '직원들이 새우 껍질을 테이블에서 직접 다 까줘서 편하게 먹을 수 있습니다. 에어컨 룸 완비.', pay: '트래블로그 카드 가능 (수수료 없음), 현금 가능', time: '10:30 ~ 23:00', addr: '미케비치 도보 5분 거리' },
+      { id: 'sgn_1', cityId: 'hochiminh', name: '포 퀸 (Phở Quỳnh)', local: 'Phở Quỳnh', cat: '남부식 쌀국수', rating: 4.5, reviews: 6500, price: '75,000₫ ~ 95,000₫ (약 4,000원 ~ 5,200원)', must: '소고기 쌀국수 + 비프스튜 쌀국수 (포 보 코) + 바게트', tip: '24시간 오픈하므로 새벽이나 늦은 밤 야식으로 최고입니다.', pay: '현금 전용', time: '24시간 연중무휴', addr: '부이비엔 여행자 거리 초입' },
+      { id: 'han_1', cityId: 'hanoi', name: '분짜 닥킴 (Bún Chả Đắc Kim)', local: 'Bún Chả Đắc Kim', cat: '숯불 분짜', rating: 4.4, reviews: 7100, price: '60,000₫ ~ 90,000₫ (약 3,300원 ~ 4,900원)', must: '숯불 돼지고기 완자 분짜 + 바삭한 게살 넴(Nem) 튀김 세트', tip: '숯불 향이 진하게 밴 양념 고기를 새콤달콤한 느억맘 육수에 담가 쌀국수와 함께 적셔 먹습니다.', pay: '현금 전용', time: '09:00 ~ 21:00', addr: '호안끼엠 올드쿼터 항만 거리 입구' },
+      { id: 'han_2', cityId: 'hanoi', name: '카페 지앙 (에그커피 원조)', local: 'Café Giảng', cat: '원조 에그커피', rating: 4.6, reviews: 11000, price: '35,000₫ ~ 45,000₫ (약 1,900원 ~ 2,500원)', must: '따뜻한 에그커피 (Hot Egg Coffee)', tip: '1946년 계란 노른자를 휘핑해 만들기 시작한 에그커피 탄생지. 티라미수처럼 부드럽고 달콤합니다.', pay: '현금 전용', time: '07:00 ~ 22:00', addr: '올드쿼터 응우옌흐우후안 거리 39번지' },
+    ];
+
+    /* ========================================================
+       2. APPLICATION STATE
+       ======================================================== */
+    let state = {
+      tab: 'flights',
+      cityId: 'fukuoka',
+      departureAirport: 'TAE', // 'TAE' (대구) or 'PUS' (부산)
+      itineraryDays: 3,
+      itineraryStyle: 'gourmet',
+      itineraryPace: 'relaxed',
+      itineraryRainSafe: false,
+      exchangeCurrency: 'JPY',
+      exchangeForeign: '10000',
+      activeDayIdx: 0,
+      currentPlan: null,
+      savedRecords: [],
+    };
+
+    // Load saved records from localStorage
+    try {
+      const saved = localStorage.getItem('travelmate_vanilla_records');
+      if (saved) {
+        state.savedRecords = JSON.parse(saved);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+
+    if (!state.savedRecords || state.savedRecords.length === 0) {
+      state.savedRecords = [
+        {
+          id: 'rec_init_1',
+          title: '후쿠오카 2박 3일 미식 식도락 여행 (샘플)',
+          cityId: 'fukuoka',
+          departureAirport: 'TAE',
+          dateRange: '2026-10-21 (3일간)',
+          checklist: [
+            { id: 'c1', task: '여권 유효기간 6개월 이상 확인', done: true, cat: '필수 서류' },
+            { id: 'c2', task: '비짓재팬웹(VJW) 입국/세관 QR 사전 등록', done: true, cat: '필수 서류' },
+            { id: 'c3', task: '하나 트래블로그 엔화 충전 & 세븐뱅크 확인', done: false, cat: '금융/통신' },
+            { id: 'c4', task: '110V 11자 돼지코 2개 챙기기', done: false, cat: '짐꾸리기' },
+          ],
+          expenses: [
+            { id: 'e1', cat: '항공', desc: '대구-후쿠오카 티웨이 왕복', local: 145000, cur: 'KRW', krw: 145000 },
+            { id: 'e2', cat: '식비', desc: '신신라멘 2인 세트', local: 2400, cur: 'JPY', krw: 21960 },
+          ],
+          memories: [
+            { id: 'm1', title: '대구공항 초고속 출국', note: '공항 도착 15분 만에 보안검색 통과 완료! 너무 편함.', date: '2026-10-21' }
+          ],
+          createdAt: '2026-10-15',
+        }
+      ];
+    }
+
+    /* ========================================================
+       3. CONTROLLER FUNCTIONS
+       ======================================================== */
+    function switchTab(tabName) {
+      state.tab = tabName;
+      document.querySelectorAll('.tab-view').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.nav-tab').forEach(el => {
+        el.classList.remove('bg-blue-600', 'text-white', 'shadow-sm');
+        el.classList.add('text-slate-300');
+      });
+
+      const activeView = document.getElementById(`view-${tabName}`);
+      if (activeView) activeView.classList.remove('hidden');
+
+      const activeBtn = document.getElementById(`tab-${tabName}`);
+      if (activeBtn) {
+        activeBtn.classList.add('bg-blue-600', 'text-white', 'shadow-sm');
+        activeBtn.classList.remove('text-slate-300');
+      }
+
+      renderView();
+    }
+
+    function selectCity(cityId) {
+      state.cityId = cityId;
+      generateItinerary();
+      renderCityBar();
+      renderView();
+      showToast(`📍 여행지가 '${getCurrentCity().nameKo}'(으)로 변경되었습니다.`);
+    }
+
+    function setDepartureAirport(airport) {
+      state.departureAirport = airport;
+      const taeBtn = document.getElementById('btn-dep-tae');
+      const pusBtn = document.getElementById('btn-dep-pus');
+
+      if (airport === 'TAE') {
+        taeBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-blue-600 text-white shadow-md';
+        pusBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-300 hover:text-white hover:bg-slate-700/60';
+      } else {
+        pusBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-blue-600 text-white shadow-md';
+        taeBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-300 hover:text-white hover:bg-slate-700/60';
+      }
+
+      generateItinerary();
+      renderView();
+      showToast(`✈️ 출발 공항이 '${airport === 'TAE' ? '대구공항 (TAE)' : '부산 김해공항 (PUS)'}'(으)로 설정되었습니다.`);
+    }
+
+    function getCurrentCity() {
+      return CITIES.find(c => c.id === state.cityId) || CITIES[0];
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast-message');
+      const text = document.getElementById('toast-text');
+      text.innerText = msg;
+      toast.classList.remove('hidden');
+      setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 3500);
+    }
+
+    function saveRecordsToLocalStorage() {
+      try {
+        localStorage.setItem('travelmate_vanilla_records', JSON.stringify(state.savedRecords));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    /* ========================================================
+       4. ITINERARY GENERATOR ENGINE
+       ======================================================== */
+    function generateItinerary() {
+      const city = getCurrentCity();
+      const depName = state.departureAirport === 'TAE' ? '대구공항 (TAE)' : '부산 김해공항 (PUS)';
+      const flightKey = `${state.departureAirport}_${state.cityId}`;
+      const flight = FLIGHTS[flightKey];
+      const weather = WEATHER[state.cityId] || WEATHER.fukuoka;
+      const cityFoods = RESTAURANTS.filter(r => r.cityId === state.cityId);
+
+      const days = [];
+      const numDays = state.itineraryDays;
+
+      // Day 1
+      days.push({
+        dayNumber: 1,
+        theme: `${city.nameKo} 도착 & 설레는 핵심 탐방`,
+        area: '공항 ➔ 호텔 체크인 ➔ 중심가 핵심 스팟',
+        budget: '약 45,000원 (식비/교통비)',
+        items: [
+          { time: '08:00 - 11:30', slot: '오전', title: `${depName} 출국 및 ${city.nameKo} 도착`, loc: `${depName} ➔ ${city.nameEn} 공항`, desc: `${state.departureAirport === 'TAE' ? city.flightTimeFromTae : city.flightTimeFromPus} 비행 후 도착. 입국 수속 및 eSIM/교통카드 확인.`, tip: state.departureAirport === 'TAE' ? '대구공항은 수속 15분 컷으로 여유롭습니다.' : '김해공항은 사상역 경전철을 타면 정시 도착합니다.' },
+          { time: '12:00 - 13:30', slot: '점심/오후', title: cityFoods[0] ? `${cityFoods[0].name} 식사` : '로컬 웰컴 런치', loc: cityFoods[0]?.addr || '시내 중심', desc: cityFoods[0] ? `시그니처: ${cityFoods[0].must}. ${cityFoods[0].tip}` : '현지 인기 로컬 식당에서 든든한 첫 점심.', tip: cityFoods[0]?.pay },
+          { time: '14:30 - 17:00', slot: '늦은오후', title: `${city.highlights[0] || '도심 랜드마크'} 둘러보기`, loc: '시내 중심가', desc: `호텔 체크인 후 가벼운 차림으로 산책 및 인생샷 촬영. ${state.itineraryRainSafe ? '(우천시 실내 코스로 안전하게 전환됨)' : ''}`, tip: weather.indoor },
+          { time: '18:00 - 20:00', slot: '저녁', title: cityFoods[1] ? `${cityFoods[1].name} 만찬` : '현지 시그니처 디너', loc: '현지 번화가', desc: cityFoods[1] ? `${cityFoods[1].cat} 전문점. ${cityFoods[1].must}` : '시원한 현지 생맥주/음료와 함께하는 푸짐한 저녁.' },
+          { time: '20:30 - 22:30', slot: '야경/나이트', title: `${city.nameKo} 야경 산책 & 편의점 털기`, loc: '도심 야경 스팟', desc: '도시의 화려한 밤거리 감상 및 숙소 복귀 전 현지 푸딩/과일 야식 구매.' }
+        ]
+      });
+
+      // Day 2
+      days.push({
+        dayNumber: 2,
+        theme: `${state.itineraryStyle === 'gourmet' ? '식도락 미식' : state.itineraryStyle === 'healing' ? '온천 & 힐링' : '핵심 명소'} 완전 정복`,
+        area: '도심 문화구역 ➔ 감성 카페 ➔ 선셋 뷰포인트',
+        budget: '약 55,000원',
+        items: [
+          { time: '09:00 - 11:30', slot: '오전', title: `${city.highlights[1] || '오전 랜드마크'} 탐방`, loc: '문화 유적/공원', desc: '오전의 상쾌한 공기와 함께 여유롭게 감상하는 대표 명소.' },
+          { time: '12:00 - 13:30', slot: '점심/오후', title: '로컬 별미 런치 & 스페셜티 카페', loc: '맛집 골목', desc: '현지인들이 줄 서는 오리지널 면요리 또는 덮밥 맛집 탐방.' },
+          { time: '14:30 - 17:30', slot: '늦은오후', title: `${city.highlights[2] || '오후 핵심 코스'} & 쇼핑`, loc: '쇼핑 아케이드/갤러리', desc: '동선 꼬임 없이 도보 15분 이내로 연결되는 알찬 오후 코스.' },
+          { time: '18:30 - 21:00', slot: '저녁', title: '야경 뷰포인트 레스토랑 또는 전통 이자카야/포차', loc: '시내 전망 레스토랑', desc: '하루를 마무리하는 낭만적인 저녁 식사.' }
+        ]
+      });
+
+      // Day 3
+      if (numDays >= 3) {
+        const isLast = numDays === 3;
+        days.push({
+          dayNumber: 3,
+          theme: isLast ? `아쉬운 작별 & ${depName} 안전 귀국` : '근교 감성 당일치기 투어',
+          area: isLast ? '마트 쇼핑 ➔ 체크아웃 ➔ 공항' : '도심 외곽 명소 투어',
+          budget: isLast ? '약 30,000원' : '약 65,000원',
+          items: isLast ? [
+            { time: '09:30 - 11:30', slot: '오전', title: '마지막 로컬 조식 & 특산품 면세 쇼핑', loc: '대형마트 / 돈키호테 / 까르푸', desc: '지인과 가족을 위한 인기 과자, 소스, 면세 쇼핑.', tip: '면세 혜택을 위해 여권 원본 필수 지참!' },
+            { time: '12:00 - 13:30', slot: '점심/오후', title: '라스트 런치 & 공항 이동', loc: '시내 중심가', desc: '가장 맛있었던 메뉴 한 번 더 먹기.' },
+            { time: '14:30 - 19:30', slot: '늦은오후', title: `공항 출국 ➔ ${depName} 도착`, loc: `${city.nameKo} 공항 ➔ ${depName}`, desc: '비행기 탑승 및 영남권 공항 도착 후 안전 귀가.' }
+          ] : [
+            { time: '09:00 - 13:00', slot: '오전', title: `${city.highlights[3] || '근교 자연 투어'}`, loc: '근교 명소', desc: '도심을 벗어나 만나는 이국적인 풍경.' },
+            { time: '13:00 - 14:30', slot: '점심/오후', title: '근교 향토 정식 점심', loc: '현지 로컬 식당', desc: '지역 특산 식재료로 만드는 전통 요리.' },
+            { time: '18:30 - 21:00', slot: '저녁', title: '마지막 밤 페어웰 디너', loc: '로컬 시그니처 식당', desc: '여행의 추억을 나누며 즐기는 푸짐한 만찬.' }
+          ]
+        });
+      }
+
+      // Day 4 & Day 5
+      if (numDays >= 4) {
+        days.push({
+          dayNumber: 4,
+          theme: numDays === 4 ? `기념품 쇼핑 & ${depName} 귀국` : '로컬 골목길 산책 & 힐링 스파',
+          area: numDays === 4 ? '도심 ➔ 공항 귀국' : '감성 카페 & 스파',
+          budget: '약 35,000원',
+          items: [
+            { time: '10:00 - 12:30', slot: '오전', title: '감성 골목길 산책 & 로컬 베이커리', loc: '골목 카페', desc: '여유롭게 즐기는 브런치와 커피 한 잔.' },
+            { time: '13:30 - 18:00', slot: '점심/오후', title: numDays === 4 ? `공항 이동 및 ${depName} 귀국` : '온천/스파 체험', loc: '도심', desc: '휴식과 충전의 시간.' }
+          ]
+        });
+      }
+
+      state.currentPlan = {
+        title: `${city.nameKo} ${numDays - 1}박 ${numDays}일 ${state.itineraryStyle === 'gourmet' ? '식도락 미식' : '알찬 핵심'} 여행`,
+        cityId: state.cityId,
+        departureAirport: state.departureAirport,
+        durationDays: numDays,
+        days: days,
+        budgetEst: (flight ? flight.price : 200000) + numDays * 85000,
+        notes: `${depName} 출발 최적화 일정. 현지 날씨: ${weather.cond} (${weather.temp}°C). ${weather.clothing}`
+      };
+    }
+
+    /* ========================================================
+       5. VIEW RENDERERS
+       ======================================================== */
+    function renderCityBar() {
+      const container = document.getElementById('city-buttons-container');
+      const label = document.getElementById('selected-city-label');
+      const flags = { '일본': '🇯🇵', '대만': '🇹🇼', '베트남': '🇻🇳' };
+      const current = getCurrentCity();
+
+      label.innerHTML = `선택: <strong class="text-blue-300">${flags[current.country]} ${current.nameKo} (${current.nameEn})</strong>`;
+
+      container.innerHTML = CITIES.map(c => {
+        const isSel = c.id === state.cityId;
+        return `
+          <button onclick="selectCity('${c.id}')" class="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 border ${
+            isSel
+              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold border-blue-400 shadow-md'
+              : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:bg-slate-700 hover:text-white'
+          }">
+            <span>${flags[c.country]}</span>
+            <span>${c.nameKo}</span>
+            <span class="text-[10px] px-1 py-0.2 rounded ${isSel ? 'bg-blue-900/50 text-blue-200' : 'text-slate-400'}">
+              ${c.country === '일본' ? 'JP' : c.country === '대만' ? 'TW' : 'VN'}
+            </span>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function renderView() {
+      switch (state.tab) {
+        case 'flights': renderFlightsView(); break;
+        case 'itinerary': renderItineraryView(); break;
+        case 'restaurants': renderRestaurantsView(); break;
+        case 'exchange': renderExchangeView(); break;
+        case 'records': renderRecordsView(); break;
+      }
+    }
+
+    // --- 1. Flights View ---
+    function renderFlightsView() {
+      const city = getCurrentCity();
+      const depName = state.departureAirport === 'TAE' ? '대구 (TAE)' : '부산 김해 (PUS)';
+      const flightKey = `${state.departureAirport}_${state.cityId}`;
+      const flight = FLIGHTS[flightKey] || { price: 200000, avg: 250000, low: 150000, peak: 500000, label: '적정가', savings: 30000, pct: 12, bestDays: ['화', '수'], drop: '주말 대비 25% 저렴', tip: '', airlines: [] };
+
+      const otherAirport = state.departureAirport === 'TAE' ? 'PUS' : 'TAE';
+      const otherKey = `${otherAirport}_${state.cityId}`;
+      const otherFlight = FLIGHTS[otherKey];
+
+      const rangeSpan = flight.peak - flight.low;
+      const offset = flight.price - flight.low;
+      const gaugePct = Math.max(8, Math.min(92, Math.round((offset / rangeSpan) * 100)));
+
+      document.getElementById('view-flights').innerHTML = `
+        <!-- Top Hero Card -->
+        <div class="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden border border-blue-800/40">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div class="flex items-center gap-2 mb-2">
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-400/30">
+                  ${city.country} ✈️ 영남권 직항
+                </span>
+                <span class="text-xs text-slate-300">비행시간: 약 <strong class="text-amber-300">${state.departureAirport === 'TAE' ? city.flightTimeFromTae : city.flightTimeFromPus}</strong></span>
+              </div>
+              <h2 class="text-2xl sm:text-3xl font-black tracking-tight">
+                ${depName} ➔ ${city.nameKo} (${city.nameEn}) 항공권 가격 분석
+              </h2>
+              <p class="mt-1 text-slate-300 text-xs sm:text-sm max-w-2xl">${city.tagline}</p>
+            </div>
+
+            <!-- Other Airport Price Compare -->
+            ${otherFlight ? `
+              <div class="bg-slate-800/90 p-3.5 rounded-xl border border-slate-700 text-xs text-slate-300">
+                <span class="text-amber-300 font-bold block mb-1">💡 출발지별 비교</span>
+                <p>• ${depName}: <strong>${flight.price.toLocaleString()}원</strong></p>
+                <p>• ${otherAirport === 'TAE' ? '대구공항' : '부산공항'}: <strong>${otherFlight.price.toLocaleString()}원</strong></p>
+                <span class="text-emerald-400 font-semibold block mt-1">
+                  ${flight.price <= otherFlight.price ? '✨ 현재 출발지가 더 경제적!' : 'ℹ️ 타 공항이 소폭 저렴'}
+                </span>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+
+        <!-- Price Gauge & Day of Week Strategy Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <!-- Price Gauge (7 cols) -->
+          <div class="lg:col-span-7 bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <span class="text-xs font-bold text-blue-600 uppercase">Historical Price Index</span>
+                <h3 class="text-lg font-bold text-slate-900">과거 12개월 데이터 기반 가격 진단</h3>
+              </div>
+              <span class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                ${flight.label}
+              </span>
+            </div>
+
+            <div class="bg-slate-50 rounded-xl p-5 border border-slate-200 mb-5">
+              <div class="flex items-baseline justify-between mb-2">
+                <div>
+                  <span class="text-xs text-slate-500 font-medium">현재 실시간 평균 왕복 운임</span>
+                  <div class="flex items-baseline gap-1 mt-0.5">
+                    <span class="text-3xl sm:text-4xl font-black text-slate-900">${flight.price.toLocaleString()}</span>
+                    <span class="text-lg font-bold text-slate-600">원~</span>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <span class="text-xs text-slate-500 block">과거 평균 대비 절감</span>
+                  <span class="text-sm sm:text-base font-bold text-emerald-600">
+                    ▼ ${flight.savings.toLocaleString()}원 (${flight.pct}%)
+                  </span>
+                </div>
+              </div>
+
+              <!-- Gauge Bar -->
+              <div class="mt-4">
+                <div class="flex justify-between text-xs text-slate-500 font-medium mb-1.5">
+                  <span class="text-emerald-700 font-bold">역대 최저 ${flight.low.toLocaleString()}원</span>
+                  <span class="text-slate-600 font-semibold">12개월 평균 ${flight.avg.toLocaleString()}원</span>
+                  <span class="text-rose-700 font-bold">성수기 ${flight.peak.toLocaleString()}원</span>
+                </div>
+                <div class="h-3.5 rounded-full bg-gradient-to-r from-emerald-400 via-amber-300 to-rose-500 relative shadow-inner">
+                  <div class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-5 h-5 bg-white border-2 border-slate-900 rounded-full shadow-lg flex items-center justify-center" style="left: ${gaugePct}%">
+                    <div class="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></div>
+                  </div>
+                </div>
+                <div class="flex justify-between text-[11px] text-slate-400 mt-2">
+                  <span class="text-emerald-600 font-semibold">● 초특가 구간</span>
+                  <span class="text-amber-600 font-semibold">● 적정 가격대</span>
+                  <span class="text-rose-600 font-semibold">● 성수기 고가</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Expert Tip Box -->
+            <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-xs sm:text-sm text-blue-900">
+              <strong class="text-blue-950 block mb-1">💡 영남권 여행 비서 특화 분석:</strong>
+              ${flight.tip}
+            </div>
+          </div>
+
+          <!-- Day of Week Strategy (5 cols) -->
+          <div class="lg:col-span-5 bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col justify-between">
+            <div>
+              <span class="text-xs font-bold text-amber-600 uppercase">Day of Week Strategy</span>
+              <h3 class="text-lg font-bold text-slate-900 mt-0.5 mb-4">출발 요일별 가격 분석 & 추천</h3>
+
+              <div class="bg-amber-50 border border-amber-200 rounded-xl p-3.5 mb-5 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-amber-500 text-white font-black flex items-center justify-center text-xs flex-shrink-0">
+                  BEST
+                </div>
+                <div>
+                  <span class="text-xs font-bold text-amber-900">
+                    최저가 출발 요일: ${flight.bestDays.join(', ')}
+                  </span>
+                  <p class="text-xs text-amber-800 font-medium mt-0.5">${flight.drop}</p>
+                </div>
+              </div>
+
+              <!-- Day Bars (Mon-Sun) -->
+              <div class="grid grid-cols-7 gap-1.5 text-center mt-3">
+                ${['월', '화', '수', '목', '금', '토', '일'].map((d, i) => {
+                  const isCheap = i === 1 || i === 2; // Tue, Wed
+                  const isPeak = i === 4 || i === 5; // Fri, Sat
+                  const height = isCheap ? 45 : isPeak ? 90 : 60;
+                  return `
+                    <div class="flex flex-col items-center">
+                      <span class="text-[11px] font-bold text-slate-600 mb-1">${d}</span>
+                      <div class="w-full bg-slate-100 rounded-t-md h-24 relative flex items-end justify-center p-1">
+                        <div class="w-full rounded-t-md ${isCheap ? 'bg-emerald-500' : isPeak ? 'bg-rose-500' : 'bg-blue-400'}" style="height: ${height}%"></div>
+                      </div>
+                      <span class="text-[10px] font-bold ${isCheap ? 'text-emerald-700' : 'text-slate-600'} mt-1">
+                        ${isCheap ? '최저' : isPeak ? '혼잡' : '보통'}
+                      </span>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+
+            <div class="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+              <span class="text-slate-400">* 유류세/세금 포함 왕복 기준</span>
+              <button onclick="switchTab('itinerary')" class="text-blue-600 font-bold hover:underline">
+                이 조건으로 일정 짜기 ➔
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Airlines List -->
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+            <h3 class="text-lg font-bold text-slate-900">
+              ✈️ ${depName} 취항 항공사별 직항 스케줄 & 수하물 규정
+            </h3>
+            <div class="flex items-center gap-2">
+              <a href="https://flight.naver.com" target="_blank" class="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold hover:bg-emerald-100">
+                네이버 항공권 검색 ↗
+              </a>
+              <a href="https://www.skyscanner.co.kr" target="_blank" class="px-3 py-1.5 rounded-lg bg-sky-50 text-sky-700 border border-sky-200 text-xs font-bold hover:bg-sky-100">
+                스카이스캐너 비교 ↗
+              </a>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs sm:text-sm">
+              <thead>
+                <tr class="bg-slate-50 border-b border-slate-200 text-slate-600">
+                  <th class="py-2.5 px-3">항공사</th>
+                  <th class="py-2.5 px-3">운항 스케줄</th>
+                  <th class="py-2.5 px-3">무료 위탁수하물</th>
+                  <th class="py-2.5 px-3 text-right">예상 왕복 운임</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                ${flight.airlines.map(a => `
+                  <tr class="hover:bg-slate-50">
+                    <td class="py-3 px-3 font-bold text-slate-900">${a.name}</td>
+                    <td class="py-3 px-3 text-slate-600">${a.time}</td>
+                    <td class="py-3 px-3"><span class="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-medium">${a.bag}</span></td>
+                    <td class="py-3 px-3 text-right font-bold text-blue-600 text-sm">${a.price.toLocaleString()}원~</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    // --- 2. Itinerary View ---
+    function renderItineraryView() {
+      if (!state.currentPlan) generateItinerary();
+      const plan = state.currentPlan;
+      const city = getCurrentCity();
+      const weather = WEATHER[state.cityId] || WEATHER.fukuoka;
+      const activeDay = plan.days[state.activeDayIdx] || plan.days[0];
+
+      document.getElementById('view-itinerary').innerHTML = `
+        <!-- Controller Bar -->
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-200">
+            <div>
+              <span class="text-xs font-bold text-blue-600 uppercase">Route & Weather Optimizer</span>
+              <h2 class="text-2xl font-black text-slate-900 mt-0.5">${city.nameKo} 동선 최적화 맞춤 일정표</h2>
+              <p class="text-xs sm:text-sm text-slate-500 mt-1">
+                ${state.departureAirport === 'TAE' ? '대구공항' : '김해공항'} 스케줄과 현지 기온(${weather.temp}°C)을 고려한 최적 동선입니다.
+              </p>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+              <button onclick="saveCurrentPlanToRecords()" class="px-3.5 py-2 rounded-xl bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 text-xs font-bold transition-colors">
+                💾 내 기록함에 저장
+              </button>
+              <button onclick="window.print()" class="px-3.5 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 text-xs font-bold transition-colors">
+                🖨️ 인쇄 / PDF
+              </button>
+            </div>
+          </div>
+
+          <!-- Controls -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-3.5 mt-5 text-xs">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">여행 기간</label>
+              <select onchange="state.itineraryDays = Number(this.value); generateItinerary(); renderItineraryView();" class="w-full rounded-xl border border-slate-300 py-2 px-3 bg-slate-50 font-medium">
+                <option value="2" ${state.itineraryDays === 2 ? 'selected' : ''}>1박 2일 (초근거리 퀵런)</option>
+                <option value="3" ${state.itineraryDays === 3 ? 'selected' : ''}>2박 3일 (주말 알뜰 코스)</option>
+                <option value="4" ${state.itineraryDays === 4 ? 'selected' : ''}>3박 4일 (인기 최적 코스)</option>
+                <option value="5" ${state.itineraryDays === 5 ? 'selected' : ''}>4박 5일 (완전 정복)</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">여행 테마</label>
+              <select onchange="state.itineraryStyle = this.value; generateItinerary(); renderItineraryView();" class="w-full rounded-xl border border-slate-300 py-2 px-3 bg-slate-50 font-medium">
+                <option value="gourmet" ${state.itineraryStyle === 'gourmet' ? 'selected' : ''}>🍜 식도락 & 미식 탐방</option>
+                <option value="highlights" ${state.itineraryStyle === 'highlights' ? 'selected' : ''}>🏛️ 핵심 랜드마크 & 포토존</option>
+                <option value="healing" ${state.itineraryStyle === 'healing' ? 'selected' : ''}>🌿 온천 & 힐링 휴양</option>
+                <option value="shopping" ${state.itineraryStyle === 'shopping' ? 'selected' : ''}>🛍️ 감성 카페 & 쇼핑</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">일정 페이스</label>
+              <select onchange="state.itineraryPace = this.value; generateItinerary(); renderItineraryView();" class="w-full rounded-xl border border-slate-300 py-2 px-3 bg-slate-50 font-medium">
+                <option value="relaxed" ${state.itineraryPace === 'relaxed' ? 'selected' : ''}>☕ 여유로운 슬로우 트래블</option>
+                <option value="packed" ${state.itineraryPace === 'packed' ? 'selected' : ''}>⚡ 핫스팟 꽉 채운 알찬 코스</option>
+              </select>
+            </div>
+
+            <div class="flex items-end">
+              <label class="flex items-center gap-2 cursor-pointer p-2 rounded-xl bg-slate-50 border border-slate-200 w-full">
+                <input type="checkbox" onchange="state.itineraryRainSafe = this.checked; generateItinerary(); renderItineraryView();" ${state.itineraryRainSafe ? 'checked' : ''} class="w-4 h-4 text-blue-600 rounded">
+                <span class="text-xs font-semibold text-slate-700">☔ 우천 대비 실내 우선</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Weather Box -->
+        <div class="bg-gradient-to-r from-amber-500/10 via-sky-500/10 to-indigo-500/10 rounded-2xl p-5 border border-amber-200/60 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
+                ${city.nameKo} 날씨: ${weather.icon} ${weather.cond} (${weather.temp}°C, 체감 ${weather.feels}°C)
+              </span>
+              <span class="text-xs text-slate-500">강수확률: ${weather.rain}%</span>
+            </div>
+            <p class="text-xs sm:text-sm text-slate-700 mt-1">
+              👕 <strong>옷차림:</strong> ${weather.clothing} | <strong>짐싸기:</strong> ${weather.pack}
+            </p>
+          </div>
+          <div class="text-xs text-blue-900 bg-white/80 p-2.5 rounded-xl border border-blue-100 max-w-sm">
+            💡 <strong>대체 동선:</strong> ${weather.indoor}
+          </div>
+        </div>
+
+        <!-- Day Tabs & Itinerary Timeline -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="flex items-center justify-between bg-slate-900 text-white px-4 sm:px-6 py-2 overflow-x-auto scrollbar-thin">
+            <div class="flex items-center gap-2">
+              ${plan.days.map((day, idx) => `
+                <button onclick="state.activeDayIdx = ${idx}; renderItineraryView();" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+                  state.activeDayIdx === idx ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                }">
+                  Day ${day.dayNumber}
+                </button>
+              `).join('')}
+            </div>
+            <button onclick="promptAddSpot()" class="text-xs font-bold bg-slate-800 hover:bg-slate-700 text-blue-300 px-3 py-1.5 rounded-lg border border-slate-700">
+              + 장소 직접 추가
+            </button>
+          </div>
+
+          <!-- Active Day Details -->
+          <div class="p-6">
+            <div class="bg-slate-50 rounded-xl p-4 border border-slate-200 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+              <div>
+                <span class="font-extrabold text-blue-600 text-sm">Day ${activeDay.dayNumber}: ${activeDay.theme}</span>
+                <p class="text-slate-500 mt-0.5">📍 <strong>동선:</strong> ${activeDay.area}</p>
+              </div>
+              <div class="text-right text-emerald-700 font-bold">
+                하루 예상 경비: ${activeDay.budget}
+              </div>
+            </div>
+
+            <!-- Timeline -->
+            <div class="relative pl-6 border-l-2 border-blue-200 space-y-6">
+              ${activeDay.items.map((item, i) => `
+                <div class="relative">
+                  <div class="absolute -left-[31px] top-1.5 w-3.5 h-3.5 rounded-full bg-blue-600 border-2 border-white shadow-xs"></div>
+                  <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-xs">
+                    <div class="flex items-center justify-between gap-2 mb-1.5">
+                      <div class="flex items-center gap-2">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                          ${item.slot} • ${item.time}
+                        </span>
+                        <span class="text-xs font-bold text-slate-800">${item.title}</span>
+                      </div>
+                      <button onclick="deleteItineraryItem(${state.activeDayIdx}, ${i})" class="text-slate-300 hover:text-rose-500 text-xs" title="삭제">
+                        🗑️
+                      </button>
+                    </div>
+                    <div class="text-xs text-blue-600 font-semibold mb-1">📍 ${item.loc}</div>
+                    <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">${item.desc}</p>
+                    ${item.tip ? `<div class="mt-2 text-xs bg-slate-50 p-2 rounded border border-slate-200 text-slate-600">💡 <strong>팁:</strong> ${item.tip}</div>` : ''}
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function promptAddSpot() {
+      const title = prompt('추가할 여행 코스 제목을 입력하세요 (예: 텐진 다이묘거리 빈티지숍):');
+      if (!title) return;
+      const desc = prompt('상세 내용 또는 팁을 입력하세요:', '자유 일정');
+
+      const plan = state.currentPlan;
+      if (plan && plan.days[state.activeDayIdx]) {
+        plan.days[state.activeDayIdx].items.push({
+          time: '자유 시간',
+          slot: '늦은오후',
+          title: title,
+          loc: '사용자 추가 코스',
+          desc: desc || '',
+          tip: ''
+        });
+        renderItineraryView();
+        showToast('장소가 성공적으로 추가되었습니다!');
+      }
+    }
+
+    function deleteItineraryItem(dayIdx, itemIdx) {
+      if (state.currentPlan && state.currentPlan.days[dayIdx]) {
+        state.currentPlan.days[dayIdx].items.splice(itemIdx, 1);
+        renderItineraryView();
+      }
+    }
+
+    function saveCurrentPlanToRecords() {
+      if (!state.currentPlan) return;
+      const city = getCurrentCity();
+      const newRec = {
+        id: `rec_${Date.now()}`,
+        title: state.currentPlan.title,
+        cityId: state.cityId,
+        departureAirport: state.departureAirport,
+        dateRange: `${state.currentPlan.durationDays}일간의 일정`,
+        checklist: [
+          { id: 'c1', task: '여권 유효기간 6개월 이상 확인', done: false, cat: '필수 서류' },
+          { id: 'c2', task: city.country === '일본' ? '비짓재팬웹(VJW) 등록' : city.country === '대만' ? '대만 e-Gate 온라인 등록' : '베트남 무비자 45일 여권 확인', done: false, cat: '필수 서류' },
+          { id: 'c3', task: '트래블로그 or SOL트래블 카드 외화 충전', done: false, cat: '금융/통신' },
+          { id: 'c4', task: city.country === '베트남' ? '220V 충전기 및 상비약' : '110V 돼지코 어댑터 2개', done: false, cat: '짐꾸리기' },
+        ],
+        expenses: [
+          { id: 'e1', cat: '항공', desc: `${state.departureAirport === 'TAE' ? '대구' : '부산'} 직항 항공권`, local: 200000, cur: 'KRW', krw: 200000 }
+        ],
+        memories: [],
+        createdAt: new Date().toISOString().split('T')[0]
+      };
+
+      state.savedRecords.unshift(newRec);
+      saveRecordsToLocalStorage();
+      showToast('🎉 내 여행 기록함에 성공적으로 저장되었습니다!');
+    }
+
+    // --- 3. Restaurants View ---
+    function renderRestaurantsView() {
+      const city = getCurrentCity();
+      const foods = RESTAURANTS.filter(r => r.cityId === state.cityId);
+
+      document.getElementById('view-restaurants').innerHTML = `
+        <div class="bg-gradient-to-r from-amber-600 via-orange-600 to-rose-600 rounded-2xl p-6 text-white shadow-lg">
+          <h2 class="text-2xl sm:text-3xl font-extrabold flex items-center gap-2">
+            🍜 ${city.nameKo} (${city.nameLocal}) 필수 현지 맛집 추천
+          </h2>
+          <p class="mt-1 text-orange-100 text-xs sm:text-sm">
+            한국인 여행객에게 검증된 대표 메뉴, 트래블로그 카드 결제 지원 여부, 웨이팅 팁 안내
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          ${foods.map(r => `
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col justify-between">
+              <div>
+                <div class="flex items-start justify-between gap-2 mb-2">
+                  <div>
+                    <span class="text-xs font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">${r.cat}</span>
+                    <h3 class="text-lg font-bold text-slate-900 mt-1">${r.name}</h3>
+                    <span class="text-xs text-slate-500 font-medium">${r.local}</span>
+                  </div>
+                  <div class="bg-amber-50 px-2 py-1 rounded-lg border border-amber-200 text-xs font-bold text-amber-900">
+                    ⭐ ${r.rating} (${r.reviews.toLocaleString()})
+                  </div>
+                </div>
+
+                <div class="mt-3 p-3 rounded-xl bg-orange-50 border border-orange-100 text-xs">
+                  <strong class="text-orange-950 block mb-0.5">🍴 추천 메뉴:</strong>
+                  <span class="text-slate-800 font-semibold">${r.must}</span>
+                  <span class="text-orange-700 block mt-1">예산: ${r.price}</span>
+                </div>
+
+                <div class="mt-3 text-xs bg-slate-50 p-2.5 rounded-lg border border-slate-100 text-slate-600">
+                  <strong>💡 방문 팁:</strong> ${r.tip}
+                </div>
+
+                <div class="mt-3 space-y-1 text-xs text-slate-500">
+                  <p>🕒 ${r.time} | 📍 ${r.addr}</p>
+                  <p class="text-blue-700 font-semibold">💳 결제: ${r.pay}</p>
+                </div>
+              </div>
+
+              <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(city.nameKo + ' ' + r.local)}" target="_blank" class="text-slate-500 hover:text-slate-800 font-medium">
+                  구글지도 보기 ↗
+                </a>
+                <button onclick="addFoodToItinerary('${r.name}', '${r.must}')" class="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold shadow-xs">
+                  + 내 일정에 추가
+                </button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function addFoodToItinerary(name, must) {
+      if (!state.currentPlan) generateItinerary();
+      state.currentPlan.days[0].items.push({
+        time: '맛집 방문',
+        slot: '점심/오후',
+        title: `${name} 식사`,
+        loc: name,
+        desc: `추천 메뉴: ${must}`,
+        tip: ''
+      });
+      showToast(`'${name}'이(가) Day 1 일정표에 추가되었습니다!`);
+    }
+
+    // --- 4. Exchange Rate View ---
+    function renderExchangeView() {
+      const activeRate = RATES.find(r => r.code === state.exchangeCurrency) || RATES[0];
+      const foreignNum = parseFloat(state.exchangeForeign.replace(/,/g, '')) || 0;
+      const krwCalculated = Math.round((foreignNum / activeRate.unit) * activeRate.base);
+
+      document.getElementById('view-exchange').innerHTML = `
+        <div class="bg-gradient-to-r from-emerald-800 via-teal-800 to-slate-900 rounded-2xl p-6 text-white shadow-lg">
+          <h2 class="text-2xl sm:text-3xl font-extrabold flex items-center gap-2">
+            💱 스마트 실시간 환율 & 양방향 계산기
+          </h2>
+          <p class="mt-1 text-emerald-100 text-xs sm:text-sm">
+            엔화, 대만달러, 베트남동을 원화로 즉시 계산하고 트래블로그/SOL트래블 수수료 무료 혜택을 확인하세요.
+          </p>
+        </div>
+
+        <!-- 4 Currency Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+          ${RATES.map(r => `
+            <button onclick="state.exchangeCurrency = '${r.code}'; renderExchangeView();" class="p-5 rounded-2xl border text-left transition-all ${
+              r.code === state.exchangeCurrency ? 'bg-emerald-50 border-emerald-500 ring-2 ring-emerald-500/30 shadow-md' : 'bg-white border-slate-200 hover:border-emerald-300'
+            }">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-sm font-bold text-slate-800">${r.name}</span>
+                <span class="text-xs font-bold ${r.pct <= 0 ? 'text-emerald-700 bg-emerald-100' : 'text-rose-700 bg-rose-100'} px-1.5 py-0.5 rounded">
+                  ${r.pct > 0 ? '+' : ''}${r.pct}%
+                </span>
+              </div>
+              <div class="text-2xl font-black text-slate-900 mt-2">${r.base.toLocaleString()} <span class="text-xs text-slate-400 font-bold">KRW</span></div>
+              <div class="mt-2 text-[11px] text-slate-500">${r.atm}</div>
+            </button>
+          `).join('')}
+        </div>
+
+        <!-- Interactive Calculator -->
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 mt-6">
+          <h3 class="text-base sm:text-lg font-bold text-slate-900 mb-4 pb-2 border-b border-slate-100">
+            ${activeRate.name} ⇄ 대한민국 원 (KRW) 즉시 환전 계산
+          </h3>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+              <span class="text-xs font-bold text-slate-700 block mb-1">외화 금액 (${activeRate.code})</span>
+              <input type="text" value="${state.exchangeForeign}" oninput="state.exchangeForeign = this.value; renderExchangeView();" class="w-full text-2xl font-black text-slate-900 bg-white border border-slate-300 rounded-xl py-2 px-3">
+              <div class="flex gap-1.5 mt-3">
+                <button onclick="state.exchangeForeign = (parseFloat(state.exchangeForeign||0) + 1000).toString(); renderExchangeView();" class="px-2.5 py-1 text-xs bg-white border rounded font-semibold">+1,000</button>
+                <button onclick="state.exchangeForeign = (parseFloat(state.exchangeForeign||0) + 5000).toString(); renderExchangeView();" class="px-2.5 py-1 text-xs bg-white border rounded font-semibold">+5,000</button>
+                <button onclick="state.exchangeForeign = (parseFloat(state.exchangeForeign||0) + 10000).toString(); renderExchangeView();" class="px-2.5 py-1 text-xs bg-white border rounded font-semibold">+10,000</button>
+              </div>
+            </div>
+
+            <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-200">
+              <span class="text-xs font-bold text-emerald-900 block mb-1">원화 환산 금액 (KRW)</span>
+              <div class="w-full text-2xl font-black text-emerald-950 bg-white border border-emerald-300 rounded-xl py-2 px-3">
+                ${krwCalculated.toLocaleString()} <span class="text-xs text-slate-400 font-bold">원</span>
+              </div>
+              <div class="mt-3 text-xs text-emerald-900 font-medium">
+                💳 <strong>추천 카드:</strong> ${activeRate.card}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // --- 5. Records View ---
+    function renderRecordsView() {
+      const records = state.savedRecords;
+
+      document.getElementById('view-records').innerHTML = `
+        <div class="bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 rounded-2xl p-6 text-white shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-2xl sm:text-3xl font-extrabold flex items-center gap-2">
+              📓 나의 여행 기록함 & 가계부
+            </h2>
+            <p class="mt-1 text-purple-100 text-xs sm:text-sm">
+              저장된 일정, 체크리스트, 현지 지출 내역을 브라우저에 영구 보관하고 언제든 확인하세요.
+            </p>
+          </div>
+          <button onclick="downloadSelfHtml()" class="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition-all">
+            📥 단독 HTML 가이드북 다운로드
+          </button>
+        </div>
+
+        <div class="mt-6 space-y-6">
+          ${records.map((rec, rIdx) => `
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-200">
+                <div>
+                  <span class="text-xs font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-800">
+                    ${rec.departureAirport === 'TAE' ? '대구공항 출발' : '부산 김해공항 출발'}
+                  </span>
+                  <h3 class="text-lg font-black text-slate-900 mt-1">${rec.title}</h3>
+                  <span class="text-xs text-slate-400">${rec.dateRange}</span>
+                </div>
+                <button onclick="deleteRecord(${rIdx})" class="text-xs text-rose-500 hover:underline">
+                  기록 삭제 ✕
+                </button>
+              </div>
+
+              <!-- Checklist Grid -->
+              <div class="mt-4">
+                <span class="text-xs font-bold text-slate-700 block mb-2">✅ 준비물 체크리스트:</span>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  ${rec.checklist.map((c, cIdx) => `
+                    <div onclick="toggleChecklist(${rIdx}, ${cIdx})" class="p-2.5 rounded-lg border text-xs flex items-center justify-between cursor-pointer ${
+                      c.done ? 'bg-slate-50 text-slate-400 line-through' : 'bg-white text-slate-800 hover:border-emerald-300'
+                    }">
+                      <span>${c.done ? '☑️' : '⬜'} ${c.task}</span>
+                      <span class="text-[10px] text-slate-400">[${c.cat}]</span>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+
+              <!-- Expenses -->
+              <div class="mt-4 pt-3 border-t border-slate-100">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-xs font-bold text-slate-700">💰 여행 경비 지출 내역:</span>
+                  <span class="text-xs font-black text-amber-600">
+                    총 ${rec.expenses.reduce((s, e) => s + e.krw, 0).toLocaleString()}원
+                  </span>
+                </div>
+                <div class="overflow-x-auto">
+                  <table class="w-full text-left text-xs">
+                    <thead>
+                      <tr class="text-slate-400 border-b">
+                        <th class="py-1">구분</th>
+                        <th class="py-1">항목</th>
+                        <th class="py-1">현지 금액</th>
+                        <th class="py-1 text-right">원화 환산</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                      ${rec.expenses.map(e => `
+                        <tr>
+                          <td class="py-1.5"><span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">${e.cat}</span></td>
+                          <td class="py-1.5 font-medium text-slate-800">${e.desc}</td>
+                          <td class="py-1.5 text-slate-600">${e.local.toLocaleString()} ${e.cur}</td>
+                          <td class="py-1.5 text-right font-bold text-slate-900">${e.krw.toLocaleString()}원</td>
+                        </tr>
+                      `).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function toggleChecklist(recordIdx, checkIdx) {
+      const rec = state.savedRecords[recordIdx];
+      if (rec && rec.checklist[checkIdx]) {
+        rec.checklist[checkIdx].done = !rec.checklist[checkIdx].done;
+        saveRecordsToLocalStorage();
+        renderRecordsView();
+      }
+    }
+
+    function deleteRecord(recordIdx) {
+      if (confirm('이 여행 기록을 삭제하시겠습니까?')) {
+        state.savedRecords.splice(recordIdx, 1);
+        saveRecordsToLocalStorage();
+        renderRecordsView();
+      }
+    }
+
+    /* ========================================================
+       6. STANDALONE HTML DOWNLOAD UTILITY
+       ======================================================== */
+    function downloadSelfHtml() {
+      // Clones current document HTML
+      const htmlContent = document.documentElement.outerHTML;
+      const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `트래블메이트_영남출발_아시아여행_단독가이드북.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('📥 빌드 없이 바로 열 수 있는 단독 HTML 파일이 다운로드되었습니다!');
+    }
+
+    /* ========================================================
+       7. INITIALIZATION
+       ======================================================== */
+    window.addEventListener('DOMContentLoaded', () => {
+      renderCityBar();
+      generateItinerary();
+      renderFlightsView();
+    });
+  </script>
+</body>
+</html>

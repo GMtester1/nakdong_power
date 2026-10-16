@@ -1002,6 +1002,8 @@ const STATE = {
   departure: 'TAE',
   destination: 'FUK',
   durationMode: '3박4일',
+  departureDate: '',
+  returnDate: '',
   selectedCurrency: 'JPY',
   calcAmount: 1000
 };
@@ -1257,8 +1259,96 @@ function setDestination(dest) {
   renderCurrentTab();
 }
 
+function getTodayIsoString() {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function addDaysToIso(isoStr, days) {
+  if (!isoStr) return '';
+  const parts = isoStr.split('-');
+  const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+  d.setDate(d.getDate() + days);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function formatKoreanDate(isoStr) {
+  if (!isoStr) return '';
+  const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+  const parts = isoStr.split('-');
+  if (parts.length !== 3) return isoStr;
+  const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+  const month = d.getMonth() + 1;
+  const day = d.getDate();
+  const w = weekdays[d.getDay()];
+  return `${d.getFullYear()}.${String(month).padStart(2, '0')}.${String(day).padStart(2, '0')} (${w})`;
+}
+
+function getDurationDays(durMode) {
+  if (durMode === '4박5일') return 4;
+  if (durMode === '3박5일') return 4;
+  return 3;
+}
+
+function initFlightDates() {
+  if (!STATE.departureDate) {
+    if (REALTIME_DATA && REALTIME_DATA.realTimeFlights && REALTIME_DATA.realTimeFlights.defaultDepDateIso) {
+      STATE.departureDate = REALTIME_DATA.realTimeFlights.defaultDepDateIso;
+    } else {
+      const today = new Date();
+      today.setDate(today.getDate() + 14);
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      STATE.departureDate = `${year}-${month}-${day}`;
+    }
+  }
+  if (!STATE.returnDate) {
+    if (REALTIME_DATA && REALTIME_DATA.realTimeFlights && REALTIME_DATA.realTimeFlights.defaultRetDatesIso && REALTIME_DATA.realTimeFlights.defaultRetDatesIso[STATE.durationMode]) {
+      STATE.returnDate = REALTIME_DATA.realTimeFlights.defaultRetDatesIso[STATE.durationMode];
+    } else {
+      const days = getDurationDays(STATE.durationMode);
+      STATE.returnDate = addDaysToIso(STATE.departureDate, days);
+    }
+  }
+}
+
+function onDepartureDateChange(newDepDate) {
+  if (!newDepDate) return;
+  STATE.departureDate = newDepDate;
+  if (!STATE.returnDate || STATE.returnDate <= newDepDate) {
+    STATE.returnDate = addDaysToIso(newDepDate, getDurationDays(STATE.durationMode));
+  }
+  renderFlightsTab();
+}
+
+function onReturnDateChange(newRetDate) {
+  if (!newRetDate) return;
+  if (newRetDate < STATE.departureDate) {
+    alert('도착(귀국)일은 출발일 이후 날짜로 선택해 주세요.');
+    return;
+  }
+  STATE.returnDate = newRetDate;
+  const depParts = STATE.departureDate.split('-');
+  const retParts = newRetDate.split('-');
+  const depD = new Date(parseInt(depParts[0], 10), parseInt(depParts[1], 10) - 1, parseInt(depParts[2], 10));
+  const retD = new Date(parseInt(retParts[0], 10), parseInt(retParts[1], 10) - 1, parseInt(retParts[2], 10));
+  const diffDays = Math.round((retD - depD) / (1000 * 60 * 60 * 24));
+  if (diffDays === 3) STATE.durationMode = '3박4일';
+  else if (diffDays === 4 && STATE.durationMode !== '3박5일') STATE.durationMode = '4박5일';
+  renderFlightsTab();
+}
+
 function setDuration(dur) {
   STATE.durationMode = dur;
+  initFlightDates();
+  STATE.returnDate = addDaysToIso(STATE.departureDate, getDurationDays(dur));
   if (STATE.currentTab === 'flights') renderFlightsTab();
   else if (STATE.currentTab === 'itinerary') renderItineraryTab();
 }
@@ -1268,8 +1358,49 @@ function selectCurrency(curr) {
   renderCurrencyTab();
 }
 
+function formatSkyscannerDate(dateStr) {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    return parts[0].slice(2) + parts[1] + parts[2];
+  }
+  return dateStr.replace(/[^0-9]/g, '').slice(2, 8);
+}
+
+function getSkyscannerSearchUrl(depAirport, destAirport, depDate, retDate) {
+  const depCode = (depAirport || 'TAE').toLowerCase();
+  const destCode = (destAirport || 'FUK').toLowerCase();
+  const depYmd = formatSkyscannerDate(depDate);
+  const retYmd = formatSkyscannerDate(retDate);
+
+  let path = `https://www.skyscanner.co.kr/transport/flights/${depCode}/${destCode}/`;
+  if (depYmd && retYmd) {
+    path += `${depYmd}/${retYmd}/`;
+  } else if (depYmd) {
+    path += `${depYmd}/`;
+  }
+
+  const params = new URLSearchParams({
+    adults: '1',
+    adultsv2: '1',
+    cabinclass: 'economy',
+    children: '0',
+    childrenv2: '',
+    ref: 'home',
+    rtn: retYmd ? '1' : '0',
+    preferdirects: 'true',
+    outboundaltsenabled: 'false',
+    inboundaltsenabled: 'false',
+    market: 'KR',
+    currency: 'KRW',
+    locale: 'ko-KR'
+  });
+
+  return `${path}?${params.toString()}`;
+}
+
 // ============================================================================
-// 1. Flights Tab (Real-time data from data.json)
+// 1. Flights Tab (과거 1년 통계 데이터 및 스카이스캐너 실시간 딥링크 연동)
 // ============================================================================
 function renderFlightsTab() {
   const content = document.getElementById('tab-content');
@@ -1278,115 +1409,145 @@ function renderFlightsTab() {
     return;
   }
 
+  initFlightDates();
+
   const dep = STATE.departure;
   const dest = STATE.destination;
   const dur = STATE.durationMode;
+  const depDate = STATE.departureDate;
+  const retDate = STATE.returnDate;
+  const todayIso = getTodayIsoString();
 
   const flightsData = REALTIME_DATA.realTimeFlights;
   const routeData = (flightsData.routes[dep] && flightsData.routes[dep][dest])
     ? flightsData.routes[dep][dest]
     : { lowestPrice: 150000, pastAvgPrice: 190000, diffPercent: -21, top3: [] };
 
-  const depDate = flightsData.departureDate;
-  const retDate = flightsData.returnDates[dur] || flightsData.returnDates['3박4일'];
-  const skyscannerUrl = `https://www.skyscanner.co.kr/transport/flights/${dep.toLowerCase()}/${dest.toLowerCase()}/`;
+  const depDestObj = REALTIME_DATA.destinations.find(d => d.id === dest) || { nameKo: dest, flag: '✈' };
+  const depObj = REALTIME_DATA.departures[dep] || { nameKo: dep };
+  
+  const skyscannerUrl = getSkyscannerSearchUrl(dep, dest, depDate, retDate);
+  const depFormatted = formatKoreanDate(depDate);
+  const retFormatted = formatKoreanDate(retDate);
 
   content.innerHTML = `
     <div class="card">
-      <!-- Live Crawler & Skyscanner Source Header -->
-      <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:10px; padding:14px; margin-bottom:18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-        <div>
+      <!-- Live Crawler & Skyscanner Deep Link Header Banner -->
+      <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:10px; padding:14px 18px; margin-bottom:18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
+        <div style="max-width:680px;">
           <div style="display:flex; align-items:center; gap:8px;">
-            <span class="badge badge-green">data.json 실시간 연동</span>
+            <span class="badge badge-green">과거 1년 통계 데이터 수집 완료</span>
             <span style="font-size:12px; color:#475569;">${REALTIME_DATA.metadata.lastCrawledAt}</span>
           </div>
-          <div style="font-size:12px; color:#0369a1; margin-top:4px;">
-            공식 데이터 출처: <strong>스카이스캐너(Skyscanner)</strong> 실시간 최저가 API
+          <div style="font-size:13px; color:#0369a1; margin-top:5px; line-height:1.5;">
+            ※ 항공권 실시간 요금은 시시각각 변동되므로 <strong>과거 1년 노선별 통계 운임</strong>을 수집하여 기준치로 안내합니다.<br>
+            선택하신 <strong>출발지(${dep}) · 도착지(${dest}) · 출발일(${depDate}) · 복귀일(${retDate})</strong> 쿼리가 자동 완성된 스카이스캐너 실시간 최저가 검색으로 바로 연결됩니다.
           </div>
         </div>
-        <div style="display:flex; gap:8px; align-items:center;">
-          <a href="${skyscannerUrl}" target="_blank" rel="noopener noreferrer" style="font-size:12px; font-weight:700; color:#0284c7; background:#ffffff; padding:6px 12px; border-radius:8px; border:1px solid #bae6fd; text-decoration:none; display:inline-flex; align-items:center; gap:4px; box-shadow:0 1px 2px rgba(0,0,0,0.05);">
-            스카이스캐너 실시간 최저가 직접 조회 ↗
+        <div>
+          <a href="${skyscannerUrl}" target="_blank" rel="noopener noreferrer" class="btn-skyscanner-live">
+            ✈ 스카이스캐너 실시간 최저가 직접 조회 ↗
           </a>
         </div>
       </div>
 
-      <!-- Controls: Departure, Destination, Duration -->
-      <div class="controls-row">
-        <span style="font-size:13px; font-weight:700;">출발 공항:</span>
-        <div class="btn-group">
-          <button class="${dep === 'TAE' ? 'active' : ''}" onclick="setDeparture('TAE')">대구국제공항 (TAE)</button>
-          <button class="${dep === 'PUS' ? 'active' : ''}" onclick="setDeparture('PUS')">김해국제공항 (PUS)</button>
+      <!-- Controls: Departure, Destination, Date Pickers, Duration -->
+      <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:16px; margin-bottom:18px;">
+        <div class="controls-row" style="margin-bottom:12px;">
+          <span style="font-size:13px; font-weight:700;">출발 공항:</span>
+          <div class="btn-group">
+            <button class="${dep === 'TAE' ? 'active' : ''}" onclick="setDeparture('TAE')">대구국제공항 (TAE)</button>
+            <button class="${dep === 'PUS' ? 'active' : ''}" onclick="setDeparture('PUS')">김해국제공항 (PUS)</button>
+          </div>
+
+          <span style="font-size:13px; font-weight:700; margin-left:14px;">도착 도시:</span>
+          <select onchange="setDestination(this.value)" style="padding:6px 12px; border-radius:8px; border:1px solid #cbd5e1; font-size:13px; font-weight:600; cursor:pointer;">
+            ${REALTIME_DATA.destinations.map(d => `
+              <option value="${d.id}" ${dest === d.id ? 'selected' : ''}>${d.flag} ${d.nameKo}</option>
+            `).join('')}
+          </select>
         </div>
 
-        <span style="font-size:13px; font-weight:700; margin-left:14px;">도착 도시:</span>
-        <select onchange="setDestination(this.value)" style="padding:6px 12px; border-radius:8px; border:1px solid #cbd5e1; font-size:13px; font-weight:600; cursor:pointer;">
-          ${REALTIME_DATA.destinations.map(d => `
-            <option value="${d.id}" ${dest === d.id ? 'selected' : ''}>${d.flag} ${d.nameKo}</option>
-          `).join('')}
-        </select>
+        <div class="controls-row" style="margin-bottom:0;">
+          <span style="font-size:13px; font-weight:700;">출발 날짜:</span>
+          <input type="date" class="flight-date-input" value="${depDate}" min="${todayIso}" onchange="onDepartureDateChange(this.value)" title="출발일 선택">
 
-        <span style="font-size:13px; font-weight:700; margin-left:14px;">여행 기간:</span>
-        <div class="btn-group">
-          <button class="${dur === '3박4일' ? 'active' : ''}" onclick="setDuration('3박4일')">3박4일</button>
-          <button class="${dur === '4박5일' ? 'active' : ''}" onclick="setDuration('4박5일')">4박5일</button>
-          <button class="${dur === '3박5일' ? 'active' : ''}" onclick="setDuration('3박5일')">3박5일 (야간비행)</button>
+          <span style="font-size:13px; font-weight:700; margin-left:14px;">도착(귀국) 날짜:</span>
+          <input type="date" class="flight-date-input" value="${retDate}" min="${depDate}" onchange="onReturnDateChange(this.value)" title="도착(귀국)일 선택">
+
+          <span style="font-size:13px; font-weight:700; margin-left:14px;">여행 기간:</span>
+          <div class="btn-group">
+            <button class="${dur === '3박4일' ? 'active' : ''}" onclick="setDuration('3박4일')">3박4일</button>
+            <button class="${dur === '4박5일' ? 'active' : ''}" onclick="setDuration('4박5일')">4박5일</button>
+            <button class="${dur === '3박5일' ? 'active' : ''}" onclick="setDuration('3박5일')">3박5일 (야간비행)</button>
+          </div>
         </div>
       </div>
 
-      <!-- Selected Route Summary -->
-      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:14px 18px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+      <!-- Selected Route Summary & Quick Skyscanner Search CTA -->
+      <div style="background:linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border:1px solid #bae6fd; border-radius:10px; padding:16px 20px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
         <div>
-          <div style="font-size:12px; color:#64748b;">실시간 최저가 경로 분석 (출처: data.json)</div>
-          <div style="font-size:16px; font-weight:800; color:#0f172a; margin-top:2px;">
-            ${REALTIME_DATA.departures[dep].nameKo} ✈ ${REALTIME_DATA.destinations.find(d => d.id === dest)?.nameKo} (${dur})
+          <div style="font-size:12px; color:#0369a1; font-weight:600;">선택하신 여정 및 스카이스캐너 실시간 딥링크 검색</div>
+          <div style="font-size:18px; font-weight:800; color:#0f172a; margin-top:2px;">
+            ${depObj.nameKo} (${dep}) ✈ ${depDestObj.nameKo} (${dur})
           </div>
           <div style="font-size:13px; color:#334155; margin-top:4px;">
-            <strong>출발일:</strong> ${depDate} &nbsp;|&nbsp; <strong>도착(귀국)일:</strong> ${retDate}
+            <strong>출발일:</strong> ${depFormatted} &nbsp;|&nbsp; <strong>도착(귀국)일:</strong> ${retFormatted}
           </div>
         </div>
         <div style="text-align:right;">
           <div style="font-size:11px; color:#16a34a; font-weight:700;">
-            과거 1년 평균(₩${routeData.pastAvgPrice.toLocaleString()}원) 대비 ${routeData.diffPercent}% 알뜰
+            과거 1년 평균(₩${routeData.pastAvgPrice.toLocaleString()}원) 대비 ${routeData.diffPercent}% 알뜰 구간
           </div>
           <div style="font-size:22px; font-weight:900; color:#2563eb;">
-            ₩${routeData.lowestPrice.toLocaleString()}<span style="font-size:13px; font-weight:normal; color:#64748b;">원부터</span>
+            ₩${routeData.lowestPrice.toLocaleString()}<span style="font-size:13px; font-weight:normal; color:#64748b;">원부터 (과거 기준)</span>
+          </div>
+          <div style="margin-top:6px;">
+            <a href="${skyscannerUrl}" target="_blank" rel="noopener noreferrer" style="font-size:12px; font-weight:700; color:#0284c7; background:#ffffff; padding:6px 14px; border-radius:6px; border:1px solid #bae6fd; text-decoration:none; display:inline-flex; align-items:center; gap:4px; box-shadow:0 1px 2px rgba(0,0,0,0.06);">
+              선택 일정으로 스카이스캐너 실시간 요금 확인 ↗
+            </a>
           </div>
         </div>
       </div>
 
       <!-- TOP 3 Lowest Prices Display -->
-      <h3 style="font-size:17px; font-weight:800; margin-bottom:14px; display:flex; align-items:center; gap:6px;">
-        <span>실시간 일자별 최저가 TOP 3 항공권</span>
-        <span style="font-size:12px; font-weight:normal; color:#64748b;">(출발일·도착일 및 실시간 요금 확정치)</span>
-      </h3>
+      <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+        <div>
+          <h3 style="font-size:17px; font-weight:800; display:flex; align-items:center; gap:6px; margin:0;">
+            <span>과거 데이터 기반 추천 TOP 3 항공권 & 실시간 예약 링크</span>
+          </h3>
+          <div style="font-size:12px; color:#64748b; margin-top:4px;">
+            항공권 카드를 클릭하면 선택하신 <strong>출발(${dep}) · 도착(${dest}) 및 날짜(${depFormatted} ~ ${retFormatted})</strong> 쿼리가 입력된 스카이스캐너 실시간 최저가 페이지로 이동합니다.
+          </div>
+        </div>
+      </div>
 
       <div class="grid-3">
         ${routeData.top3.map(f => `
-          <div class="flight-card ${f.rank === 1 ? 'best' : ''}">
+          <div class="flight-card ${f.rank === 1 ? 'best' : ''}" onclick="window.open('${skyscannerUrl}', '_blank')" title="클릭 시 스카이스캐너 실시간 검색 페이지로 이동">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-              <span class="badge ${f.rank === 1 ? 'badge-blue' : 'badge-amber'}">${f.rank}위 ${f.rank === 1 ? '최저가' : ''}</span>
+              <span class="badge ${f.rank === 1 ? 'badge-blue' : 'badge-amber'}">${f.rank}위 ${f.rank === 1 ? '최저가' : '추천'}</span>
               <span style="font-weight:700; font-size:14px; color:#0f172a;">${f.airline} <small style="color:#94a3b8; font-weight:normal;">${f.flightNo}</small></span>
             </div>
 
             <div class="price">
               ₩${f.price.toLocaleString()}<span style="font-size:13px; font-weight:normal; color:#64748b; margin-left:2px;">원</span>
             </div>
-            <div style="font-size:11px; color:#ef4444; margin-top:2px; margin-bottom:12px;">
-              잔여 ${f.seats}석 남음 · 수하물 15kg 포함
+            <div style="font-size:11px; color:#0284c7; margin-top:2px; margin-bottom:12px; font-weight:600;">
+              과거 비수기 기준 요금 · 수하물 포함
             </div>
 
             <div style="background:#f8fafc; border:1px solid #f1f5f9; padding:12px; border-radius:8px; font-size:12px; line-height:1.7;">
-              <div><strong>출발일 (가는 편):</strong> ${depDate}</div>
+              <div><strong>출발일 (가는 편):</strong> ${depFormatted}</div>
               <div style="color:#2563eb; font-weight:600; padding-left:10px;">• ${f.depTime} (${dep}) → ${f.arrTime} (${dest}) [직항]</div>
-              <div style="margin-top:6px;"><strong>도착일 (오는 편):</strong> ${retDate}</div>
+              <div style="margin-top:6px;"><strong>도착일 (오는 편):</strong> ${retFormatted}</div>
               <div style="color:#16a34a; font-weight:600; padding-left:10px;">• ${f.retDepTime} (${dest}) → ${f.retArrTime} (${dep}) [직항]</div>
             </div>
 
             <div style="margin-top:14px; padding-top:10px; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
               <span style="font-size:11px; color:#64748b;">유류할증료/세금 포함</span>
-              <a href="https://www.skyscanner.co.kr/" target="_blank" rel="noopener noreferrer" style="font-size:12px; font-weight:700; color:#2563eb; text-decoration:none;">
-                스카이스캐너 조회 ↗
+              <a href="${skyscannerUrl}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();" style="font-size:12px; font-weight:700; color:#0284c7; background:#eff6ff; padding:5px 10px; border-radius:6px; border:1px solid #bfdbfe; text-decoration:none;">
+                스카이스캐너 실시간 조회 ↗
               </a>
             </div>
           </div>
@@ -1396,11 +1557,11 @@ function renderFlightsTab() {
       <!-- Past 1-Year Historical Price Comparison Analysis -->
       <div style="margin-top:24px; padding:18px; background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px;">
         <h4 style="font-size:14px; font-weight:800; color:#1e40af; margin-bottom:8px;">
-          📊 과거 1년 가격 비교 분석 결과 (data.json 수치 기준)
+          📊 과거 1년 가격 비교 분석 및 스카이스캐너 실시간 검색 안내
         </h4>
         <div style="font-size:13px; color:#1e3a8a; line-height:1.6;">
-          현재 최저 요금 <strong>₩${routeData.lowestPrice.toLocaleString()}원</strong>은 지난 1년 중 <strong>비수기 최저가 구간(상위 10% 알뜰가)</strong>에 해당합니다.
-          다가오는 연말 및 벚꽃/단풍/방학 성수기(평균 ₩${Math.round(routeData.lowestPrice * 1.55).toLocaleString()}원) 대비 약 <strong>40% 이상 경비를 절약</strong>할 수 있습니다.
+          현재 기준 요금 <strong>₩${routeData.lowestPrice.toLocaleString()}원</strong>은 지난 1년 중 <strong>비수기 최저가 구간(상위 10% 알뜰가)</strong>에 해당합니다.<br>
+          스카이스캐너 등 주요 항공권 플랫폼의 실시간 요금은 예약 시점의 잔여 좌석에 따라 실시간으로 변동되므로, 위 카드를 클릭하여 <strong>선택하신 날짜(${depFormatted} ~ ${retFormatted})의 실시간 최저가</strong>를 확인하고 바로 예약하실 수 있습니다.
         </div>
       </div>
     </div>

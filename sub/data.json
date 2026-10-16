@@ -4,7 +4,7 @@
   "metadata": {
     "today": "2026-10-16",
     "todayStr": "2026년 10월 16일 (금)",
-    "lastCrawledAt": "2026-10-16 10:45:14 KST (오늘 실시간 1일 단위 수집 완료)",
+    "lastCrawledAt": "2026-10-16 11:17:16 KST (오늘 실시간 1일 단위 수집 완료)",
     "crawlCycle": "1일 1회 정기 크롤링 및 실시간 동기화",
     "sources": {
       "exchangeRate": {
@@ -13,9 +13,9 @@
         "description": "서울외국환중개 및 주요 시중은행 매매기준율 고시"
       },
       "flightPrices": {
-        "title": "스카이스캐너(Skyscanner)",
-        "url": "https://www.skyscanner.co.kr/",
-        "description": "국내외 항공사 및 OTA 실시간 최저가 API 크롤링"
+        "title": "스카이스캐너(Skyscanner) 실시간 연동 & 과거 통계 데이터",
+        "url": "https://www.skyscanner.co.kr/transport/flights/",
+        "description": "과거 1년 노선별 기준 운임 데이터 제공 및 사용자 선택 날짜 기준 스카이스캐너 실시간 최저가 검색 링크 연동"
       }
     }
   },
@@ -275,13 +275,21 @@
     }
   },
   "realTimeFlights": {
+    "dataSource": "과거 1년 노선별 통계 데이터(비수기 최저가/평균가) & 스카이스캐너 실시간 연동",
+    "notice": "항공권의 실시간 최저가는 잔여 좌석 및 발권 시점에 따라 변동되므로, 과거 기준 통계 데이터를 상시 제공하고 사용자가 선택한 출발/도착 날짜가 포함된 스카이스캐너 실시간 검색 링크로 바로 이동합니다.",
+    "defaultDepDateIso": "2026-10-30",
+    "defaultRetDatesIso": {
+      "3박4일": "2026-11-02",
+      "4박5일": "2026-11-03",
+      "3박5일": "2026-11-03"
+    },
     "departureDate": "2026.10.16 (금, 오늘)",
     "returnDates": {
       "3박4일": "2026.10.19 (월)",
       "4박5일": "2026.10.20 (화)",
       "3박5일": "2026.10.20 (화 새벽)"
     },
-    "skyscannerBaseUrl": "https://www.skyscanner.co.kr/",
+    "skyscannerBaseUrl": "https://www.skyscanner.co.kr/transport/flights/",
     "routes": {
       "TAE": {
         "FUK": {

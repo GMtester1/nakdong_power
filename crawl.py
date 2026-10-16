@@ -184,13 +184,18 @@ def build_exchange_rates_section(live_rates):
     }
 
 def build_flights_section():
-    """대구(TAE) 및 부산(PUS) 출발 주요 도시 실시간 최저가 및 항공 스케줄"""
+    """대구(TAE) 및 부산(PUS) 출발 주요 도시 과거 통계 데이터 및 스카이스캐너 실시간 연동 정보"""
     now = get_current_kst_time()
     weekdays_ko = ["월", "화", "수", "목", "금", "토", "일"]
     
     dep_date_str = f"{now.strftime('%Y.%m.%d')} ({weekdays_ko[now.weekday()]}, 오늘)"
     ret_3n4d = (now + timedelta(days=3))
     ret_4n5d = (now + timedelta(days=4))
+    
+    # 기본 권장 출발일 및 복귀일 (ISO 포맷 - 프론트엔드 date picker 기본값 연동)
+    dep_default_iso = (now + timedelta(days=14)).strftime('%Y-%m-%d')
+    ret_3n4d_iso = (now + timedelta(days=17)).strftime('%Y-%m-%d')
+    ret_4n5d_iso = (now + timedelta(days=18)).strftime('%Y-%m-%d')
     
     return_dates = {
         "3박4일": f"{ret_3n4d.strftime('%Y.%m.%d')} ({weekdays_ko[ret_3n4d.weekday()]})",
@@ -367,9 +372,17 @@ def build_flights_section():
     }
 
     return {
+        "dataSource": "과거 1년 노선별 통계 데이터(비수기 최저가/평균가) & 스카이스캐너 실시간 연동",
+        "notice": "항공권의 실시간 최저가는 잔여 좌석 및 발권 시점에 따라 변동되므로, 과거 기준 통계 데이터를 상시 제공하고 사용자가 선택한 출발/도착 날짜가 포함된 스카이스캐너 실시간 검색 링크로 바로 이동합니다.",
+        "defaultDepDateIso": dep_default_iso,
+        "defaultRetDatesIso": {
+            "3박4일": ret_3n4d_iso,
+            "4박5일": ret_4n5d_iso,
+            "3박5일": ret_4n5d_iso
+        },
         "departureDate": dep_date_str,
         "returnDates": return_dates,
-        "skyscannerBaseUrl": "https://www.skyscanner.co.kr/",
+        "skyscannerBaseUrl": "https://www.skyscanner.co.kr/transport/flights/",
         "routes": {
             "TAE": tae_routes,
             "PUS": pus_routes
@@ -430,9 +443,9 @@ def main():
                     "description": "서울외국환중개 및 주요 시중은행 매매기준율 고시"
                 },
                 "flightPrices": {
-                    "title": "스카이스캐너(Skyscanner)",
-                    "url": "https://www.skyscanner.co.kr/",
-                    "description": "국내외 항공사 및 OTA 실시간 최저가 API 크롤링"
+                    "title": "스카이스캐너(Skyscanner) 실시간 연동 & 과거 통계 데이터",
+                    "url": "https://www.skyscanner.co.kr/transport/flights/",
+                    "description": "과거 1년 노선별 기준 운임 데이터 제공 및 사용자 선택 날짜 기준 스카이스캐너 실시간 최저가 검색 링크 연동"
                 }
             }
         },
@@ -466,19 +479,27 @@ def main():
         "weatherToday": weather_section
     }
 
-# sub 디렉토리 내 data.json 단일 저장 경로 설정
-    target_path = os.path.join("sub", "data.json")
-    dir_name = os.path.dirname(target_path)
+    # 파일 저장 (지정된 경로 및 기본 data.json)
+    target_paths = [args.output]
 
-    # sub 폴더가 없을 경우 자동 생성
-    if dir_name and not os.path.exists(dir_name):
-        os.makedirs(dir_name, exist_ok=True)
+    # 로컬 standalone 디렉토리가 존재하는 경우 동기화
+    standalone_path = os.path.join("public", "standalone", "data.json")
+    if os.path.isdir(os.path.join("public", "standalone")) and standalone_path not in target_paths:
+        target_paths.append(standalone_path)
 
-    # 파일 쓰기
-    with open(target_path, "w", encoding="utf-8") as f:
-        json.dump(full_data, f, ensure_ascii=False, indent=2)
+    # sub 디렉토리가 존재하는 경우 동기화 (GitHub Pages 하위 경로 지원)
+    sub_path = os.path.join("sub", "data.json")
+    if os.path.isdir("sub") and sub_path not in target_paths:
+        target_paths.append(sub_path)
 
-    print(f"성공적으로 데이터를 저장했습니다: {target_path}")
+    for path in target_paths:
+        dir_name = os.path.dirname(path)
+        if dir_name and not os.path.exists(dir_name):
+            os.makedirs(dir_name, exist_ok=True)
+            
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(full_data, f, ensure_ascii=False, indent=2)
+        print(f"[crawl.py] 성공적으로 저장 완료: {path} (크기: {os.path.getsize(path)} bytes)")
 
     print(f"==================================================")
     print(f"크롤링 및 JSON 생성 성공 완료!")

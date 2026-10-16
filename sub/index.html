@@ -3,8 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>동아시아 해외여행 플래너 (대구·부산 출발) - 실시간 데이터 뷰어</title>
-  <link rel="stylesheet" href="style.css">
+  <title>동아시아 해외여행 플래너 (대구·부산 출발)</title>
+  <script>
+    // GitHub Pages 서브디렉터리 접근 시 끝자리 슬래시(/) 누락으로 인한 CSS/JS/JSON 404 깨짐 자동 방지
+    if (!window.location.pathname.endsWith('/') && !window.location.pathname.endsWith('.html')) {
+      window.location.replace(window.location.pathname + '/' + window.location.search + window.location.hash);
+    }
+  </script>
+  <link rel="stylesheet" href="./style.css">
 </head>
 <body>
   <div class="container">
@@ -52,6 +58,6 @@
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <script src="./app.js"></script>
 </body>
 </html>

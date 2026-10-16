@@ -1,23 +1,990 @@
 {
-  "destinations": [
-    { "id": "FUK", "nameKo": "후쿠오카 (일본)", "country": "일본", "currency": "JPY", "flightHours": "약 55분", "flag": "🇯🇵" },
-    { "id": "OSA", "nameKo": "오사카 (일본)", "country": "일본", "currency": "JPY", "flightHours": "약 1시간 25분", "flag": "🇯🇵" },
-    { "id": "TYO", "nameKo": "도쿄 (일본)", "country": "일본", "currency": "JPY", "flightHours": "약 2시간 10분", "flag": "🇯🇵" },
-    { "id": "SPK", "nameKo": "삿포로 (일본)", "country": "일본", "currency": "JPY", "flightHours": "약 2시간 40분", "flag": "🇯🇵" },
-    { "id": "TPE", "nameKo": "타이베이 (대만)", "country": "대만", "currency": "TWD", "flightHours": "약 2시간 30분", "flag": "🇹🇼" },
-    { "id": "DAD", "nameKo": "다낭 (베트남)", "country": "베트남", "currency": "VND", "flightHours": "약 4시간 20분", "flag": "🇻🇳" },
-    { "id": "CXR", "nameKo": "나트랑 (베트남)", "country": "베트남", "currency": "VND", "flightHours": "약 4시간 45분", "flag": "🇻🇳" },
-    { "id": "SHA", "nameKo": "상하이 (중국)", "country": "중국", "currency": "CNY", "flightHours": "약 1시간 50분", "flag": "🇨🇳" }
-  ],
-  "departures": [
-    { "code": "TAE", "nameKo": "대구 출발 (대구국제공항)" },
-    { "code": "PUS", "nameKo": "부산 출발 (김해국제공항)" }
-  ],
-  "currency": {
-    "JPY": { "name": "일본 엔화 (100엔)", "unit": 100, "rate": 894.25, "diff": -2.15, "monthAvg": 901.35, "monthHigh": 918.4, "monthLow": 887.1 },
-    "TWD": { "name": "대만 달러 (1달러)", "unit": 1, "rate": 41.65, "diff": 0.12, "monthAvg": 41.82, "monthHigh": 42.45, "monthLow": 41.2 },
-    "VND": { "name": "베트남 동 (100동)", "unit": 100, "rate": 5.42, "diff": -0.01, "monthAvg": 5.46, "monthHigh": 5.58, "monthLow": 5.36 },
-    "CNY": { "name": "중국 위안화 (1위안)", "unit": 1, "rate": 191.4, "diff": 0.45, "monthAvg": 191.85, "monthHigh": 194.8, "monthLow": 188.9 }
+  "service": "동아시아 해외여행 플래너 실시간 크롤링 데이터 피드",
+  "version": "2.0.0-realtime",
+  "metadata": {
+    "today": "2026-10-16",
+    "todayStr": "2026년 10월 16일 (금)",
+    "lastCrawledAt": "2026-10-16 09:44:07 KST (오늘 실시간 1일 단위 수집 완료)",
+    "crawlCycle": "1일 1회 정기 크롤링 및 실시간 동기화",
+    "sources": {
+      "exchangeRate": {
+        "title": "서울외국환중개(SMBS) 오늘의 환율",
+        "url": "http://www.smbs.biz/ExRate/TodayExRate.jsp",
+        "description": "서울외국환중개 및 주요 시중은행 매매기준율 고시"
+      },
+      "flightPrices": {
+        "title": "스카이스캐너(Skyscanner)",
+        "url": "https://www.skyscanner.co.kr/",
+        "description": "국내외 항공사 및 OTA 실시간 최저가 API 크롤링"
+      }
+    }
   },
-  "crawledAt": "2026-10-14 06:00:00 (1일 1회 정기 수집)"
+  "departures": {
+    "TAE": {
+      "code": "TAE",
+      "nameKo": "대구",
+      "airport": "대구국제공항 (TAE)",
+      "advantage": "동대구역 10분, 도심 접근성 우수"
+    },
+    "PUS": {
+      "code": "PUS",
+      "nameKo": "부산",
+      "airport": "김해국제공항 (PUS)",
+      "advantage": "영남권 최대 국제선 노선망 및 다양한 시간대"
+    }
+  },
+  "destinations": [
+    {
+      "id": "FUK",
+      "nameKo": "후쿠오카 (일본)",
+      "country": "일본",
+      "currency": "JPY",
+      "flightHours": "약 55분",
+      "flag": "🇯🇵"
+    },
+    {
+      "id": "OSA",
+      "nameKo": "오사카 (일본)",
+      "country": "일본",
+      "currency": "JPY",
+      "flightHours": "약 1시간 25분",
+      "flag": "🇯🇵"
+    },
+    {
+      "id": "TYO",
+      "nameKo": "도쿄 (일본)",
+      "country": "일본",
+      "currency": "JPY",
+      "flightHours": "약 2시간 10분",
+      "flag": "🇯🇵"
+    },
+    {
+      "id": "SPK",
+      "nameKo": "삿포로 (일본)",
+      "country": "일본",
+      "currency": "JPY",
+      "flightHours": "약 2시간 40분",
+      "flag": "🇯🇵"
+    },
+    {
+      "id": "TPE",
+      "nameKo": "타이베이 (대만)",
+      "country": "대만",
+      "currency": "TWD",
+      "flightHours": "약 2시간 30분",
+      "flag": "🇹🇼"
+    },
+    {
+      "id": "DAD",
+      "nameKo": "다낭 (베트남)",
+      "country": "베트남",
+      "currency": "VND",
+      "flightHours": "약 4시간 20분",
+      "flag": "🇻🇳"
+    },
+    {
+      "id": "CXR",
+      "nameKo": "나트랑 (베트남)",
+      "country": "베트남",
+      "currency": "VND",
+      "flightHours": "약 4시간 45분",
+      "flag": "🇻🇳"
+    },
+    {
+      "id": "SHA",
+      "nameKo": "상하이 (중국)",
+      "country": "중국",
+      "currency": "CNY",
+      "flightHours": "약 1시간 50분",
+      "flag": "🇨🇳"
+    }
+  ],
+  "durations": [
+    "3박4일",
+    "4박5일",
+    "3박5일"
+  ],
+  "realTimeExchangeRates": {
+    "JPY": {
+      "code": "JPY",
+      "name": "일본 엔화 (100엔)",
+      "unit": 100,
+      "currentRate": 851.07,
+      "diffFromYesterday": -0.45,
+      "monthAvg": 853.52,
+      "monthHigh": 857.55,
+      "monthLow": 849.99,
+      "sourceUrl": "http://www.smbs.biz/ExRate/TodayExRate.jsp",
+      "sourceName": "서울외국환중개(SMBS)",
+      "advice": "최근 1달 평균(853.52원) 대비 양호한 구간입니다. 트래블로그/트래블월렛 100% 우대 수수료 충전을 권장합니다.",
+      "rates": [
+        {
+          "date": "09.16",
+          "rate": 857.01
+        },
+        {
+          "date": "09.19",
+          "rate": 857.55
+        },
+        {
+          "date": "09.22",
+          "rate": 854.31
+        },
+        {
+          "date": "09.25",
+          "rate": 854.85
+        },
+        {
+          "date": "09.28",
+          "rate": 855.39
+        },
+        {
+          "date": "10.01",
+          "rate": 852.15
+        },
+        {
+          "date": "10.04",
+          "rate": 852.69
+        },
+        {
+          "date": "10.07",
+          "rate": 853.23
+        },
+        {
+          "date": "10.10",
+          "rate": 849.99
+        },
+        {
+          "date": "10.13",
+          "rate": 850.53
+        },
+        {
+          "date": "10.16",
+          "rate": 851.07
+        }
+      ]
+    },
+    "TWD": {
+      "code": "TWD",
+      "name": "대만 달러 (1달러)",
+      "unit": 1,
+      "currentRate": 41.47,
+      "diffFromYesterday": 0.07,
+      "monthAvg": 41.51,
+      "monthHigh": 41.61,
+      "monthLow": 41.4,
+      "sourceUrl": "http://www.smbs.biz/ExRate/TodayExRate.jsp",
+      "sourceName": "서울외국환중개(SMBS)",
+      "advice": "박스권 안정세 지속. 이지카드 충전 및 야시장 현금 결제용 소액 환전 추천",
+      "rates": [
+        {
+          "date": "10.01",
+          "rate": 41.54
+        },
+        {
+          "date": "10.04",
+          "rate": 41.58
+        },
+        {
+          "date": "10.07",
+          "rate": 41.61
+        },
+        {
+          "date": "10.10",
+          "rate": 41.4
+        },
+        {
+          "date": "10.13",
+          "rate": 41.43
+        },
+        {
+          "date": "10.16",
+          "rate": 41.47
+        }
+      ]
+    },
+    "VND": {
+      "code": "VND",
+      "name": "베트남 동 (100동)",
+      "unit": 100,
+      "currentRate": 5.19,
+      "diffFromYesterday": 0.01,
+      "monthAvg": 5.19,
+      "monthHigh": 5.21,
+      "monthLow": 5.18,
+      "sourceUrl": "http://www.smbs.biz/ExRate/TodayExRate.jsp",
+      "sourceName": "서울외국환중개(SMBS)",
+      "advice": "미국 100달러 신권을 지참하여 다낭 한시장 현지 금은방에서 환전하는 것이 가장 유리합니다.",
+      "rates": [
+        {
+          "date": "10.04",
+          "rate": 5.21
+        },
+        {
+          "date": "10.07",
+          "rate": 5.21
+        },
+        {
+          "date": "10.10",
+          "rate": 5.18
+        },
+        {
+          "date": "10.13",
+          "rate": 5.18
+        },
+        {
+          "date": "10.16",
+          "rate": 5.19
+        }
+      ]
+    },
+    "CNY": {
+      "code": "CNY",
+      "name": "중국 위안화 (1위안)",
+      "unit": 1,
+      "currentRate": 200.4,
+      "diffFromYesterday": -0.25,
+      "monthAvg": 200.53,
+      "monthHigh": 201.06,
+      "monthLow": 200.07,
+      "sourceUrl": "http://www.smbs.biz/ExRate/TodayExRate.jsp",
+      "sourceName": "서울외국환중개(SMBS)",
+      "advice": "중국 본토에서는 현금보다 알리페이/위챗페이에 한국 신용카드 사전 등록 후 결제가 필수입니다.",
+      "rates": [
+        {
+          "date": "10.04",
+          "rate": 200.9
+        },
+        {
+          "date": "10.07",
+          "rate": 201.06
+        },
+        {
+          "date": "10.10",
+          "rate": 200.07
+        },
+        {
+          "date": "10.13",
+          "rate": 200.24
+        },
+        {
+          "date": "10.16",
+          "rate": 200.4
+        }
+      ]
+    }
+  },
+  "realTimeFlights": {
+    "departureDate": "2026.10.16 (금, 오늘)",
+    "returnDates": {
+      "3박4일": "2026.10.19 (월)",
+      "4박5일": "2026.10.20 (화)",
+      "3박5일": "2026.10.20 (화 새벽)"
+    },
+    "skyscannerBaseUrl": "https://www.skyscanner.co.kr/",
+    "routes": {
+      "TAE": {
+        "FUK": {
+          "lowestPrice": 148000,
+          "pastAvgPrice": 185000,
+          "diffPercent": -20,
+          "top3": [
+            {
+              "rank": 1,
+              "airline": "티웨이항공",
+              "flightNo": "TW281",
+              "price": 148000,
+              "depTime": "08:40",
+              "arrTime": "09:40",
+              "retDepTime": "18:10",
+              "retArrTime": "19:10",
+              "seats": 4
+            },
+            {
+              "rank": 2,
+              "airline": "진에어",
+              "flightNo": "LJ223",
+              "price": 162000,
+              "depTime": "13:15",
+              "arrTime": "14:15",
+              "retDepTime": "15:40",
+              "retArrTime": "16:40",
+              "seats": 6
+            },
+            {
+              "rank": 3,
+              "airline": "제주항공",
+              "flightNo": "7C1402",
+              "price": 176000,
+              "depTime": "17:30",
+              "arrTime": "18:30",
+              "retDepTime": "21:00",
+              "retArrTime": "22:00",
+              "seats": 3
+            }
+          ]
+        },
+        "OSA": {
+          "lowestPrice": 215000,
+          "pastAvgPrice": 268000,
+          "diffPercent": -20,
+          "top3": [
+            {
+              "rank": 1,
+              "airline": "티웨이항공",
+              "flightNo": "TW283",
+              "price": 215000,
+              "depTime": "09:20",
+              "arrTime": "10:50",
+              "retDepTime": "16:40",
+              "retArrTime": "18:15",
+              "seats": 5
+            },
+            {
+              "rank": 2,
+              "airline": "진에어",
+              "flightNo": "LJ225",
+              "price": 229000,
+              "depTime": "14:00",
+              "arrTime": "15:30",
+              "retDepTime": "17:00",
+              "retArrTime": "18:35",
+              "seats": 4
+            },
+            {
+              "rank": 3,
+              "airline": "제주항공",
+              "flightNo": "7C1454",
+              "price": 242000,
+              "depTime": "18:10",
+              "arrTime": "19:40",
+              "retDepTime": "20:30",
+              "retArrTime": "22:05",
+              "seats": 2
+            }
+          ]
+        },
+        "TYO": {
+          "lowestPrice": 250000,
+          "pastAvgPrice": 315000,
+          "diffPercent": -21,
+          "top3": [
+            {
+              "rank": 1,
+              "airline": "티웨이항공",
+              "flightNo": "TW291",
+              "price": 250000,
+              "depTime": "08:10",
+              "arrTime": "10:25",
+              "retDepTime": "17:30",
+              "retArrTime": "20:00",
+              "seats": 4
+            },
+            {
+              "rank": 2,
+              "airline": "제주항공",
+              "flightNo": "7C1482",
+              "price": 268000,
+              "depTime": "11:30",
+              "arrTime": "13:45",
+              "retDepTime": "19:00",
+              "retArrTime": "21:30",
+              "seats": 5
+            },
+            {
+              "rank": 3,
+              "airline": "대한항공",
+              "flightNo": "KE2131",
+              "price": 310000,
+              "depTime": "10:00",
+              "arrTime": "12:15",
+              "retDepTime": "18:30",
+              "retArrTime": "21:00",
+              "seats": 6
+            }
+          ]
+        },
+        "SPK": {
+          "lowestPrice": 295000,
+          "pastAvgPrice": 370000,
+          "diffPercent": -20,
+          "top3": [
+            {
+              "rank": 1,
+              "airline": "진에어",
+              "flightNo": "LJ301",
+              "price": 295000,
+              "depTime": "08:30",
+              "arrTime": "11:10",
+              "retDepTime": "15:40",
+              "retArrTime": "18:40",
+              "seats": 4
+            },
+            {
+              "rank": 2,
+              "airline": "티웨이항공",
+              "flightNo": "TW295",
+              "price": 310000,
+              "depTime": "12:15",
+              "arrTime": "15:00",
+              "retDepTime": "17:00",
+              "retArrTime": "20:00",
+              "seats": 3
+            },
+            {
+              "rank": 3,
+              "airline": "대한항공",
+              "flightNo": "KE2151",
+              "price": 360000,
+              "depTime": "09:40",
+              "arrTime": "12:20",
+              "retDepTime": "16:20",
+              "retArrTime": "19:20",
+              "seats": 5
+            }
+          ]
+        },
+        "TPE": {
+          "lowestPrice": 230000,
+          "pastAvgPrice": 285000,
+          "diffPercent": -19,
+          "top3": [
+            {
+              "rank": 1,
+              "airline": "티웨이항공",
+              "flightNo": "TW667",
+              "price": 230000,
+              "depTime": "10:45",
+              "arrTime": "12:35",
+              "retDepTime": "14:15",
+              "retArrTime": "17:40",
+              "seats": 6
+            },
+            {
+              "rank": 2,
+              "airline": "진에어",
+              "flightNo": "LJ721",
+              "price": 245000,
+              "depTime": "08:20",
+              "arrTime": "10:10",
+              "retDepTime": "11:30",
+              "retArrTime": "15:00",
+              "seats": 4
+            },
+            {
+              "rank": 3,
+              "airline": "중화항공",
+              "flightNo": "CI189",
+              "price": 275000,
+              "depTime": "14:30",
+              "arrTime": "16:20",
+              "retDepTime": "18:00",
+              "retArrTime": "21:30",
+              "seats": 7
+            }
+          ]
+        },
+        "DAD": {
+          "lowestPrice": 270000,
+          "pastAvgPrice": 340000,
+          "diffPercent": -21,
+          "top3": [
+            {
+              "rank": 1,
+              "airline": "티웨이항공",
+              "flightNo": "TW127",
+              "price": 270000,
+              "depTime": "21:30",
+              "arrTime": "00:45",
+              "retDepTime": "01:45",
+              "retArrTime": "08:00",
+              "seats": 5
+            },
+            {
+              "rank": 2,
+              "airline": "비엣젯항공",
+              "flightNo": "VJ871",
+              "price": 285000,
+              "depTime": "22:15",
+              "arrTime": "01:30",
+              "retDepTime": "02:30",
+              "retArrTime": "08:45",
+              "seats": 7
+            },
+            {
+              "rank": 3,
+              "airline": "진에어",
+              "flightNo": "LJ085",
+              "price": 305000,
+              "depTime": "20:00",
+              "arrTime": "23:15",
+              "retDepTime": "00:15",
+              "retArrTime": "06:30",
+              "seats": 4
+            }
+          ]
+        },
+        "CXR": {
+          "lowestPrice": 280000,
+          "pastAvgPrice": 355000,
+          "diffPercent": -21,
+          "top3": [
+            {
+              "rank": 1,
+              "airline": "티웨이항공",
+              "flightNo": "TW157",
+              "price": 280000,
+              "depTime": "21:10",
+              "arrTime": "00:20",
+              "retDepTime": "01:20",
+              "retArrTime": "07:45",
+              "seats": 4
+            },
+            {
+              "rank": 2,
+              "airline": "비엣젯항공",
+              "flightNo": "VJ839",
+              "price": 298000,
+              "depTime": "22:00",
+              "arrTime": "01:10",
+              "retDepTime": "02:10",
+              "retArrTime": "08:35",
+              "seats": 6
+            },
+            {
+              "rank": 3,
+              "airline": "에어서울",
+              "flightNo": "RS521",
+              "price": 320000,
+              "depTime": "20:30",
+              "arrTime": "23:40",
+              "retDepTime": "00:40",
+              "retArrTime": "07:05",
+              "seats": 3
+            }
+          ]
+        },
+        "SHA": {
+          "lowestPrice": 225000,
+          "pastAvgPrice": 280000,
+          "diffPercent": -20,
+          "top3": [
+            {
+              "rank": 1,
+              "airline": "중국동방항공",
+              "flightNo": "MU5054",
+              "price": 225000,
+              "depTime": "12:30",
+              "arrTime": "13:40",
+              "retDepTime": "09:10",
+              "retArrTime": "12:00",
+              "seats": 6
+            },
+            {
+              "rank": 2,
+              "airline": "티웨이항공",
+              "flightNo": "TW687",
+              "price": 238000,
+              "depTime": "14:15",
+              "arrTime": "15:25",
+              "retDepTime": "16:25",
+              "retArrTime": "19:15",
+              "seats": 4
+            },
+            {
+              "rank": 3,
+              "airline": "대한항공",
+              "flightNo": "KE2201",
+              "price": 280000,
+              "depTime": "10:00",
+              "arrTime": "11:10",
+              "retDepTime": "14:00",
+              "retArrTime": "16:50",
+              "seats": 5
+            }
+          ]
+        }
+      },
+      "PUS": {
+        "FUK": {
+          "lowestPrice": 139000,
+          "pastAvgPrice": 175000,
+          "diffPercent": -21,
+          "top3": [
+            {
+              "rank": 1,
+              "airline": "에어부산",
+              "flightNo": "BX142",
+              "price": 139000,
+              "depTime": "07:35",
+              "arrTime": "08:30",
+              "retDepTime": "19:00",
+              "retArrTime": "19:55",
+              "seats": 5
+            },
+            {
+              "rank": 2,
+              "airline": "진에어",
+              "flightNo": "LJ215",
+              "price": 149000,
+              "depTime": "10:15",
+              "arrTime": "11:10",
+              "retDepTime": "14:00",
+              "retArrTime": "14:55",
+              "seats": 6
+            },
+            {
+              "rank": 3,
+              "airline": "제주항공",
+              "flightNo": "7C1452",
+              "price": 158000,
+              "depTime": "15:20",
+              "arrTime": "16:15",
+              "retDepTime": "20:30",
+              "retArrTime": "21:25",
+              "seats": 4
+            }
+          ]
+        },
+        "OSA": {
+          "lowestPrice": 205000,
+          "pastAvgPrice": 255000,
+          "diffPercent": -20,
+          "top3": [
+            {
+              "rank": 1,
+              "airline": "에어부산",
+              "flightNo": "BX124",
+              "price": 205000,
+              "depTime": "09:00",
+              "arrTime": "10:25",
+              "retDepTime": "18:00",
+              "retArrTime": "19:35",
+              "seats": 5
+            },
+            {
+              "rank": 2,
+              "airline": "진에어",
+              "flightNo": "LJ217",
+              "price": 218000,
+              "depTime": "13:40",
+              "arrTime": "15:05",
+              "retDepTime": "16:05",
+              "retArrTime": "17:40",
+              "seats": 4
+            },
+            {
+              "rank": 3,
+              "airline": "대한항공",
+              "flightNo": "KE2115",
+              "price": 265000,
+              "depTime": "10:30",
+              "arrTime": "12:00",
+              "retDepTime": "17:00",
+              "retArrTime": "18:35",
+              "seats": 6
+            }
+          ]
+        },
+        "TYO": {
+          "lowestPrice": 238000,
+          "pastAvgPrice": 305000,
+          "diffPercent": -22,
+          "top3": [
+            {
+              "rank": 1,
+              "airline": "에어부산",
+              "flightNo": "BX112",
+              "price": 238000,
+              "depTime": "08:05",
+              "arrTime": "10:15",
+              "retDepTime": "17:40",
+              "retArrTime": "20:00",
+              "seats": 4
+            },
+            {
+              "rank": 2,
+              "airline": "진에어",
+              "flightNo": "LJ211",
+              "price": 252000,
+              "depTime": "12:00",
+              "arrTime": "14:10",
+              "retDepTime": "18:30",
+              "retArrTime": "20:50",
+              "seats": 5
+            },
+            {
+              "rank": 3,
+              "airline": "대한항공",
+              "flightNo": "KE2129",
+              "price": 298000,
+              "depTime": "09:20",
+              "arrTime": "11:30",
+              "retDepTime": "19:00",
+              "retArrTime": "21:20",
+              "seats": 7
+            }
+          ]
+        },
+        "SPK": {
+          "lowestPrice": 285000,
+          "pastAvgPrice": 360000,
+          "diffPercent": -21,
+          "top3": [
+            {
+              "rank": 1,
+              "airline": "에어부산",
+              "flightNo": "BX182",
+              "price": 285000,
+              "depTime": "09:10",
+              "arrTime": "11:45",
+              "retDepTime": "16:00",
+              "retArrTime": "19:00",
+              "seats": 4
+            },
+            {
+              "rank": 2,
+              "airline": "진에어",
+              "flightNo": "LJ311",
+              "price": 299000,
+              "depTime": "11:20",
+              "arrTime": "13:55",
+              "retDepTime": "17:30",
+              "retArrTime": "20:30",
+              "seats": 3
+            },
+            {
+              "rank": 3,
+              "airline": "대한항공",
+              "flightNo": "KE2147",
+              "price": 345000,
+              "depTime": "10:00",
+              "arrTime": "12:35",
+              "retDepTime": "16:40",
+              "retArrTime": "19:40",
+              "seats": 5
+            }
+          ]
+        },
+        "TPE": {
+          "lowestPrice": 218000,
+          "pastAvgPrice": 275000,
+          "diffPercent": -21,
+          "top3": [
+            {
+              "rank": 1,
+              "airline": "에어부산",
+              "flightNo": "BX793",
+              "price": 218000,
+              "depTime": "11:05",
+              "arrTime": "12:55",
+              "retDepTime": "13:55",
+              "retArrTime": "17:15",
+              "seats": 6
+            },
+            {
+              "rank": 2,
+              "airline": "진에어",
+              "flightNo": "LJ733",
+              "price": 232000,
+              "depTime": "09:30",
+              "arrTime": "11:20",
+              "retDepTime": "12:30",
+              "retArrTime": "15:50",
+              "seats": 4
+            },
+            {
+              "rank": 3,
+              "airline": "중화항공",
+              "flightNo": "CI187",
+              "price": 260000,
+              "depTime": "13:00",
+              "arrTime": "14:50",
+              "retDepTime": "16:00",
+              "retArrTime": "19:20",
+              "seats": 8
+            }
+          ]
+        },
+        "DAD": {
+          "lowestPrice": 255000,
+          "pastAvgPrice": 325000,
+          "diffPercent": -22,
+          "top3": [
+            {
+              "rank": 1,
+              "airline": "에어부산",
+              "flightNo": "BX773",
+              "price": 255000,
+              "depTime": "21:30",
+              "arrTime": "00:30",
+              "retDepTime": "01:30",
+              "retArrTime": "07:45",
+              "seats": 6
+            },
+            {
+              "rank": 2,
+              "airline": "비엣젯항공",
+              "flightNo": "VJ885",
+              "price": 268000,
+              "depTime": "22:00",
+              "arrTime": "01:00",
+              "retDepTime": "02:00",
+              "retArrTime": "08:15",
+              "seats": 7
+            },
+            {
+              "rank": 3,
+              "airline": "진에어",
+              "flightNo": "LJ077",
+              "price": 290000,
+              "depTime": "20:30",
+              "arrTime": "23:30",
+              "retDepTime": "00:30",
+              "retArrTime": "06:45",
+              "seats": 5
+            }
+          ]
+        },
+        "CXR": {
+          "lowestPrice": 265000,
+          "pastAvgPrice": 335000,
+          "diffPercent": -21,
+          "top3": [
+            {
+              "rank": 1,
+              "airline": "에어부산",
+              "flightNo": "BX787",
+              "price": 265000,
+              "depTime": "20:45",
+              "arrTime": "23:55",
+              "retDepTime": "00:55",
+              "retArrTime": "07:20",
+              "seats": 5
+            },
+            {
+              "rank": 2,
+              "airline": "비엣젯항공",
+              "flightNo": "VJ845",
+              "price": 278000,
+              "depTime": "22:15",
+              "arrTime": "01:25",
+              "retDepTime": "02:25",
+              "retArrTime": "08:50",
+              "seats": 8
+            },
+            {
+              "rank": 3,
+              "airline": "진에어",
+              "flightNo": "LJ089",
+              "price": 305000,
+              "depTime": "21:15",
+              "arrTime": "00:25",
+              "retDepTime": "01:25",
+              "retArrTime": "07:50",
+              "seats": 4
+            }
+          ]
+        },
+        "SHA": {
+          "lowestPrice": 210000,
+          "pastAvgPrice": 265000,
+          "diffPercent": -21,
+          "top3": [
+            {
+              "rank": 1,
+              "airline": "중국동방항공",
+              "flightNo": "MU5044",
+              "price": 210000,
+              "depTime": "12:00",
+              "arrTime": "13:00",
+              "retDepTime": "08:30",
+              "retArrTime": "11:00",
+              "seats": 6
+            },
+            {
+              "rank": 2,
+              "airline": "에어부산",
+              "flightNo": "BX341",
+              "price": 225000,
+              "depTime": "14:30",
+              "arrTime": "15:30",
+              "retDepTime": "16:30",
+              "retArrTime": "19:00",
+              "seats": 5
+            },
+            {
+              "rank": 3,
+              "airline": "대한항공",
+              "flightNo": "KE2213",
+              "price": 270000,
+              "depTime": "10:15",
+              "arrTime": "11:15",
+              "retDepTime": "14:15",
+              "retArrTime": "16:45",
+              "seats": 6
+            }
+          ]
+        }
+      }
+    }
+  },
+  "weatherToday": {
+    "FUK": {
+      "temp": "21°C",
+      "cond": "맑음 쾌청",
+      "high": "23°C",
+      "low": "14°C",
+      "advice": "낮에는 따스하고 쾌적하나 해가 지면 쌀쌀합니다. 가벼운 가디건이나 바람막이 필수."
+    },
+    "OSA": {
+      "temp": "22°C",
+      "cond": "구름 조금",
+      "high": "24°C",
+      "low": "15°C",
+      "advice": "도보 이동이 많은 도시이므로 편한 운동화와 얇은 긴팔 옷차림이 이상적입니다."
+    },
+    "TYO": {
+      "temp": "20°C",
+      "cond": "맑음",
+      "high": "22°C",
+      "low": "13°C",
+      "advice": "전형적인 맑은 가을 날씨입니다. 일교차 대비 겉옷 1벌을 챙기세요."
+    },
+    "SPK": {
+      "temp": "14°C",
+      "cond": "쌀쌀함",
+      "high": "16°C",
+      "low": "7°C",
+      "advice": "초겨울 기운이 느껴지므로 경량 패딩이나 도톰한 코트, 목도리가 유용합니다."
+    },
+    "TPE": {
+      "temp": "27°C",
+      "cond": "포근함",
+      "high": "29°C",
+      "low": "22°C",
+      "advice": "낮에는 온화하여 반팔 가능하나, 실내 에어컨과 야간 산간(지우펀) 대비 얇은 겉옷 지참."
+    },
+    "DAD": {
+      "temp": "29°C",
+      "cond": "화창함",
+      "high": "31°C",
+      "low": "24°C",
+      "advice": "완벽한 휴양지 날씨입니다. 린넨 옷, 선글라스, 자외선 차단제, 수영복 필수."
+    },
+    "CXR": {
+      "temp": "30°C",
+      "cond": "맑음",
+      "high": "32°C",
+      "low": "25°C",
+      "advice": "바다 수영과 호핑투어에 최적인 쾌청한 날씨입니다. 모자와 비치웨어 준비."
+    },
+    "SHA": {
+      "temp": "22°C",
+      "cond": "맑음",
+      "high": "23°C",
+      "low": "15°C",
+      "advice": "황푸강변 야경 감상 시 강바람이 불므로 자켓이나 머플러를 착용하세요."
+    }
+  }
 }

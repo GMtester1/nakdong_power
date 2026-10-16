@@ -3,220 +3,31 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>동아시아 해외여행 플래너 (대구·부산 출발) - Standalone</title>
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>동아시아 해외여행 플래너 (대구·부산 출발) - Standalone</title>
-  
-  <!-- style.css 내용을 직접 삽입 (경로 오류 원천 차단) -->
-  <style>
-    :root {
-      --primary: #2563eb;
-      --primary-hover: #1d4ed8;
-      --bg-main: #f8fafc;
-      --card-bg: #ffffff;
-      --text-main: #0f172a;
-      --text-muted: #64748b;
-      --border: #e2e8f0;
-      --radius: 12px;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Pretendard", sans-serif;
-    }
-
-    body {
-      background-color: var(--bg-main);
-      color: var(--text-main);
-      line-height: 1.5;
-      padding: 24px;
-    }
-
-    .container {
-      max-width: 1100px;
-      margin: 0 auto;
-    }
-
-    header {
-      background: #ffffff;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 20px 24px;
-      margin-bottom: 24px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    }
-
-    .header-title {
-      font-size: 22px;
-      font-weight: 800;
-      color: #0f172a;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .header-desc {
-      font-size: 13px;
-      color: var(--text-muted);
-      margin-top: 4px;
-    }
-
-    .nav-tabs {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 20px;
-      border-bottom: 2px solid var(--border);
-      padding-bottom: 8px;
-      overflow-x: auto;
-    }
-
-    .tab-btn {
-      background: transparent;
-      border: none;
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--text-muted);
-      padding: 8px 16px;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .tab-btn.active {
-      background: var(--primary);
-      color: #ffffff;
-    }
-
-    .card {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 20px;
-      margin-bottom: 20px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-    }
-
-    .badge {
-      display: inline-block;
-      font-size: 11px;
-      font-weight: 700;
-      padding: 3px 8px;
-      border-radius: 6px;
-    }
-
-    .badge-blue { background: #dbeafe; color: #1e40af; }
-    .badge-green { background: #dcfce7; color: #15803d; }
-    .badge-amber { background: #fef3c7; color: #b45309; }
-
-    .controls-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      align-items: center;
-      margin-bottom: 16px;
-    }
-
-    .btn-group {
-      display: inline-flex;
-      background: #f1f5f9;
-      padding: 4px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-    }
-
-    .btn-group button {
-      border: none;
-      background: transparent;
-      padding: 6px 14px;
-      font-size: 13px;
-      font-weight: 500;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
-    .btn-group button.active {
-      background: #ffffff;
-      color: #0f172a;
-      font-weight: 700;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.06);
-    }
-
-    .grid-3 {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 16px;
-    }
-
-    .flight-card {
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 16px;
-      background: #ffffff;
-    }
-
-    .flight-card.best {
-      border-color: #3b82f6;
-      background: #f8faff;
-    }
-
-    .price {
-      font-size: 24px;
-      font-weight: 900;
-      color: #0f172a;
-    }
-
-    .currency-box {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 16px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      margin-bottom: 8px;
-    }
-
-    .schedule-item {
-      border-left: 3px solid var(--primary);
-      padding-left: 14px;
-      margin-bottom: 16px;
-    }
-
-    .restaurant-box {
-      background: #fffbeb;
-      border: 1px solid #fde68a;
-      border-radius: 8px;
-      padding: 12px;
-      margin-top: 8px;
-      font-size: 12px;
-    }
-
-    .footer {
-      text-align: center;
-      font-size: 12px;
-      color: var(--text-muted);
-      margin-top: 40px;
-      padding-top: 20px;
-      border-top: 1px solid var(--border);
-    }
-  </style>
-</head>
+  <title>동아시아 해외여행 플래너 (대구·부산 출발) - 실시간 데이터 뷰어</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="container">
     <header>
-      <div class="header-title">
-        <span>✈</span>
-        <span>동아시아 해외여행 플래너 (대구·부산 출발)</span>
-      </div>
-      <div class="header-desc">
-        별도의 빌드나 설치 없이 브라우저에서 바로 실행 가능한 단독형(Standalone) 플래너입니다.
-        일본, 대만, 베트남, 상하이 주요 도시 항공권 최저가 TOP 3, 환율 그래프, 일정 및 맛집, 기상 정보 제공.
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        <div>
+          <div class="header-title">
+            <span>✈</span>
+            <span>동아시아 해외여행 플래너 (대구·부산 출발)</span>
+          </div>
+          <div class="header-desc">
+            스카이스캐너(Skyscanner) 항공권 실시간 최저가 TOP 3 및 서울외국환중개(SMBS) 오늘 환율 실시간 연동 (data.json 기반)
+          </div>
+        </div>
+
+        <div style="display:flex; gap:8px; align-items:center;">
+          <button id="btn-refresh-data" onclick="reloadRealtimeData()" style="padding:8px 14px; background:#2563eb; color:#ffffff; border:none; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+            <span>🔄 data.json 실시간 새로고침</span>
+          </button>
+          <a href="./data.json" target="_blank" style="padding:7px 12px; background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; border-radius:8px; font-size:12px; font-weight:600; text-decoration:none;">
+            JSON 원본 보기 ↗
+          </a>
+        </div>
       </div>
     </header>
 
@@ -230,11 +41,14 @@
 
     <!-- Main Content Area -->
     <div id="tab-content">
-      <!-- Dynamic rendering via app.js -->
+      <!-- Dynamic rendering via app.js with real-time data.json -->
+      <div style="padding:40px; text-align:center; color:#64748b; font-size:14px;">
+        실시간 크롤링 데이터(./data.json)를 불러오는 중입니다...
+      </div>
     </div>
 
     <div class="footer">
-      © 2026 동아시아 해외여행 플래너 · 대구(TAE)·부산(PUS) 출발 맞춤 · Standalone Edition
+      © 2026 동아시아 해외여행 플래너 · 대구(TAE)·부산(PUS) 출발 맞춤 · 실시간 data.json 연동 시스템
     </div>
   </div>
 

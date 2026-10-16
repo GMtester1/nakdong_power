@@ -1,0 +1,48 @@
+name: Daily Travel Data Crawler
+
+on:
+  schedule:
+    # 매일 한국 시간(KST) 오전 6:00 (UTC 기준 21:00)
+    - cron: '0 21 * * *'
+  workflow_dispatch: # GitHub Actions 탭에서 언제든 'Run workflow' 버튼으로 즉시 수동 실행 가능
+
+# Git 자동 커밋 & 푸시를 위한 권한 부여
+permissions:
+  contents: write
+
+jobs:
+  crawl-and-update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests beautifulsoup4
+
+      - name: Run crawl.py
+        run: |
+          python crawl.py
+
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add sub/data.json
+          # 변경 사항이 있을 때만 커밋 및 푸시 수행
+          if git diff --staged --quiet; then
+            echo "여행 데이터에 변경 사항이 없어 커밋을 건너뜁니다."
+          else
+            git commit -m "Update travel data: $(date +'%Y-%m-%d %H:%M:%S KST')"
+            git push
+            echo "성공적으로 Git Push 완료!"
+          fi

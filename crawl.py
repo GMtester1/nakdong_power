@@ -466,27 +466,19 @@ def main():
         "weatherToday": weather_section
     }
 
-    # 파일 저장 (지정된 경로 및 기본 data.json)
-    target_paths = [args.output]
+# sub 디렉토리 내 data.json 단일 저장 경로 설정
+    target_path = os.path.join("sub", "data.json")
+    dir_name = os.path.dirname(target_path)
 
-    # 로컬 standalone 디렉토리가 존재하는 경우 동기화
-    standalone_path = os.path.join("public", "standalone", "data.json")
-    if os.path.isdir(os.path.join("public", "standalone")) and standalone_path not in target_paths:
-        target_paths.append(standalone_path)
+    # sub 폴더가 없을 경우 자동 생성
+    if dir_name and not os.path.exists(dir_name):
+        os.makedirs(dir_name, exist_ok=True)
 
-    # sub 디렉토리가 존재하는 경우 동기화 (GitHub Pages 하위 경로 지원)
-    sub_path = os.path.join("sub", "data.json")
-    if os.path.isdir("sub") and sub_path not in target_paths:
-        target_paths.append(sub_path)
+    # 파일 쓰기
+    with open(target_path, "w", encoding="utf-8") as f:
+        json.dump(full_data, f, ensure_ascii=False, indent=2)
 
-    for path in target_paths:
-        dir_name = os.path.dirname(path)
-        if dir_name and not os.path.exists(dir_name):
-            os.makedirs(dir_name, exist_ok=True)
-            
-        with open(path, "w", encoding="utf-8") as f:
-            json.dump(full_data, f, ensure_ascii=False, indent=2)
-        print(f"[crawl.py] 성공적으로 저장 완료: {path} (크기: {os.path.getsize(path)} bytes)")
+    print(f"성공적으로 데이터를 저장했습니다: {target_path}")
 
     print(f"==================================================")
     print(f"크롤링 및 JSON 생성 성공 완료!")

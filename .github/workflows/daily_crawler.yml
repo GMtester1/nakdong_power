@@ -27,7 +27,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install requests beautifulsoup4
+          pip install -r requirements.txt
 
       - name: Run crawl.py
         run: |
@@ -37,7 +37,16 @@ jobs:
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add sub/data.json
+          
+          # 생성 및 갱신된 JSON 파일 스테이징
+          git add data.json
+          if [ -f "public/standalone/data.json" ]; then
+            git add public/standalone/data.json
+          fi
+          if [ -f "sub/data.json" ]; then
+            git add sub/data.json
+          fi
+
           # 변경 사항이 있을 때만 커밋 및 푸시 수행
           if git diff --staged --quiet; then
             echo "여행 데이터에 변경 사항이 없어 커밋을 건너뜁니다."

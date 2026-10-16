@@ -38,20 +38,28 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           
-          # 생성 및 갱신된 JSON 파일 스테이징
-          git add data.json
-          if [ -f "public/standalone/data.json" ]; then
-            git add public/standalone/data.json
-          fi
-          if [ -f "sub/data.json" ]; then
-            git add sub/data.json
-          fi
+      - name: Commit and push changes
+
+        run: |
+
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+
+          git config --local user.name "github-actions[bot]"
+
+          git add sub/data.json
 
           # 변경 사항이 있을 때만 커밋 및 푸시 수행
+
           if git diff --staged --quiet; then
+
             echo "여행 데이터에 변경 사항이 없어 커밋을 건너뜁니다."
+
           else
+
             git commit -m "Update travel data: $(date +'%Y-%m-%d %H:%M:%S KST')"
+
             git push
+
             echo "성공적으로 Git Push 완료!"
-          fi
+
+          fi 

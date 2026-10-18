@@ -2,9 +2,9 @@
   "service": "동아시아 해외여행 플래너 실시간 크롤링 데이터 피드",
   "version": "2.0.0-realtime",
   "metadata": {
-    "today": "2026-10-18",
-    "todayStr": "2026년 10월 18일 (일)",
-    "lastCrawledAt": "2026-10-18 07:57:01 KST (오늘 실시간 1일 단위 수집 완료)",
+    "today": "2026-10-19",
+    "todayStr": "2026년 10월 19일 (월)",
+    "lastCrawledAt": "2026-10-19 07:52:43 KST (오늘 실시간 1일 단위 수집 완료)",
     "crawlCycle": "1일 1회 정기 크롤링 및 실시간 동기화",
     "sources": {
       "exchangeRate": {
@@ -109,58 +109,58 @@
       "code": "JPY",
       "name": "일본 엔화 (100엔)",
       "unit": 100,
-      "currentRate": 845.23,
+      "currentRate": 845.15,
       "diffFromYesterday": -0.45,
-      "monthAvg": 847.68,
-      "monthHigh": 851.71,
-      "monthLow": 844.15,
+      "monthAvg": 847.6,
+      "monthHigh": 851.63,
+      "monthLow": 844.07,
       "sourceUrl": "http://www.smbs.biz/ExRate/TodayExRate.jsp",
       "sourceName": "서울외국환중개(SMBS)",
-      "advice": "최근 1달 평균(847.68원) 대비 양호한 구간입니다. 트래블로그/트래블월렛 100% 우대 수수료 충전을 권장합니다.",
+      "advice": "최근 1달 평균(847.6원) 대비 양호한 구간입니다. 트래블로그/트래블월렛 100% 우대 수수료 충전을 권장합니다.",
       "rates": [
         {
-          "date": "09.18",
-          "rate": 851.17
+          "date": "09.19",
+          "rate": 851.09
         },
         {
-          "date": "09.21",
-          "rate": 851.71
+          "date": "09.22",
+          "rate": 851.63
         },
         {
-          "date": "09.24",
-          "rate": 848.47
+          "date": "09.25",
+          "rate": 848.39
         },
         {
-          "date": "09.27",
-          "rate": 849.01
+          "date": "09.28",
+          "rate": 848.93
         },
         {
-          "date": "09.30",
-          "rate": 849.55
+          "date": "10.01",
+          "rate": 849.47
         },
         {
-          "date": "10.03",
-          "rate": 846.31
+          "date": "10.04",
+          "rate": 846.23
         },
         {
-          "date": "10.06",
-          "rate": 846.85
+          "date": "10.07",
+          "rate": 846.77
         },
         {
-          "date": "10.09",
-          "rate": 847.39
+          "date": "10.10",
+          "rate": 847.31
         },
         {
-          "date": "10.12",
-          "rate": 844.15
+          "date": "10.13",
+          "rate": 844.07
         },
         {
-          "date": "10.15",
-          "rate": 844.69
+          "date": "10.16",
+          "rate": 844.61
         },
         {
-          "date": "10.18",
-          "rate": 845.23
+          "date": "10.19",
+          "rate": 845.15
         }
       ]
     },
@@ -168,38 +168,38 @@
       "code": "TWD",
       "name": "대만 달러 (1달러)",
       "unit": 1,
-      "currentRate": 41.17,
+      "currentRate": 41.19,
       "diffFromYesterday": 0.07,
-      "monthAvg": 41.21,
-      "monthHigh": 41.31,
-      "monthLow": 41.1,
+      "monthAvg": 41.23,
+      "monthHigh": 41.33,
+      "monthLow": 41.12,
       "sourceUrl": "http://www.smbs.biz/ExRate/TodayExRate.jsp",
       "sourceName": "서울외국환중개(SMBS)",
       "advice": "박스권 안정세 지속. 이지카드 충전 및 야시장 현금 결제용 소액 환전 추천",
       "rates": [
         {
-          "date": "10.03",
-          "rate": 41.24
+          "date": "10.04",
+          "rate": 41.26
         },
         {
-          "date": "10.06",
-          "rate": 41.28
+          "date": "10.07",
+          "rate": 41.3
         },
         {
-          "date": "10.09",
-          "rate": 41.31
+          "date": "10.10",
+          "rate": 41.33
         },
         {
-          "date": "10.12",
-          "rate": 41.1
+          "date": "10.13",
+          "rate": 41.12
         },
         {
-          "date": "10.15",
-          "rate": 41.13
+          "date": "10.16",
+          "rate": 41.15
         },
         {
-          "date": "10.18",
-          "rate": 41.17
+          "date": "10.19",
+          "rate": 41.19
         }
       ]
     },
@@ -207,34 +207,34 @@
       "code": "VND",
       "name": "베트남 동 (100동)",
       "unit": 100,
-      "currentRate": 5.19,
+      "currentRate": 5.2,
       "diffFromYesterday": 0.01,
-      "monthAvg": 5.19,
-      "monthHigh": 5.21,
-      "monthLow": 5.18,
+      "monthAvg": 5.2,
+      "monthHigh": 5.22,
+      "monthLow": 5.19,
       "sourceUrl": "http://www.smbs.biz/ExRate/TodayExRate.jsp",
       "sourceName": "서울외국환중개(SMBS)",
       "advice": "미국 100달러 신권을 지참하여 다낭 한시장 현지 금은방에서 환전하는 것이 가장 유리합니다.",
       "rates": [
         {
-          "date": "10.06",
-          "rate": 5.21
+          "date": "10.07",
+          "rate": 5.22
         },
         {
-          "date": "10.09",
-          "rate": 5.21
+          "date": "10.10",
+          "rate": 5.22
         },
         {
-          "date": "10.12",
-          "rate": 5.18
-        },
-        {
-          "date": "10.15",
-          "rate": 5.18
-        },
-        {
-          "date": "10.18",
+          "date": "10.13",
           "rate": 5.19
+        },
+        {
+          "date": "10.16",
+          "rate": 5.19
+        },
+        {
+          "date": "10.19",
+          "rate": 5.2
         }
       ]
     },
@@ -252,23 +252,23 @@
       "advice": "중국 본토에서는 현금보다 알리페이/위챗페이에 한국 신용카드 사전 등록 후 결제가 필수입니다.",
       "rates": [
         {
-          "date": "10.06",
+          "date": "10.07",
           "rate": 200.78
         },
         {
-          "date": "10.09",
+          "date": "10.10",
           "rate": 200.94
         },
         {
-          "date": "10.12",
+          "date": "10.13",
           "rate": 199.95
         },
         {
-          "date": "10.15",
+          "date": "10.16",
           "rate": 200.12
         },
         {
-          "date": "10.18",
+          "date": "10.19",
           "rate": 200.28
         }
       ]
@@ -277,17 +277,17 @@
   "realTimeFlights": {
     "dataSource": "과거 1년 노선별 통계 데이터(비수기 최저가/평균가) & 스카이스캐너 실시간 연동",
     "notice": "항공권의 실시간 최저가는 잔여 좌석 및 발권 시점에 따라 변동되므로, 과거 기준 통계 데이터를 상시 제공하고 사용자가 선택한 출발/도착 날짜가 포함된 스카이스캐너 실시간 검색 링크로 바로 이동합니다.",
-    "defaultDepDateIso": "2026-11-01",
+    "defaultDepDateIso": "2026-11-02",
     "defaultRetDatesIso": {
-      "3박4일": "2026-11-04",
-      "4박5일": "2026-11-05",
-      "3박5일": "2026-11-05"
+      "3박4일": "2026-11-05",
+      "4박5일": "2026-11-06",
+      "3박5일": "2026-11-06"
     },
-    "departureDate": "2026.10.18 (일, 오늘)",
+    "departureDate": "2026.10.19 (월, 오늘)",
     "returnDates": {
-      "3박4일": "2026.10.21 (수)",
-      "4박5일": "2026.10.22 (목)",
-      "3박5일": "2026.10.22 (목 새벽)"
+      "3박4일": "2026.10.22 (목)",
+      "4박5일": "2026.10.23 (금)",
+      "3박5일": "2026.10.23 (금 새벽)"
     },
     "skyscannerBaseUrl": "https://www.skyscanner.co.kr/transport/flights/",
     "routes": {

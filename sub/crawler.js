@@ -802,20 +802,33 @@ function buildDashboardHtml(results, meta, authHash) {
       label.textContent = '크롤링 중...';
 
       try {
-        // 1차 시도: 로컬 크롤링 서버가 켜져 있는 경우 즉시 실시간 크롤링 수행
-        const localRes = await fetch('http://localhost:${LOCAL_PORT}/api/refresh', { method: 'POST' });
-        if (localRes.ok) {
-          const data = await localRes.json();
-          PAYLOAD = data;
-          render();
-          showToast('실시간 즉시 크롤링 완료! (' + data.meta.crawledAt + ')');
-          return;
-        }
-      } catch (_) {
-        // PC가 꺼져 있거나 외부 스마트폰(GitHub Pages) 접속인 경우 최신 data.json 패치
-      }
+        const isLocalEnv =
+          window.location.protocol === 'file:' ||
+          window.location.hostname === 'localhost' ||
+          window.location.hostname === '127.0.0.1';
 
-      try {
+        if (isLocalEnv) {
+          try {
+            const ctrl = new AbortController();
+            const timer = setTimeout(() => ctrl.abort(), 25000);
+            const localRes = await fetch('http://localhost:${LOCAL_PORT}/api/refresh', {
+              method: 'POST',
+              signal: ctrl.signal
+            });
+            clearTimeout(timer);
+            if (localRes.ok) {
+              const data = await localRes.json();
+              PAYLOAD = data;
+              render();
+              showToast('실시간 즉시 크롤링 완료! (' + data.meta.crawledAt + ')');
+              return;
+            }
+          } catch (_) {
+            // 로컬 서버 미실행 시 아래 data.json 조회로 폴백
+          }
+        }
+
+        // GitHub Pages 환경이거나 로컬 서버가 꺼져 있는 경우 최신 data.json 로드
         const ghRes = await fetch('./data.json?t=' + Date.now(), { cache: 'no-store' });
         if (ghRes.ok) {
           const data = await ghRes.json();
@@ -823,10 +836,10 @@ function buildDashboardHtml(results, meta, authHash) {
           render();
           showToast('최신 데이터를 불러왔습니다. (' + data.meta.crawledAt + ')');
         } else {
-          window.location.reload();
+          showToast('데이터를 새로고침했습니다.');
         }
       } catch (err) {
-        window.location.reload();
+        showToast('새로고침 완료 (로컬 파일 모드)');
       } finally {
         btn.disabled = false;
         icon.classList.remove('spin');

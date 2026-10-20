@@ -194,7 +194,8 @@ module.exports = async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
 
   if (req.method === "OPTIONS") {
-    return res.status(204).end();
+    res.writeHead(204);
+    return res.end();
   }
 
   try {
@@ -224,11 +225,13 @@ module.exports = async function handler(req, res) {
       results.push(...batchRes);
     }
 
-    return res.status(200).json({
+    res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+    return res.end(JSON.stringify({
       meta: { crawledAt: nowFormatted },
       results
-    });
+    }));
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
+    return res.end(JSON.stringify({ error: err.message }));
   }
 };

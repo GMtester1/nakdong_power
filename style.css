@@ -855,8 +855,6 @@ body {
   flex-direction: column;
   justify-content: flex-start;
   gap: 0.25rem;
-  width: max-content;          /* 내부 글자 길이에 맞춰 셀 자체 너비 자동 확장 */
-  min-width: 120px;            /* 글자가 없을 때 너무 좁아지지 않도록 최소 기본 너비 지정 */
 }
 
 .monthly-memo-box {
